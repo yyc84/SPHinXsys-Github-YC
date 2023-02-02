@@ -115,7 +115,7 @@ int main(int ac, char *av[])
 		return 0;
 	}
 	SolidBody plate(sph_system, makeShared<Plate>("plate"));
-	plate.defineParticlesAndMaterial<SolidParticles, Solid>();
+	plate.defineParticlesAndMaterial<SolidParticles, Solid>(rho0_s, Youngs_modulus, poisson);
 	//plate.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	plate.generateParticles<ParticleGeneratorLattice>();
 	//----------------------------------------------------------------------
