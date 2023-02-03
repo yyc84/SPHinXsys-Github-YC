@@ -92,9 +92,11 @@ namespace SPH
 			
 			this->registerVariable(external_diffusion_dt_sum_, "HeatFlux");
 			this->registerVariable(thermal_conductivity_, "ThermalConductivity");
-			this->addVariableToWrite<Real>("HeatFlux");
-			this->addVariableToWrite<Real>("ThermalConductivity");
-
+			
+			this->template addVariableToWrite<Real>("HeatFlux");
+			this->template addVariableToWrite<Real>("ThermalConductivity");
+			 
+			
 			for (size_t m = 0; m < number_of_diffusion_species_; ++m)
 			{
 				constexpr int type_index = DataTypeIndex<Real>::value;
