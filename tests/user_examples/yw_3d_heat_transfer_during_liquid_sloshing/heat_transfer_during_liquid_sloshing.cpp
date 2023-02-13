@@ -18,9 +18,9 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(false);
+	system.setRunParticleRelaxation(true);
 	// Tag for computation start with relaxed body fitted particles distribution.
-	system.setReloadParticles(true);
+	system.setReloadParticles(false);
 	/* Tag for computation from restart files. 0: start with initial condition. */
 	system.setRestartStep(0);
 	//handle command line arguments
@@ -34,7 +34,7 @@ int main(int ac, char* av[])
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
 	tank.defineParticlesAndMaterial<SolidParticles, Solid>();
-	/*tank.defineBodyLevelSetShape()->writeLevelSet(in_output);*/
+	tank.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<ParticleGeneratorReload>(in_output, tank.getName())
 		: tank.generateParticles<ParticleGeneratorLattice>();
@@ -48,7 +48,7 @@ int main(int ac, char* av[])
 
 	FluidBody air_block(system, makeShared<AirBlock>("AirBody"));
 	air_block.defineParticlesAndMaterial<DiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoAirBodyMaterial>();
-	//air_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	air_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	air_block.generateParticles<ParticleGeneratorLattice>();
 
 	/*ObserverBody liquid_temperature_observer(system, "LiquidTemperatureObserver");
@@ -184,12 +184,12 @@ int main(int ac, char* av[])
 		water_average_temperature(in_output, water_block, "Phi");
 	ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
 		air_average_temperature(in_output, air_block, "Phi");
-	ReducedQuantityRecording<ReduceAverage<QuantitySummation<Real>>>
+	ReducedQuantityRecording<ReduceDynamics<QuantityMoment<Real>>>
 		air_rate_of_heat_transfer(in_output, air_block, "HeatFlux");
-	ReducedQuantityRecording<ReduceAverage<QuantitySummation<Real>>>
+	ReducedQuantityRecording<ReduceDynamics<QuantityMoment<Real>>>
 		water_rate_of_heat_transfer(in_output, water_block, "HeatFlux");
-	ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
-	ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");
+	/*ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
+	ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");*/
 	/**
  * @brief Pre-simulation.
  */
@@ -211,8 +211,8 @@ int main(int ac, char* av[])
 	air_average_temperature.writeToFile(0);
 	air_rate_of_heat_transfer.writeToFile(0);
 	water_rate_of_heat_transfer.writeToFile(0);
-	compute_water_total_mass.writeToFile(0);
-	compute_air_total_mass.writeToFile(0);
+	/*compute_water_total_mass.writeToFile(0);
+	compute_air_total_mass.writeToFile(0);*/
 	if (system.RestartStep() != 0)
 	{
 		GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());

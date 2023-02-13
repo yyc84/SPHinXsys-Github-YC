@@ -42,7 +42,7 @@ int main(int ac, char* av[])
 
 	FluidBody water_block(system, makeShared<WaterBlock>("WaterBody"));
 	water_block.defineParticlesAndMaterial<DiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoWaterBodyMaterial>();
-	water_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	/*water_block.defineBodyLevelSetShape()->writeLevelSet(in_output);*/
 	water_block.generateParticles<ParticleGeneratorLattice>();
 
 

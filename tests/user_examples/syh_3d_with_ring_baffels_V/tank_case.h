@@ -90,8 +90,8 @@ public:
 	{
 		
 		time_ = GlobalStaticVariables::physical_time_;
-		if(time_>0.1)
-		global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_-0.1));
+		//if (time_ > 0.1)
+			global_acceleration_[0] = 0.0;//4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_-0.1));
 		return global_acceleration_;
 	}
 };
