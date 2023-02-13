@@ -101,6 +101,26 @@ namespace SPH
 		};
 
 		/**
+		 * @class AcousticTimeStepSizeMultiResolution
+		 * @brief Computing the acoustic time step size with multi-resolution
+		 * computing time step size
+		 */
+		class AcousticTimeStepSizeMultiResolution : public LocalDynamicsReduce<Real, ReduceMin>,
+			public ElasticSolidDataSimple
+		{
+		protected:
+			Real CFL_;
+			StdLargeVec<Vecd>& vel_, & acc_;
+			Real smoothing_length_, c0_;
+
+		public:
+			explicit AcousticTimeStepSizeMultiResolution(SPHBody& sph_body, Real CFL = 0.6);
+			virtual ~AcousticTimeStepSizeMultiResolution() {};
+
+			Real reduce(size_t index_i, Real dt = 0.0);
+		};
+
+		/**
 		 * @class DeformationGradientBySummation
 		 * @brief computing deformation gradient tensor by summation
 		 */
@@ -161,6 +181,26 @@ namespace SPH
 		public:
 			explicit Integration1stHalf(BaseInnerRelation &inner_relation);
 			virtual ~Integration1stHalf(){};
+			void initialization(size_t index_i, Real dt = 0.0);
+			void interaction(size_t index_i, Real dt = 0.0);
+
+		protected:
+			StdLargeVec<Matd> stress_PK1_B_;
+			Real numerical_dissipation_factor_;
+			Real inv_W0_ = 1.0 / sph_body_.sph_adaptation_->getKernel()->W0(zero_vec);
+		};
+
+		/*below for multi-resolution*/
+		/**
+		 * @class Integration1stHalfMultiResolution
+		 * @brief computing stress relaxation process by verlet time stepping
+		 * This is the first step
+		 */
+		class Integration1stHalfMultiResolution : public BaseIntegration1stHalf
+		{
+		public:
+			explicit Integration1stHalfMultiResolution(BaseInnerRelation& inner_relation);
+			virtual ~Integration1stHalfMultiResolution() {};
 			void initialization(size_t index_i, Real dt = 0.0);
 			void interaction(size_t index_i, Real dt = 0.0);
 

@@ -214,5 +214,63 @@ namespace SPH
 			F_[index_i] += dF_dt_[index_i] * dt * 0.5;
 		}
 		//=================================================================================================//
+		AcousticTimeStepSizeMultiResolution::AcousticTimeStepSizeMultiResolution(SPHBody& sph_body, Real CFL)
+			: LocalDynamicsReduce<Real, ReduceMin>(sph_body, Real(MaxRealNumber)),
+			ElasticSolidDataSimple(sph_body), CFL_(CFL),
+			vel_(particles_->vel_), acc_(particles_->acc_),
+			smoothing_length_(sph_body.sph_adaptation_->ReferenceSmoothingLength()),
+			c0_(particles_->elastic_solid_.ReferenceSoundSpeed()) {}
+		//=================================================================================================//
+		Real AcousticTimeStepSizeMultiResolution::reduce(size_t index_i, Real dt)
+		{
+			Real smoothing_length_local = smoothing_length_ * sph_body_.sph_adaptation_->SmoothingLengthRatio(index_i);
+			return CFL_ * SMIN(sqrt(smoothing_length_local / (acc_[index_i].norm() + TinyReal)),
+				smoothing_length_local / (c0_ + vel_[index_i].norm()));
+		}
+		//=================================================================================================//
+		Integration1stHalfMultiResolution::
+			Integration1stHalfMultiResolution(BaseInnerRelation& inner_relation)
+			: BaseIntegration1stHalf(inner_relation)
+		{
+			particles_->registerVariable(stress_PK1_B_, "CorrectedStressPK1");
+			numerical_dissipation_factor_ = 0.25;
+		}
+		//=================================================================================================//
+		void Integration1stHalfMultiResolution::initialization(size_t index_i, Real dt)
+		{
+			pos_[index_i] += vel_[index_i] * dt * 0.5;
+			F_[index_i] += dF_dt_[index_i] * dt * 0.5;
+			rho_[index_i] = rho0_ / F_[index_i].determinant();
+			// obtain the first Piola-Kirchhoff stress from the second Piola-Kirchhoff stress
+			// it seems using reproducing correction here increases convergence rate near the free surface
+			stress_PK1_B_[index_i] = F_[index_i] * elastic_solid_.StressPK2(F_[index_i], index_i) * B_[index_i];
+		}
+		//=================================================================================================//
+		void Integration1stHalfMultiResolution::interaction(size_t index_i, Real dt)
+		{
+			// including gravity and force from fluid
+			Vecd acceleration = Vecd::Zero();
+			const Neighborhood& inner_neighborhood = inner_configuration_[index_i];
+			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+			{
+				size_t index_j = inner_neighborhood.j_[n];
+				Vecd e_ij = inner_neighborhood.e_ij_[n];
+				Real r_ij = inner_neighborhood.r_ij_[n];
+				Real dim_r_ij_1 = Dimensions / r_ij;
+				Vecd pos_jump = pos_[index_i] - pos_[index_j];
+				Vecd vel_jump = vel_[index_i] - vel_[index_j];
+				Real strain_rate = dim_r_ij_1 * dim_r_ij_1 * pos_jump.dot(vel_jump);
+				Real weight = inner_neighborhood.W_ij_[n] * inv_W0_;
+				Matd numerical_stress_ij =
+					0.5 * (F_[index_i] + F_[index_j]) * elastic_solid_.PairNumericalDamping(strain_rate,
+						smoothing_length_ * sph_body_.sph_adaptation_->SmoothingLengthRatio(index_i));
+				acceleration += inv_rho0_ * inner_neighborhood.dW_ijV_j_[n] *
+					(stress_PK1_B_[index_i] + stress_PK1_B_[index_j] +
+						numerical_dissipation_factor_ * weight * numerical_stress_ij) * e_ij;
+			}
+
+			acc_[index_i] = acceleration;
+		}
+		//=================================================================================================//
 	}
 }
