@@ -134,10 +134,10 @@ int main(int ac, char* av[])
 	//	and regression tests of the simulation.
 	//----------------------------------------------------------------------
 	BodyStatesRecordingToVtp body_states_recording(in_output, system.real_bodies_);
-	RegressionTestDynamicTimeWarping<ReducedQuantityRecording<ReduceDynamics<TotalMechanicalEnergy>>>
+	/*RegressionTestDynamicTimeWarping<ReducedQuantityRecording<ReduceDynamics<TotalMechanicalEnergy>>>
 		write_water_mechanical_energy(in_output, water_block, gravity_ptr);
 	RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>;
-		/*write_recorded_water_pressure("Pressure", in_output, fluid_observer_contact);*/
+		write_recorded_water_pressure("Pressure", in_output, fluid_observer_contact);*/
 	/*BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("PorbeS1"));
 	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
 		probe_1(in_output, probe_s1);
@@ -188,7 +188,7 @@ int main(int ac, char* av[])
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
 	body_states_recording.writeToFile(0);
-	write_water_mechanical_energy.writeToFile(0);
+	//write_water_mechanical_energy.writeToFile(0);
 	/*write_recorded_water_pressure.writeToFile(0);*/
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
@@ -228,7 +228,7 @@ int main(int ac, char* av[])
 
 				if (number_of_iterations != 0 && number_of_iterations % observation_sample_interval == 0)
 				{
-					write_water_mechanical_energy.writeToFile(number_of_iterations);
+					//write_water_mechanical_energy.writeToFile(number_of_iterations);
 					/*write_recorded_water_pressure.writeToFile(number_of_iterations);*/
 				}
 			}
