@@ -18,7 +18,7 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(false);
+	system.setRunParticleRelaxation(true);
 	// Tag for computation start with relaxed body fitted particles distribution.
 	system.setReloadParticles(true);
 	/* Tag for computation from restart files. 0: start with initial condition. */
@@ -34,7 +34,7 @@ int main(int ac, char* av[])
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
 	tank.defineParticlesAndMaterial<SolidParticles, Solid>();
-	/*tank.defineBodyLevelSetShape()->writeLevelSet(in_output);*/
+	tank.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<ParticleGeneratorReload>(in_output, tank.getName())
 		: tank.generateParticles<ParticleGeneratorLattice>();
