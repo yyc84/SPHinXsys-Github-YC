@@ -152,6 +152,23 @@ namespace SPH
 			: density_summation_(near_surface), pressure_relaxation_(near_surface),
 			  density_relaxation_(near_surface) {}
 		//=================================================================================================//
+		StaticConfinementTransportVelocity::StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient)
+			: LocalDynamics(near_surface.getSPHBody()), FluidDataSimple(sph_body_),
+			pos_(particles_->pos_), surface_indicator_(particles_->surface_indicator_),
+			smoothing_length_sqr_(powerN(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
+			coefficient_(coefficient),
+			level_set_shape_(&near_surface.level_set_shape_) {}
+		//=================================================================================================//
+		void StaticConfinementTransportVelocity::update(size_t index_i, Real dt)
+		{
+			Vecd acceleration_trans = Vecd::Zero();
+			// acceleration for transport velocity
+			acceleration_trans -= 2.0 * level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
+			/** correcting particle position */
+			if (surface_indicator_[index_i] == 0)
+				pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+		}
+		//=================================================================================================//
 	}
 	//=================================================================================================//
 }

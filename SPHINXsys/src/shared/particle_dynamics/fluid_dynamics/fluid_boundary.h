@@ -263,6 +263,25 @@ namespace SPH
         };
 
         /**
+         * @class StaticConfinementTransportVelocity
+         * @brief static confinement condition for transport velocity
+         */
+        class StaticConfinementTransportVelocity : public LocalDynamics, public FluidDataSimple
+        {
+        public:
+            StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient = 0.2);
+            virtual ~StaticConfinementTransportVelocity() {};
+            void update(size_t index_i, Real dt = 0.0);
+
+        protected:
+            StdLargeVec<Vecd>& pos_;
+            StdLargeVec<int>& surface_indicator_;
+            const Real coefficient_;
+            Real smoothing_length_sqr_;
+            LevelSetShape* level_set_shape_;
+        };
+
+        /**
          * @class StaticConfinementIntegration1stHalf
          * @brief static confinement condition for pressure relaxation
          */
