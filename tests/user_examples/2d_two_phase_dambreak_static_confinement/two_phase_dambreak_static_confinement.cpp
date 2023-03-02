@@ -44,7 +44,7 @@ int main()
 	ComplexRelation water_air_complex(water_block, {&air_block});
 	//ContactRelation water_wall_contact(water_block, {&wall_boundary});
 	ComplexRelation air_water_complex(air_block, {&water_block});
-	ContactRelation air_wall_contact(air_block, {&wall_boundary});
+	//ContactRelation air_wall_contact(air_block, {&wall_boundary});
 	ContactRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block, &air_block});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
@@ -66,9 +66,9 @@ int main()
 	//	update_air_density_by_summation(air_wall_contact, air_water_complex);
 	InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_air_density_by_summation(air_water_complex);
 
-	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex>
-		air_transport_correction(air_wall_contact, air_water_complex);
-	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionInner>air_transport_correction(air_water_complex);
+	//InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex>
+	//	air_transport_correction(air_wall_contact, air_water_complex);
+	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex>air_transport_correction(air_water_complex);
 
 	/** Time step size without considering sound wave speed. */
 	ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_max);
@@ -89,23 +89,28 @@ int main()
 	/** Extend Pressure relaxation is used for air. */
 	//Dynamics1Level<fluid_dynamics::ExtendMultiPhaseIntegration1stHalfRiemannWithWall>
 	//	air_pressure_relaxation(air_wall_contact, air_water_complex, 2.0);
-	Dynamics1Level<fluid_dynamics::ExtendMultiPhaseIntegration1stHalfRiemannWithWall>air_pressure_relaxation(air_wall_contact, air_water_complex, 2.0);
+	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration1stHalfRiemann>air_pressure_relaxation(air_water_complex);
 
 	//Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemannWithWall>
 	//	air_density_relaxation(air_wall_contact, air_water_complex);
 	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemann>air_density_relaxation(air_water_complex);
 	
 	/** Confinement condition for wall and structure. */
-	NearShapeSurface near_surface(water_block, makeShared<InnerWall>("InnerWall"));
-	fluid_dynamics::StaticConfinement confinement_condition(near_surface);
+	NearShapeSurface near_surface_water(water_block, makeShared<InnerWall>("InnerWall"));
+	near_surface_water.level_set_shape_.writeLevelSet(io_environment);
+	fluid_dynamics::StaticConfinement confinement_condition_water(near_surface_water);
 
-	update_water_density_by_summation.post_processes_.push_back(&confinement_condition.density_summation_);
-	water_pressure_relaxation.post_processes_.push_back(&confinement_condition.pressure_relaxation_);
-	water_density_relaxation.post_processes_.push_back(&confinement_condition.density_relaxation_);
+	NearShapeSurface near_surface_air(air_block, makeShared<InnerWall>("InnerWall"));
+	fluid_dynamics::StaticConfinement confinement_condition_air(near_surface_air);
+	
+	update_water_density_by_summation.post_processes_.push_back(&confinement_condition_water.density_summation_);
+	water_pressure_relaxation.post_processes_.push_back(&confinement_condition_water.pressure_relaxation_);
+	water_density_relaxation.post_processes_.push_back(&confinement_condition_water.density_relaxation_);
 
-	update_air_density_by_summation.post_processes_.push_back(&confinement_condition.density_summation_);
-	air_pressure_relaxation.post_processes_.push_back(&confinement_condition.extend_pressure_relaxation_);
-	air_density_relaxation.post_processes_.push_back(&confinement_condition.density_relaxation_);
+	update_air_density_by_summation.post_processes_.push_back(&confinement_condition_air.density_summation_);
+	air_pressure_relaxation.post_processes_.push_back(&confinement_condition_air.extend_intergration_1st_half_);
+	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.density_relaxation_);
+	air_transport_correction.post_processes_.push_back(&confinement_condition_air.transport_velocity_);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations 
 	//	and regression tests of the simulation.
@@ -124,7 +129,7 @@ int main()
 	//----------------------------------------------------------------------
 	sph_system.initializeSystemCellLinkedLists();
 	sph_system.initializeSystemConfigurations();
-	inner_normal_direction.parallel_exec();
+	//inner_normal_direction.parallel_exec();
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
@@ -184,7 +189,7 @@ int main()
 				dt = SMIN(SMIN(dt_f, dt_a), Dt);
 
 				water_pressure_relaxation.parallel_exec(dt);
-				air_pressure_relaxation.parallel_exec(dt);
+				air_pressure_relaxation.exec(dt);
 
 				water_density_relaxation.parallel_exec(dt);
 				air_density_relaxation.parallel_exec(dt);
@@ -214,11 +219,11 @@ int main()
 
 			water_block.updateCellLinkedListWithParticleSort(100);
 			water_air_complex.updateConfiguration();
-			water_wall_contact.updateConfiguration();
+			//water_wall_contact.updateConfiguration();
 
 			air_block.updateCellLinkedListWithParticleSort(100);
 			air_water_complex.updateConfiguration();
-			air_wall_contact.updateConfiguration();
+			//air_wall_contact.updateConfiguration();
 
 			fluid_observer_contact.updateConfiguration();
 			interval_updating_configuration += tick_count::now() - time_instance;

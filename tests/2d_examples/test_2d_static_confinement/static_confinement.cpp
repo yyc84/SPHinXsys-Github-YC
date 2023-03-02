@@ -133,7 +133,7 @@ int main()
 	NearShapeSurface near_surface(water_block, makeShared<WallAndStructure>("WallAndStructure"));
 	fluid_dynamics::StaticConfinement confinement_condition(near_surface);
 	update_density_by_summation.post_processes_.push_back(&confinement_condition.density_summation_);
-	pressure_relaxation.post_processes_.push_back(&confinement_condition.pressure_relaxation_);
+	pressure_relaxation.post_processes_.push_back(&confinement_condition.extend_intergration_1st_half_);
 	density_relaxation.post_processes_.push_back(&confinement_condition.density_relaxation_);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations

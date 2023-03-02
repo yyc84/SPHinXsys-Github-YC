@@ -190,6 +190,7 @@ namespace SPH
 
 					/** penalty method to prevent particle running into boundary */
 					Real projection = e_ij.dot(n_j);
+					
 					Real delta = 2.0 * projection * r_ij * particle_spacing_j1;
 					Real beta = delta < 1.0 ? (1.0 - delta) * (1.0 - delta) * particle_spacing_ratio2 : 0.0;
 					// penalty must be positive so that the penalty force is pointed to fluid inner domain
