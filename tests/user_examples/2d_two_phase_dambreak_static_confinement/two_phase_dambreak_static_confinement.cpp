@@ -106,10 +106,12 @@ int main()
 	update_water_density_by_summation.post_processes_.push_back(&confinement_condition_water.density_summation_);
 	water_pressure_relaxation.post_processes_.push_back(&confinement_condition_water.pressure_relaxation_);
 	water_density_relaxation.post_processes_.push_back(&confinement_condition_water.density_relaxation_);
+	water_density_relaxation.post_processes_.push_back(&confinement_condition_water.surface_bounding_);
 
 	update_air_density_by_summation.post_processes_.push_back(&confinement_condition_air.density_summation_);
 	air_pressure_relaxation.post_processes_.push_back(&confinement_condition_air.extend_intergration_1st_half_);
 	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.density_relaxation_);
+	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.surface_bounding_);
 	air_transport_correction.post_processes_.push_back(&confinement_condition_air.transport_velocity_);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations 

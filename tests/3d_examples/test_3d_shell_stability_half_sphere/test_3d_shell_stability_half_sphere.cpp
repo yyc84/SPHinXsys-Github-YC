@@ -167,7 +167,7 @@ void sphere_compression(int dp_ratio, Real pressure, Real gravity_z)
 	}();
 	constrained_edges.body_part_particles_ = constrained_edge_ids;
 
-	SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegion, BodyPartByParticle> constrain_holder(constrained_edges);
+	SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegion> constrain_holder(constrained_edges);
 
 	DampingWithRandomChoice<InteractionSplit<DampingBySplittingInner<Vec3d>>>
 		shell_velocity_damping(0.2, shell_body_inner, "Velocity", physical_viscosity);
@@ -240,7 +240,7 @@ void sphere_compression(int dp_ratio, Real pressure, Real gravity_z)
 				initialize_external_force.parallel_exec(dt);
 				if (pressure > TinyReal) apply_pressure();
 
-				dt = 0.25 * computing_time_step_size.parallel_exec(); // constant multiplier is related to thickness/dp ratio
+				dt = computing_time_step_size.parallel_exec();
 				{// checking for excessive time step reduction
 					if (dt > max_dt) max_dt = dt;
 					if (dt < max_dt/1e3) throw std::runtime_error("time step decreased too much, iteration: " + std::to_string(ite));
