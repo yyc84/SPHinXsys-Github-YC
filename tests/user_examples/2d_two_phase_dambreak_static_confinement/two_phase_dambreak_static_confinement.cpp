@@ -29,10 +29,10 @@ int main()
 	air_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_a, c_f);
 	air_block.generateParticles<ParticleGeneratorLattice>();
 
-	SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
+	/*SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
 	wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
 	wall_boundary.generateParticles<ParticleGeneratorLattice>();
-	wall_boundary.addBodyStateForRecording<Vecd>("NormalDirection");
+	wall_boundary.addBodyStateForRecording<Vecd>("NormalDirection");*/
 
 	ObserverBody fluid_observer(sph_system, "FluidObserver");
 	fluid_observer.generateParticles<ObserverParticleGenerator>(observation_location);

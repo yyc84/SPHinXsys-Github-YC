@@ -215,7 +215,7 @@ namespace SPH
 			
 			Real penalty_pressure = p_[index_i];
 			Real distance_to_the_wall = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
-			Real ratio = distance_to_the_wall  / (2.0 * sph_body_.sph_adaptation_->ReferenceSpacing());
+			Real ratio = distance_to_the_wall  / (3.0 * sph_body_.sph_adaptation_->ReferenceSpacing());
 			Real penalty = ratio < 1.0 ? (1.0 - ratio) * (1.0 - ratio) * 0.5 * penalty_pressure: 0.0;
 			
 			acc_[index_i] -= 2.0 * penalty_strength_* penalty * kernel_gradient / rho_[index_i];
