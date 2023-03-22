@@ -98,20 +98,20 @@ int main()
 	/** Confinement condition for wall and structure. */
 	NearShapeSurface near_surface_water(water_block, makeShared<InnerWall>("InnerWall"));
 	near_surface_water.level_set_shape_.writeLevelSet(io_environment);
-	fluid_dynamics::StaticConfinement confinement_condition_water(near_surface_water);
+	fluid_dynamics::StaticConfinementWithBounding confinement_condition_water(near_surface_water);
 
 	NearShapeSurface near_surface_air(air_block, makeShared<InnerWall>("InnerWall"));
-	fluid_dynamics::StaticConfinement confinement_condition_air(near_surface_air);
+	fluid_dynamics::StaticConfinementWithPenalty confinement_condition_air(near_surface_air, c_f, 2.0);
 	
 	update_water_density_by_summation.post_processes_.push_back(&confinement_condition_water.density_summation_);
 	water_pressure_relaxation.post_processes_.push_back(&confinement_condition_water.pressure_relaxation_);
 	water_density_relaxation.post_processes_.push_back(&confinement_condition_water.density_relaxation_);
-	water_density_relaxation.post_processes_.push_back(&confinement_condition_water.surface_bounding_);
+	//water_density_relaxation.post_processes_.push_back(&confinement_condition_water.surface_bounding_);
 
 	update_air_density_by_summation.post_processes_.push_back(&confinement_condition_air.density_summation_);
 	air_pressure_relaxation.post_processes_.push_back(&confinement_condition_air.extend_intergration_1st_half_);
 	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.density_relaxation_);
-	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.surface_bounding_);
+	//air_density_relaxation.post_processes_.push_back(&confinement_condition_air.surface_bounding_);
 	air_transport_correction.post_processes_.push_back(&confinement_condition_air.transport_velocity_);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations 

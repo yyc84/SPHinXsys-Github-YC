@@ -439,6 +439,7 @@ namespace SPH
 				{
 					Vecu neighbor_index = Vecu(global_index_[0] + i, global_index_[1] + j);
 					Real phi_neighbor = DataValueFromGlobalIndex(phi_, neighbor_index);
+					Real phi_neighbor_offset = phi_neighbor + 0.5 * data_spacing_;
 					if (phi_neighbor > -data_spacing_)
 					{
 						Vecd displacement = position - global_mesh_.GridPositionFromIndex(neighbor_index);
