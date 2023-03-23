@@ -102,7 +102,7 @@ int main()
 	fluid_dynamics::StaticConfinementWithBounding confinement_condition_water(near_surface_water);
 
 	NearShapeSurface near_surface_air(air_block, makeShared<InnerWall>("InnerWall"));
-	fluid_dynamics::StaticConfinementWithPenalty confinement_condition_air(near_surface_air, c_f, 2.0);
+	fluid_dynamics::StaticConfinementWithPenalty confinement_condition_air(near_surface_air, c_f, 3.0);
 	
 	update_water_density_by_summation.post_processes_.push_back(&confinement_condition_water.density_summation_);
 	water_pressure_relaxation.post_processes_.push_back(&confinement_condition_water.pressure_relaxation_);

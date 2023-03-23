@@ -1,11 +1,5 @@
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${SPHINXSYS_PROJECT_DIR}/cmake) # main (top) cmake dir
-
-set(CMAKE_VERBOSE_MAKEFILE on)
-
-STRING( REGEX REPLACE ".*/(.*)" "\\1" CURRENT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR} )
+STRING(REGEX REPLACE ".*/(.*)" "\\1" CURRENT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR})
 PROJECT("${CURRENT_FOLDER}")
-
-
 
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 SET(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin/")
@@ -13,37 +7,13 @@ SET(BUILD_INPUT_PATH "${EXECUTABLE_OUTPUT_PATH}/input")
 SET(BUILD_RELOAD_PATH "${EXECUTABLE_OUTPUT_PATH}/reload")
 
 file(MAKE_DIRECTORY ${BUILD_INPUT_PATH})
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/regression_test_tool.py
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/FluidObserver_Pressure_runtimes.dat
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/FluidObserver_Pressure_dtwdistance.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/FluidObserver_Pressure_Run_0_result.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/FluidObserver_Pressure_Run_11_result.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/FluidObserver_Pressure_Run_20_result.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/WaterBody_TotalMechanicalEnergy_runtimes.dat
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/WaterBody_TotalMechanicalEnergy_dtwdistance.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/WaterBody_TotalMechanicalEnergy_Run_0_result.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/WaterBody_TotalMechanicalEnergy_Run_3_result.xml
-        DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/WaterBody_TotalMechanicalEnergy_Run_5_result.xml
-        DESTINATION ${BUILD_INPUT_PATH})
 
-
+add_executable(${PROJECT_NAME})
 aux_source_directory(. DIR_SRCS)
-ADD_EXECUTABLE(${PROJECT_NAME} ${DIR_SRCS})
+target_sources(${PROJECT_NAME} PRIVATE ${DIR_SRCS})
+target_link_libraries(${PROJECT_NAME} fluid_boundary_static_confinement_module)
+set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
 
-
-add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME}
-WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
-
-    set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
-    target_link_libraries(${PROJECT_NAME} sphinxsys_2d)
+add_test(NAME ${PROJECT_NAME}
+		 COMMAND ${PROJECT_NAME}
+		 WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})

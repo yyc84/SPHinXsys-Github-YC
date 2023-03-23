@@ -27,11 +27,11 @@
  * @author	Yongchuan Yu and Xiangyu Hu
  */
 
-#ifndef FLUID_BOUNDARY_H
-#define FLUID_BOUNDARY_H
+#ifndef FLUID_BOUNDARY_STATIC_COFINEMENT_H
+#define FLUID_BOUNDARY_STATIC_COFINEMENT_H
 
 #include "fluid_dynamics_inner.h"
-
+#include "fluid_boundary.h"
 #include <mutex>
 
 namespace SPH
@@ -43,7 +43,7 @@ namespace SPH
          * @class StaticConfinementDensity
          * @brief static confinement condition for density summation
          */
-        class StaticConfinementDensity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+       /* class StaticConfinementDensity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementDensity(NearShapeSurface &near_surface);
@@ -55,7 +55,7 @@ namespace SPH
             StdLargeVec<Real> &mass_, &rho_sum_;
             StdLargeVec<Vecd> &pos_;
             LevelSetShape *level_set_shape_;
-        };
+        };*/
 
         /**
          * @class StaticConfinementTransportVelocity
@@ -99,7 +99,7 @@ namespace SPH
          * @class StaticConfinementIntegration1stHalf
          * @brief static confinement condition for pressure relaxation
          */
-        class StaticConfinementIntegration1stHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+       /* class StaticConfinementIntegration1stHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementIntegration1stHalf(NearShapeSurface &near_surface);
@@ -112,13 +112,13 @@ namespace SPH
             StdLargeVec<Vecd> &pos_, &vel_, &acc_;
             LevelSetShape *level_set_shape_;
             AcousticRiemannSolver riemann_solver_;
-        };
+        };*/
 
         /**
          * @class StaticConfinementIntegration2ndHalf
          * @brief static confinement condition for density relaxation
          */
-        class StaticConfinementIntegration2ndHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+       /* class StaticConfinementIntegration2ndHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementIntegration2ndHalf(NearShapeSurface &near_surface);
@@ -131,7 +131,7 @@ namespace SPH
             StdLargeVec<Vecd> &pos_, &vel_, &acc_;
             LevelSetShape *level_set_shape_;
             AcousticRiemannSolver riemann_solver_;
-        };
+        };*/
 
         /**
         * @class StaticConfinementIntegration1stHalf
@@ -140,12 +140,12 @@ namespace SPH
         class StaticConfinementExtendIntegration1stHalf : public LocalDynamics, public FluidDataSimple
         {
         public:
-            StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real penalty_strength = 2.0);
+            StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real  sound_speed,  Real penalty_strength = 2.0);
             virtual ~StaticConfinementExtendIntegration1stHalf() {};
             void update(size_t index_i, Real dt = 0.0);
 
         protected:
-            Real penalty_strength_;
+            Real penalty_strength_, c_0_;
             Fluid& fluid_;
             StdLargeVec<Real>& rho_, & p_;
             StdLargeVec<Vecd>& pos_, & vel_, & acc_;
@@ -175,13 +175,52 @@ namespace SPH
          * @class StaticConfinement
          * @brief Static confined boundary condition for complex structures.
          */
-        class StaticConfinement
+        //class StaticConfinement
+        //{
+        //public:
+
+        //    /*SimpleDynamics<StaticConfinementDensity> density_summation_;
+        //    SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
+        //    SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;*/
+        //    SimpleDynamics<StaticConfinementDensity> density_summation_;
+        //    SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
+        //    SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
+        //    SimpleDynamics<StaticConfinementTransportVelocity> transport_velocity_;
+        //    SimpleDynamics<StaticConfinementViscousAcceleration> viscous_acceleration_;
+        //    SimpleDynamics<StaticConfinementExtendIntegration1stHalf> extend_intergration_1st_half_;
+        //    SimpleDynamics<StaticConfinementBounding> surface_bounding_;
+
+        //    StaticConfinement(NearShapeSurface &near_surface);
+        //    virtual ~StaticConfinement(){};
+        //};
+
+        /**
+        * @class StaticConfinement
+        * @brief Static confined boundary condition for complex structures with bounding.
+        */
+         class StaticConfinementWithBounding
+         {
+         public:
+
+             SimpleDynamics<StaticConfinementDensity> density_summation_;
+             SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
+             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
+             SimpleDynamics<StaticConfinementBounding> surface_bounding_;
+
+
+             StaticConfinementWithBounding(NearShapeSurface& near_surface);
+             virtual ~StaticConfinementWithBounding() {};
+         };
+
+
+        /**
+        * @class StaticConfinement
+        * @brief Static confined boundary condition for complex structures with penalty force for light phase.
+        */
+        class StaticConfinementWithPenalty
         {
         public:
 
-            /*SimpleDynamics<StaticConfinementDensity> density_summation_;
-            SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
-            SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;*/
             SimpleDynamics<StaticConfinementDensity> density_summation_;
             SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
@@ -190,9 +229,10 @@ namespace SPH
             SimpleDynamics<StaticConfinementExtendIntegration1stHalf> extend_intergration_1st_half_;
             SimpleDynamics<StaticConfinementBounding> surface_bounding_;
 
-            StaticConfinement(NearShapeSurface &near_surface);
-            virtual ~StaticConfinement(){};
+            StaticConfinementWithPenalty(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength);
+            virtual ~StaticConfinementWithPenalty() {};
         };
+
 
     }
 }
