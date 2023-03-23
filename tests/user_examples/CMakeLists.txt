@@ -6,4 +6,4 @@ foreach(subdir ${SUBDIRS})
     endif()
 endforeach()
 
-include_directories(extra_sources)
+
