@@ -1,4 +1,4 @@
-#include "static_confinement.h"
+#include "fluid_boundary_static_confinement.h"
 
 namespace SPH
 {

@@ -40,6 +40,9 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/WaterBody_TotalMechan
 aux_source_directory(. DIR_SRCS)
 ADD_EXECUTABLE(${PROJECT_NAME} ${DIR_SRCS})
 
+include_directories(extra_sources)
+#add_library(extra_sources fluid_boundary_static_confinement.cpp)
+
 add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME}
 WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 

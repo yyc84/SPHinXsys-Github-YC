@@ -7,6 +7,7 @@
  */
 #include "two_phase_dambreak_static_confinement.h"
 #include "sphinxsys.h"
+#include "../extra_sources/fluid_boundary_static_confinement.h"
 using namespace SPH;
 
 int main()

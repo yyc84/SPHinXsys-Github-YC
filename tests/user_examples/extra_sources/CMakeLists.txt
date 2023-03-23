@@ -5,5 +5,3 @@ foreach(subdir ${SUBDIRS})
 	    add_subdirectory(${subdir})
     endif()
 endforeach()
-
-include_directories(extra_sources)

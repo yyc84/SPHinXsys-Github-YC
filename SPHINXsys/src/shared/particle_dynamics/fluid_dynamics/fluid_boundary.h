@@ -266,7 +266,7 @@ namespace SPH
          * @class StaticConfinementTransportVelocity
          * @brief static confinement condition for transport velocity
          */
-        class StaticConfinementTransportVelocity : public LocalDynamics, public FluidDataSimple
+        /*class StaticConfinementTransportVelocity : public LocalDynamics, public FluidDataSimple
         {
         public:
             StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient = 0.2);
@@ -279,13 +279,13 @@ namespace SPH
             const Real coefficient_;
             Real smoothing_length_sqr_;
             LevelSetShape* level_set_shape_;
-        };
+        };*/
 
         /**
          * @class StaticConfinementViscousAcceleration
          * @brief static confinement condition for viscous acceleration
          */
-        class StaticConfinementViscousAcceleration : public LocalDynamics, public FluidDataSimple
+       /* class StaticConfinementViscousAcceleration : public LocalDynamics, public FluidDataSimple
         {
         public:
             StaticConfinementViscousAcceleration(NearShapeSurface& near_surface);
@@ -298,7 +298,7 @@ namespace SPH
             StdLargeVec<Vecd>& vel_, &acc_prior_;
             Real mu_;
             LevelSetShape* level_set_shape_;
-        };
+        };*/
 
         /**
          * @class StaticConfinementIntegration1stHalf
@@ -342,7 +342,7 @@ namespace SPH
         * @class StaticConfinementIntegration1stHalf
         * @brief static confinement condition for pressure relaxation
         */
-        class StaticConfinementExtendIntegration1stHalf : public LocalDynamics, public FluidDataSimple
+       /* class StaticConfinementExtendIntegration1stHalf : public LocalDynamics, public FluidDataSimple
         {
         public:
             StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength=2.0 );
@@ -357,13 +357,13 @@ namespace SPH
             StdLargeVec<Vecd>& pos_, & vel_, & acc_;
             LevelSetShape* level_set_shape_;
             AcousticRiemannSolver riemann_solver_;
-        };
+        };*/
 
         /**
         * @class StaticConfinementIntegration1stHalf
         * @brief static confinement condition for pressure relaxation
         */
-        class StaticConfinementBounding : public LocalDynamics, public FluidDataSimple
+        /*class StaticConfinementBounding : public LocalDynamics, public FluidDataSimple
         {
         public:
             StaticConfinementBounding(NearShapeSurface& near_surface);
@@ -374,7 +374,7 @@ namespace SPH
             StdLargeVec<Vecd>& pos_;
             LevelSetShape* level_set_shape_;
             Real constrained_distance_;
-        };
+        };*/
 
 
         /**
@@ -397,7 +397,7 @@ namespace SPH
        * @class StaticConfinement
        * @brief Static confined boundary condition for complex structures with bounding.
        */
-        class StaticConfinementWithBounding
+        /*class StaticConfinementWithBounding
         {
         public:
 
@@ -409,14 +409,14 @@ namespace SPH
 
             StaticConfinementWithBounding(NearShapeSurface& near_surface);
             virtual ~StaticConfinementWithBounding() {};
-        };
+        };*/
 
 
         /**
        * @class StaticConfinement
        * @brief Static confined boundary condition for complex structures with penalty force for light phase.
        */
-        class StaticConfinementWithPenalty
+       /* class StaticConfinementWithPenalty
         {
         public:
 
@@ -430,7 +430,7 @@ namespace SPH
 
             StaticConfinementWithPenalty(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength);
             virtual ~StaticConfinementWithPenalty() {};
-        };
+        };*/
 
     }
 }
