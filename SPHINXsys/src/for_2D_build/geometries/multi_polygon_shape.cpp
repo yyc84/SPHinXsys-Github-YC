@@ -17,6 +17,12 @@ namespace SPH
 		addACircle(center, radius, resolution, ShapeBooleanOps::add);
 	}
 	//=================================================================================================//
+	MultiPolygon::MultiPolygon(const std::string &file_path_name)
+		: MultiPolygon()
+	{
+		addAPolygonFromFile(file_path_name, ShapeBooleanOps::add);
+	}
+	//=================================================================================================//
 	boost_multi_poly MultiPolygon::
 		MultiPolygonByBooleanOps(boost_multi_poly multi_poly_in,
 								 boost_multi_poly multi_poly_op, ShapeBooleanOps boolean_op)

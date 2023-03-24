@@ -76,6 +76,7 @@ namespace SPH
 		MultiPolygon(){};
 		explicit MultiPolygon(const std::vector<Vecd> &points);
 		explicit MultiPolygon(const Vecd &center, Real radius, int resolution);
+		explicit MultiPolygon(const std::string &file_path_name);
 		boost_multi_poly &getBoostMultiPoly() { return multi_poly_; };
 
 		BoundingBox findBounds();
