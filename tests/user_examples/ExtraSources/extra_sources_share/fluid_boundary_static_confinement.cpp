@@ -9,7 +9,7 @@ namespace SPH
 		StaticConfinementTransportVelocity::StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient)
 			: LocalDynamics(near_surface.getSPHBody()), FluidDataSimple(sph_body_),
 			pos_(particles_->pos_), surface_indicator_(particles_->surface_indicator_),
-			smoothing_length_sqr_(powerN(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
+			smoothing_length_sqr_(pow(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
 			coefficient_(coefficient),
 			level_set_shape_(&near_surface.level_set_shape_) {}
 		//=================================================================================================//
