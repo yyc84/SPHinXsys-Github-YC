@@ -32,6 +32,7 @@
 
 #include "fluid_dynamics_inner.h"
 
+#include "relax_dynamics.h"
 #include <mutex>
 
 namespace SPH
@@ -57,7 +58,7 @@ namespace SPH
          * @class FlowVelocityBuffer
          * @brief Flow buffer in which the particle velocity relaxes to a given target profile.
          * This technique will be used for applying several boundary conditions,
-         * such as freestream, inflow, damping boundary conditions.
+         * such as free stream, inflow, damping boundary conditions.
          */
         class FlowVelocityBuffer : public BaseFlowBoundaryCondition
         {
@@ -388,6 +389,7 @@ namespace SPH
             SimpleDynamics<StaticConfinementDensity> density_summation_;
             SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
+           SimpleDynamics<relax_dynamics::ShapeSurfaceBounding> surface_bounding_;
 
             StaticConfinement(NearShapeSurface &near_surface);
             virtual ~StaticConfinement(){};
