@@ -43,9 +43,9 @@ namespace SPH
 		}
 		//=================================================================================================//
 		StaticConfinementExtendIntegration1stHalf::
-			StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real  sound_speed, Real penalty_strength)
+			StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real penalty_strength)
 			: LocalDynamics(near_surface.getSPHBody()), FluidDataSimple(sph_body_),
-			fluid_(particles_->fluid_), c_0_ (sound_speed),
+			fluid_(particles_->fluid_), 
 			rho_(particles_->rho_), p_(particles_->p_),
 			pos_(particles_->pos_), vel_(particles_->vel_),
 			acc_(particles_->acc_),
@@ -63,6 +63,29 @@ namespace SPH
 			Real penalty = ratio < 1.0 ? (1.0 - ratio) * (1.0 - ratio) * 1.0 * penalty_pressure: 0.0;
 			
 			acc_[index_i] -= 2.0 * penalty_strength_* penalty * kernel_gradient / rho_[index_i];
+		}
+		//=================================================================================================//
+		StaticConfinementIntegration1stHalfPenaltyVelocity::
+			StaticConfinementIntegration1stHalfPenaltyVelocity(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength)
+			: LocalDynamics(near_surface.getSPHBody()), FluidDataSimple(sph_body_),
+			fluid_(particles_->fluid_), c_0_(sound_speed),
+			rho_(particles_->rho_), p_(particles_->p_),
+			pos_(particles_->pos_), vel_(particles_->vel_),
+			acc_(particles_->acc_),
+			level_set_shape_(&near_surface.level_set_shape_),
+			riemann_solver_(fluid_, fluid_), penalty_strength_(penalty_strength) {}
+		//=================================================================================================//
+		void StaticConfinementIntegration1stHalfPenaltyVelocity::update(size_t index_i, Real dt)
+		{
+			Vecd kernel_gradient = level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
+			acc_[index_i] -= 2.0 * p_[index_i] * kernel_gradient / rho_[index_i];
+
+			Real penalty_pressure = 0.5 * c_0_ * c_0_ * rho_[index_i];
+			Real distance_to_the_wall = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
+			Real ratio = distance_to_the_wall / (3.0 * sph_body_.sph_adaptation_->ReferenceSpacing());
+			Real penalty = ratio < 1.0 ? (1.0 - ratio) * (1.0 - ratio) * 0.5 * penalty_pressure : 0.0;
+
+			acc_[index_i] -= 2.0 * penalty_strength_ * penalty * kernel_gradient / rho_[index_i];
 		}
 		//=================================================================================================//
 		StaticConfinementBounding::StaticConfinementBounding(NearShapeSurface& near_surface)
@@ -92,8 +115,8 @@ namespace SPH
 		StaticConfinementWithPenalty::StaticConfinementWithPenalty(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength)
 			: density_summation_(near_surface), pressure_relaxation_(near_surface),
 			density_relaxation_(near_surface), transport_velocity_(near_surface),
-			viscous_acceleration_(near_surface), extend_intergration_1st_half_(near_surface, sound_speed, penalty_strength),
-			surface_bounding_(near_surface)
+			viscous_acceleration_(near_surface), extend_intergration_1st_half_(near_surface, penalty_strength),
+			surface_bounding_(near_surface), extend_intergration_1st_half_Velocity(near_surface, sound_speed, penalty_strength)
 		{}
 	}
 	//=================================================================================================//

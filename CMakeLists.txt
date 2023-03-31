@@ -10,6 +10,8 @@ option(SPHINXSYS_2D "Build sphinxsys_2d library" ON)
 option(SPHINXSYS_3D "Build sphinxsys_3d library" ON)
 option(SPHINXSYS_BUILD_TESTS "Build tests" ON)
 option(SPHINXSYS_DEVELOPER_MODE "Developer mode has more flags active for code quality" ON)
+option(EXTRA_SOURCES_2D "Build extra_source_2d library" ON)
+option(EXTRA_SOURCES_3D "Build extra_source_3d library" ON)
 
 #------ Global properties (Some cannot be set on INTERFACE targets)
 set(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Enable verbose compilation commands for Makefile and Ninja" FORCE) # Extra fluff needed for Ninja: https://github.com/ninja-build/ninja/issues/900
@@ -80,6 +82,7 @@ endif()
 #------ Setup the concrete libraries
 add_subdirectory(SPHINXsys)
 add_subdirectory(modules)
+add_subdirectory(features)
 
 #------ Setup the tests
 if(SPHINXSYS_BUILD_TESTS)

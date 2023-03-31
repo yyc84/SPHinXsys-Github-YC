@@ -85,8 +85,28 @@ namespace SPH
         class StaticConfinementExtendIntegration1stHalf : public LocalDynamics, public FluidDataSimple
         {
         public:
-            StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real  sound_speed,  Real penalty_strength = 2.0);
+            StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real penalty_strength = 2.0);
             virtual ~StaticConfinementExtendIntegration1stHalf() {};
+            void update(size_t index_i, Real dt = 0.0);
+
+        protected:
+            Real penalty_strength_;
+            Fluid& fluid_;
+            StdLargeVec<Real>& rho_, & p_;
+            StdLargeVec<Vecd>& pos_, & vel_, & acc_;
+            LevelSetShape* level_set_shape_;
+            AcousticRiemannSolver riemann_solver_;
+        };
+
+        /**
+        * @class StaticConfinementIntegration1stHalf
+        * @brief static confinement condition for pressure relaxation
+        */
+        class StaticConfinementIntegration1stHalfPenaltyVelocity : public LocalDynamics, public FluidDataSimple
+        {
+        public:
+            StaticConfinementIntegration1stHalfPenaltyVelocity(NearShapeSurface& near_surface, Real  sound_speed, Real penalty_strength = 2.0);
+            virtual ~StaticConfinementIntegration1stHalfPenaltyVelocity() {};
             void update(size_t index_i, Real dt = 0.0);
 
         protected:
@@ -148,6 +168,7 @@ namespace SPH
             SimpleDynamics<StaticConfinementTransportVelocity> transport_velocity_;
             SimpleDynamics<StaticConfinementViscousAcceleration> viscous_acceleration_;
             SimpleDynamics<StaticConfinementExtendIntegration1stHalf> extend_intergration_1st_half_;
+            SimpleDynamics<StaticConfinementIntegration1stHalfPenaltyVelocity> extend_intergration_1st_half_Velocity;
             SimpleDynamics<StaticConfinementBounding> surface_bounding_;
 
             StaticConfinementWithPenalty(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength);
