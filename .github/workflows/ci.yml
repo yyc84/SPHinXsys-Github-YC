@@ -20,7 +20,7 @@ jobs:
   ###############################################################################
 
   Linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       VCPKG_DEFAULT_TRIPLET: x64-linux
 
@@ -60,7 +60,8 @@ jobs:
             boost-program-options \
             boost-geometry \
             simbody \
-            gtest
+            gtest \
+            xsimd
 
       - name: Generate buildsystem
         run: |
@@ -146,7 +147,8 @@ jobs:
             boost-program-options `
             boost-geometry `
             simbody `
-            gtest
+            gtest `
+            xsimd
 
       - uses: ilammy/msvc-dev-cmd@v1
 
@@ -239,7 +241,8 @@ jobs:
             boost-program-options \
             boost-geometry \
             gtest \
-            simbody
+            simbody \
+            xsimd
 
       - name: Generate buildsystem
         run: |
