@@ -19,7 +19,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		BaseDensitySummationInner::BaseDensitySummationInner(BaseInnerRelation& inner_relation)
-			: LocalDynamics(inner_relation.sph_body_), EulerianWeaklyCompressibleFluidDataInner(inner_relation),
+			: LocalDynamics(inner_relation.getSPHBody()), EulerianWeaklyCompressibleFluidDataInner(inner_relation),
 			rho_(particles_->rho_), rho_sum_(particles_->rho_sum_), mass_(particles_->mass_),
 			rho0_(sph_body_.base_material_->ReferenceDensity()) {}
 		//=================================================================================================//
@@ -30,7 +30,7 @@ namespace SPH
 		//=================================================================================================//
 		DensitySummationInner::DensitySummationInner(BaseInnerRelation& inner_relation)
 			: BaseDensitySummationInner(inner_relation),
-			W0_(sph_body_.sph_adaptation_->getKernel()->W0(zero_vec)),
+			W0_(sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd)),
 			inv_sigma0_(1.0 / sph_body_.sph_adaptation_->ReferenceNumberDensity()) {}
 		//=================================================================================================//
 		void DensitySummationInner::interaction(size_t index_i, Real dt)
@@ -44,9 +44,9 @@ namespace SPH
 		}
 		TransportVelocityCorrectionInner::
 			TransportVelocityCorrectionInner(BaseInnerRelation& inner_relation, Real coefficient)
-			: LocalDynamics(inner_relation.sph_body_), EulerianWeaklyCompressibleFluidDataInner(inner_relation),
+			: LocalDynamics(inner_relation.getSPHBody()), EulerianWeaklyCompressibleFluidDataInner(inner_relation),
 			pos_(particles_->pos_), surface_indicator_(particles_->surface_indicator_),
-			smoothing_length_sqr_(powerN(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
+			smoothing_length_sqr_(pow(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
 			coefficient_(coefficient) {}
 		//=================================================================================================//
 		void TransportVelocityCorrectionInner::interaction(size_t index_i, Real dt)
@@ -68,10 +68,10 @@ namespace SPH
 		//=================================================================================================//
 		TransportVelocityCorrectionInnerAdaptive::
 			TransportVelocityCorrectionInnerAdaptive(BaseInnerRelation& inner_relation, Real coefficient)
-			: LocalDynamics(inner_relation.sph_body_), EulerianWeaklyCompressibleFluidDataInner(inner_relation),
+			: LocalDynamics(inner_relation.getSPHBody()), EulerianWeaklyCompressibleFluidDataInner(inner_relation),
 			sph_adaptation_(*sph_body_.sph_adaptation_),
 			pos_(particles_->pos_), surface_indicator_(particles_->surface_indicator_),
-			smoothing_length_sqr_(powerN(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
+			smoothing_length_sqr_(pow(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
 			coefficient_(coefficient) {}
 		//=================================================================================================//
 		void TransportVelocityCorrectionInnerAdaptive::interaction(size_t index_i, Real dt)
@@ -95,7 +95,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ViscousAccelerationInner::ViscousAccelerationInner(BaseInnerRelation& inner_relation)
-			: LocalDynamics(inner_relation.sph_body_),
+			: LocalDynamics(inner_relation.getSPHBody()),
 			EulerianWeaklyCompressibleFluidDataInner(inner_relation),
 			Vol_(particles_->Vol_), rho_(particles_->rho_), p_(particles_->p_),
 			vel_(particles_->vel_), dmom_dt_prior_(particles_->dmom_dt_prior_),
@@ -173,7 +173,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		BaseIntegration::BaseIntegration(BaseInnerRelation& inner_relation)
-			: LocalDynamics(inner_relation.sph_body_),
+			: LocalDynamics(inner_relation.getSPHBody()),
 			EulerianWeaklyCompressibleFluidDataInner(inner_relation), fluid_(particles_->fluid_),
 			Vol_(particles_->Vol_), mass_(particles_->mass_), rho_(particles_->rho_),
 			p_(particles_->p_), drho_dt_(particles_->drho_dt_), vel_(particles_->vel_), mom_(particles_->mom_),
