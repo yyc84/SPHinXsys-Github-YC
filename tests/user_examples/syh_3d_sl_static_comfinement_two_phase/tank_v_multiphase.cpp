@@ -4,6 +4,7 @@
  */
 #include "sphinxsys.h"
 #include "tank_case.h"
+#include "fluid_boundary_static_confinement.h"
 /*@brief Namespace cite here.
 */
 using namespace SPH;
@@ -77,25 +78,38 @@ int main(int ac, char* av[])
 	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemann> air_density_relaxation(air_water_complex);
 		/** Confinement condition for wall and structure. */
 	NearShapeSurface near_surface_water(water_block, makeShared<WallAndStructure>("WallAndStructure"));
+	near_surface_water.level_set_shape_.writeLevelSet(in_output);
+	fluid_dynamics::StaticConfinementWithBounding confinement_condition_water(near_surface_water);
+	
 	NearShapeSurface near_surface_air(air_block, makeShared<WallAndStructure>("WallAndStructure"));
-	/*near_surface_water.level_set_shape_.writeLevelSet(in_output);*/
-	fluid_dynamics::StaticConfinement confinement_condition_water(near_surface_water);
-	fluid_dynamics::StaticConfinement confinement_condition_air(near_surface_air);
+	fluid_dynamics::StaticConfinementWithPenalty confinement_condition_air(near_surface_air,c_f,3.0);
+	
 	fluid_density_by_summation.post_processes_.push_back(&confinement_condition_water.density_summation_);
+	fluid_pressure_relaxation.post_processes_.push_back(&confinement_condition_water.pressure_relaxation_);
+	fluid_density_relaxation.post_processes_.push_back(&confinement_condition_water.density_relaxation_);
+	/*fluid_density_relaxation.post_processes_.push_back(&confinement_condition_water.surface_bounding_);*/
+
+	air_density_by_summation.post_processes_.push_back(&confinement_condition_air.density_summation_);
+	air_pressure_relaxation.post_processes_.push_back(&confinement_condition_air.extend_intergration_1st_half_);
+	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.density_relaxation_);
+	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.surface_bounding_);
+	air_transport_correction.post_processes_.push_back(&confinement_condition_air.transport_velocity_);
+	
+	/*fluid_density_by_summation.post_processes_.push_back(&confinement_condition_water.density_summation_);
 	fluid_pressure_relaxation.post_processes_.push_back(&confinement_condition_water.pressure_relaxation_);
 	fluid_density_relaxation.post_processes_.push_back(&confinement_condition_water.density_relaxation_);
 	air_density_by_summation.post_processes_.push_back(&confinement_condition_air.density_summation_);
 	air_pressure_relaxation.post_processes_.push_back(&confinement_condition_air.pressure_relaxation_);
-	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.density_relaxation_);
+	air_density_relaxation.post_processes_.push_back(&confinement_condition_air.density_relaxation_);*/
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations
 	//	and regression tests of the simulation.
 	//----------------------------------------------------------------------
 	BodyStatesRecordingToVtp body_states_recording(in_output, system.real_bodies_);
-	/*RegressionTestDynamicTimeWarping<ReducedQuantityRecording<ReduceDynamics<TotalMechanicalEnergy>>>
+	RegressionTestDynamicTimeWarping<ReducedQuantityRecording<ReduceDynamics<TotalMechanicalEnergy>>>
 		write_water_mechanical_energy(in_output, water_block, gravity_ptr);
-	RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>;*/
-		/*write_recorded_water_pressure("Pressure", in_output, fluid_observer_contact);*/
+	/*RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>;
+		write_recorded_pressure("Pressure", in_output, fluid_observer_contact);*/
 	/*BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("PorbeS1"));
 	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
 		probe_1(in_output, probe_s1);
@@ -114,7 +128,7 @@ int main(int ac, char* av[])
 	system.initializeSystemConfigurations();
 	/** computing surface normal direction for the tank. */
 	/*inner_normal_direction.parallel_exec();*/
-
+	write_water_mechanical_energy.writeToFile(0);
 	write_real_body_states.writeToFile(0);
 	/*probe_1.writeToFile(0);
 	probe_2.writeToFile(0);
@@ -133,20 +147,20 @@ int main(int ac, char* av[])
 	int screen_output_interval = 100;
 	int observation_sample_interval = screen_output_interval * 2;
 	Real end_time = 5.0;		/**< End time. */
-	Real output_interval = 0.1; /**< Time stamps for output of body states. */
+	Real output_interval = 0.01; /**< Time stamps for output of body states. */
 	Real dt = 0.0;				/**< Default acoustic time step sizes. */
 	/** statistics for computing CPU time. */
-	tick_count t1 = tick_count::now();
-	tick_count::interval_t interval;
-	tick_count::interval_t interval_computing_time_step;
-	tick_count::interval_t interval_computing_pressure_relaxation;
-	tick_count::interval_t interval_updating_configuration;
-	tick_count time_instance;
+	TickCount t1 = TickCount::now();
+	TickCount::interval_t interval;
+	TickCount::interval_t interval_computing_time_step;
+	TickCount::interval_t interval_computing_pressure_relaxation;
+	TickCount::interval_t interval_updating_configuration;
+	TickCount time_instance;
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
 	body_states_recording.writeToFile(0);
-	/*write_water_mechanical_energy.writeToFile(0);*/
+	write_water_mechanical_energy.writeToFile(0);
 	/*write_recorded_water_pressure.writeToFile(0);*/
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
@@ -158,34 +172,34 @@ int main(int ac, char* av[])
 		while (integration_time < output_interval)
 		{
 			/** Acceleration due to viscous force and gravity. */
-			time_instance = tick_count::now();
-			initialize_a_water_step.parallel_exec();
-			Real Dt_f = fluid_advection_time_step.parallel_exec();
-			Real Dt_a = air_advection_time_step.parallel_exec();
+			time_instance = TickCount::now();
+			initialize_a_water_step.exec();
+			Real Dt_f = fluid_advection_time_step.exec();
+			Real Dt_a = air_advection_time_step.exec();
 			Real Dt = SMIN(Dt_f, Dt_a);
-			fluid_density_by_summation.parallel_exec();
-			air_density_by_summation.parallel_exec();
-			air_transport_correction.parallel_exec();
-			interval_computing_time_step += tick_count::now() - time_instance;
+			fluid_density_by_summation.exec();
+			air_density_by_summation.exec();
+			air_transport_correction.exec();
+			interval_computing_time_step += TickCount::now() - time_instance;
 
 			/** Dynamics including pressure relaxation. */
-			time_instance = tick_count::now();
+			time_instance = TickCount::now();
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt_f = fluid_acoustic_time_step.parallel_exec();
-				Real dt_a = air_acoustic_time_step.parallel_exec();
+				Real dt_f = fluid_acoustic_time_step.exec();
+				Real dt_a = air_acoustic_time_step.exec();
 				dt = SMIN(SMIN(dt_f, dt_a), Dt);
-				fluid_pressure_relaxation.parallel_exec(dt);
-				fluid_density_relaxation.parallel_exec(dt);
-				air_pressure_relaxation.parallel_exec(dt);
-				air_density_relaxation.parallel_exec(dt);
+				fluid_pressure_relaxation.exec(dt);
+				fluid_density_relaxation.exec(dt);
+				air_pressure_relaxation.exec(dt);
+				air_density_relaxation.exec(dt);
 				/*dt = fluid_acoustic_time_step.parallel_exec();*/
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 			}
-			interval_computing_pressure_relaxation += tick_count::now() - time_instance;
+			interval_computing_pressure_relaxation += TickCount::now() - time_instance;
 
 			if (number_of_iterations % screen_output_interval == 0)
 			{
@@ -193,34 +207,34 @@ int main(int ac, char* av[])
 					<< GlobalStaticVariables::physical_time_
 					<< "	Dt = " << Dt << "	dt = " << dt << "\n";
 
-				//if (number_of_iterations != 0 && number_of_iterations % observation_sample_interval == 0)
-				//{
-				//	write_water_mechanical_energy.writeToFile(number_of_iterations);
+				if (number_of_iterations != 0 && number_of_iterations % observation_sample_interval == 0)
+				{
+					write_water_mechanical_energy.writeToFile(number_of_iterations);
 				//	/*write_recorded_water_pressure.writeToFile(number_of_iterations);*/
-				//}
+				}
 			}
 			number_of_iterations++;
 
 			/** Update cell linked list and configuration. */
-			time_instance = tick_count::now();
+			time_instance = TickCount::now();
 			water_block.updateCellLinkedListWithParticleSort(100);
-			/*water_block_inner.updateConfiguration();*/
-			air_block.updateCellLinkedListWithParticleSort(100);
-			/*air_block_inner.updateConfiguration();*/
-			air_water_complex.updateConfiguration();
 			water_air_complex.updateConfiguration();
+			
+			air_block.updateCellLinkedListWithParticleSort(100);
+			air_water_complex.updateConfiguration();
+			
 			/*fluid_observer_contact.updateConfiguration();*/
-			interval_updating_configuration += tick_count::now() - time_instance;
+			interval_updating_configuration += TickCount::now() - time_instance;
 		}
 
-		tick_count t2 = tick_count::now();
+		TickCount t2 = TickCount::now();
 		body_states_recording.writeToFile();
-		tick_count t3 = tick_count::now();
+		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}
-	tick_count t4 = tick_count::now();
+	TickCount t4 = TickCount::now();
 
-	tick_count::interval_t tt;
+	TickCount::interval_t tt;
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 	return 0;

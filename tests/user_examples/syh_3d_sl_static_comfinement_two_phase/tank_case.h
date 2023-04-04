@@ -96,12 +96,15 @@ public:
 	virtual Vecd InducedAcceleration(Vecd& position) override
 	{
 		time_= GlobalStaticVariables::physical_time_;
-		if (time_ > 0.25)
+		if (4 < time_ < 5 )
 		{
-			global_acceleration_[0] = 4 * PI * PI * 1.63 * 1.63 * 0.0075 * sin(2 * PI * 1.63 * (time_ - 0.25));
+			global_acceleration_[0] = 4 * PI * PI * 1.0 * 1.0 * 0.0075 * sin(2 * PI * 1.0 * (time_ - 4));
 			/*global_acceleration_[0] =0;*/
 		}
-		
+		else
+		{
+			global_acceleration_[0] =0;
+		}
 		return global_acceleration_;
 	}
 };

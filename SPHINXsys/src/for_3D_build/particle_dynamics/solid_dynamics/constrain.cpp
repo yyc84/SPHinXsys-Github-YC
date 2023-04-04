@@ -19,7 +19,7 @@ namespace SPH
 		//=================================================================================================//
 		void Constrain3DSolidBodyRotation::setupDynamics(Real dt)
 		{
-			angular_velocity_ = moment_of_inertia_.inverse()*compute_total_moment_of_momentum_.parallel_exec(dt);
+			angular_velocity_ = moment_of_inertia_.inverse()*compute_total_moment_of_momentum_.exec(dt);
 		}
 		//=================================================================================================//
 		void Constrain3DSolidBodyRotation::update(size_t index_i, Real dt)

@@ -161,12 +161,12 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
-		random_wall_boundary_particles.parallel_exec(0.25);
-		random_water_particles.parallel_exec(0.25);
-		random_vapor_particles.parallel_exec(0.25);
-		wall_boundary_relaxation_step_complex.SurfaceBounding().parallel_exec();
-		water_relaxation_step_inner.SurfaceBounding().parallel_exec();
-		vapor_relaxation_step_inner.SurfaceBounding().parallel_exec();
+		random_wall_boundary_particles.exec(0.25);
+		random_water_particles.exec(0.25);
+		random_vapor_particles.exec(0.25);
+		wall_boundary_relaxation_step_complex.SurfaceBounding().exec();
+		water_relaxation_step_inner.SurfaceBounding().exec();
+		vapor_relaxation_step_inner.SurfaceBounding().exec();
 		write_wall_boundary_to_vtp.writeToFile(0);
 		write_water_to_vtp.writeToFile(0);
 		write_vapor_to_vtp.writeToFile(0);
@@ -176,9 +176,9 @@ int main(int ac, char *av[])
 		int ite_p = 0;
 		while (ite_p < 1000)
 		{
-			wall_boundary_relaxation_step_complex.parallel_exec();
-			water_relaxation_step_inner.parallel_exec();
-			vapor_relaxation_step_inner.parallel_exec();
+			wall_boundary_relaxation_step_complex.exec();
+			water_relaxation_step_inner.exec();
+			vapor_relaxation_step_inner.exec();
 			ite_p += 1;
 			if (ite_p % 200 == 0)
 			{
@@ -249,8 +249,8 @@ int main(int ac, char *av[])
 
 	sph_system.initializeSystemCellLinkedLists();
 	sph_system.initializeSystemConfigurations();
-	inner_normal_direction.parallel_exec();
-	wall_boundary_corrected_configuration.parallel_exec();
+	inner_normal_direction.exec();
+	wall_boundary_corrected_configuration.exec();
 	//----------------------------------------------------------------------
 	//	Load restart file if necessary.
 	//----------------------------------------------------------------------
@@ -279,12 +279,12 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
-	tick_count t1 = tick_count::now();
-	tick_count::interval_t interval;
-	tick_count::interval_t interval_computing_time_step;
-	tick_count::interval_t interval_computing_fluid_pressure_relaxation;
-	tick_count::interval_t interval_updating_configuration;
-	tick_count time_instance;
+	TickCount t1 = TickCount::now();
+	TickCount::interval_t interval;
+	TickCount::interval_t interval_computing_time_step;
+	TickCount::interval_t interval_computing_fluid_pressure_relaxation;
+	TickCount::interval_t interval_updating_configuration;
+	TickCount time_instance;
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
@@ -303,42 +303,42 @@ int main(int ac, char *av[])
 		while (integration_time < output_interval)
 		{
 			/** Acceleration due to viscous force and gravity. */
-			time_instance = tick_count::now();
-			initialize_a_water_step.parallel_exec();
-			initialize_a_vapor_step.parallel_exec();
+			time_instance = TickCount::now();
+			initialize_a_water_step.exec();
+			initialize_a_vapor_step.exec();
 
-			Real Dt_f = get_water_advection_time_step_size.parallel_exec();
-			Real Dt_a = get_vapor_advection_time_step_size.parallel_exec();
+			Real Dt_f = get_water_advection_time_step_size.exec();
+			Real Dt_a = get_vapor_advection_time_step_size.exec();
 			Real Dt = SMIN(Dt_f, Dt_a);
 
-			update_water_density_by_summation.parallel_exec();
-			update_vapor_density_by_summation.parallel_exec();
+			update_water_density_by_summation.exec();
+			update_vapor_density_by_summation.exec();
 			//water_viscous_acceleration.parallel_exec();
 			//vapor_viscous_acceleration.parallel_exec();
-			vapor_transport_correction.parallel_exec();
+			vapor_transport_correction.exec();
 
-			viscous_acceleration_air.parallel_exec();
-			viscous_acceleration_water.parallel_exec();
+			viscous_acceleration_air.exec();
+			viscous_acceleration_water.exec();
 			/*viscous_force_on_solid.parallel_exec();*/
 		/*	wall_update_normal.parallel_exec();*/
-			interval_computing_time_step += tick_count::now() - time_instance;
+			interval_computing_time_step += TickCount::now() - time_instance;
 
 			/** Dynamics including pressure relaxation. */
-			time_instance = tick_count::now();
+			time_instance = TickCount::now();
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt_f = get_water_time_step_size.parallel_exec();
-				Real dt_a = get_vapor_time_step_size.parallel_exec();
+				Real dt_f = get_water_time_step_size.exec();
+				Real dt_a = get_vapor_time_step_size.exec();
 				//Real dt_thermal_water = get_thermal_time_step_water.parallel_exec();
 				//Real dt_thermal_air = get_thermal_time_step_vapor.parallel_exec();
 				dt = SMIN(SMIN(dt_f, dt_a),Dt);
 
-				water_pressure_relaxation.parallel_exec(dt);
-				vapor_pressure_relaxation.parallel_exec(dt);
+				water_pressure_relaxation.exec(dt);
+				vapor_pressure_relaxation.exec(dt);
 				/*fluid_force_on_solid_update.parallel_exec();*/
-				water_density_relaxation.parallel_exec(dt);
-				vapor_density_relaxation.parallel_exec(dt);
+				water_density_relaxation.exec(dt);
+				vapor_density_relaxation.exec(dt);
 
 				size_t inner_ite_dt_s = 0;
 				Real dt_s_sum = 0.0;
@@ -346,7 +346,7 @@ int main(int ac, char *av[])
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 			}
-			interval_computing_fluid_pressure_relaxation += tick_count::now() - time_instance;
+			interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;
 
 			if (number_of_iterations % screen_output_interval == 0)
 			{
@@ -360,7 +360,7 @@ int main(int ac, char *av[])
 			number_of_iterations++;
 
 			/** Update cell linked list and configuration. */
-			time_instance = tick_count::now();
+			time_instance = TickCount::now();
 
 			water_block.updateCellLinkedListWithParticleSort(100);
 			vapor_block.updateCellLinkedListWithParticleSort(100);
@@ -371,18 +371,18 @@ int main(int ac, char *av[])
 			water_wall_contact.updateConfiguration();
 			wall_boundary_water_contact.updateConfiguration();
 			//fluid_observer_contact.updateConfiguration();
-			interval_updating_configuration += tick_count::now() - time_instance;
+			interval_updating_configuration += TickCount::now() - time_instance;
 		}
 
-		tick_count t2 = tick_count::now();
+		TickCount t2 = TickCount::now();
 		body_states_recording.writeToFile();
-		tick_count t3 = tick_count::now();
+		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}
 
-	tick_count t4 = tick_count::now();
+	TickCount t4 = TickCount::now();
 
-	tick_count::interval_t tt;
+	TickCount::interval_t tt;
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds()
 		<< " seconds." << std::endl;

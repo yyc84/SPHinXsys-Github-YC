@@ -1,7 +1,7 @@
 /**
- * @file 	two_phase_dambreak.h
+ * @file 	two_phase_dambreak_static_confinement.h
  * @brief 	Numerical parameters and body definition for 2D two-phase dambreak flow.
- * @author 	Chi Zhang and Xiangyu Hu
+ * @author 	Yongchuan Yu and Xiangyu Hu
  */
 #include "sphinxsys.h" // SPHinXsys Library.
 using namespace SPH;   // Namespace cite here.
