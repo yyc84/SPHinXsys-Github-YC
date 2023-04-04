@@ -28,7 +28,7 @@ Vec3d translation(0, 0.175, 0);
 /*
 Geometry of the tank, water, air, and sensors.
 */
-std::string fuel_tank_outer = "./input/validation_tank_outer_slim.STL";
+std::string fuel_tank_outer = "./input/validation_tank_outer.STL";
 std::string fuel_tank_inner = "./input/validation_tank_inner.STL";
 std::string water_05 = "./input/validation_water.STL";
 std::string air_05 = "./input/validation_air.STL";

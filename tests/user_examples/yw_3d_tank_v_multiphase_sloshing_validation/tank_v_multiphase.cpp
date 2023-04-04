@@ -31,7 +31,7 @@ int main(int ac, char* av[])
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
 	tank.defineParticlesAndMaterial<SolidParticles, Solid>();
-	tank.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	//tank.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<ParticleGeneratorReload>(in_output, tank.getName())
 		: tank.generateParticles<ParticleGeneratorLattice>();
@@ -67,8 +67,8 @@ int main(int ac, char* av[])
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
-		random_tank_particles.parallel_exec(0.25);
-		tank_relaxation_step_inner.SurfaceBounding().parallel_exec();
+		random_tank_particles.exec(0.25);
+		tank_relaxation_step_inner.SurfaceBounding().exec();
 		write_tank_to_vtp.writeToFile(0);
 		//----------------------------------------------------------------------
 		//	Relax particles of the tank.
@@ -76,7 +76,7 @@ int main(int ac, char* av[])
 		int ite_p = 0;
 		while (ite_p < 1000)
 		{
-			tank_relaxation_step_inner.parallel_exec();
+			tank_relaxation_step_inner.exec();
 			ite_p += 1;
 			if (ite_p % 200 == 0)
 			{
@@ -110,21 +110,21 @@ int main(int ac, char* av[])
 	ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> air_advection_time_step(air_block, U_g);
 	ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> fluid_acoustic_time_step(water_block);
 	ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> air_acoustic_time_step(air_block);
-	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration1stHalfRiemannWithWall> fluid_pressure_relaxation(water_block_contact, water_air_complex);
-	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemannWithWall> fluid_density_relaxation(water_block_contact,water_air_complex);
+	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> fluid_pressure_relaxation(water_block_contact, water_air_complex.getInnerRelation());
+	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> fluid_density_relaxation(water_block_contact,water_air_complex.getInnerRelation());
 	Dynamics1Level<fluid_dynamics::ExtendMultiPhaseIntegration1stHalfRiemannWithWall>
 		air_pressure_relaxation(air_block_contact, air_water_complex, 2.0);
 	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemannWithWall>
 		air_density_relaxation(air_block_contact, air_water_complex);
 
 	BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("PorbeS1"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_1(in_output, probe_s1);
 	BodyRegionByCell probe_s2(water_block, makeShared<ProbeS2>("PorbeS2"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_2(in_output, probe_s2);
 	BodyRegionByCell probe_s3(water_block, makeShared<ProbeS3>("PorbeS3"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_3(in_output, probe_s3);
 	/**
  * @brief Pre-simulation.
@@ -134,7 +134,7 @@ int main(int ac, char* av[])
 	/** initialize configurations for all bodies. */
 	system.initializeSystemConfigurations();
 	/** computing surface normal direction for the tank. */
-	inner_normal_direction.parallel_exec();
+	inner_normal_direction.exec();
 
 	write_real_body_states.writeToFile(0);
 	probe_1.writeToFile(0);
@@ -159,8 +159,8 @@ int main(int ac, char* av[])
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
 		/** Statistics for computing time. */
-	tick_count t1 = tick_count::now();
-	tick_count::interval_t interval;
+	TickCount t1 = TickCount::now();
+	TickCount::interval_t interval;
 	while (GlobalStaticVariables::physical_time_ < End_Time)
 	{
 		Real integration_time = 0.0;
@@ -168,26 +168,26 @@ int main(int ac, char* av[])
 		while (integration_time < D_Time)
 		{
 			/** outer loop for dual-time criteria time-stepping. */
-			initialize_a_water_step.parallel_exec();
-			initialize_a_air_step.parallel_exec();
-			Real Dt_f = fluid_advection_time_step.parallel_exec();
-			Real Dt_a = air_advection_time_step.parallel_exec();
+			initialize_a_water_step.exec();
+			initialize_a_air_step.exec();
+			Real Dt_f = fluid_advection_time_step.exec();
+			Real Dt_a = air_advection_time_step.exec();
 			Real Dt = SMIN(Dt_f, Dt_a);
-			fluid_density_by_summation.parallel_exec();
-			air_density_by_summation.parallel_exec();
-			air_transport_correction.parallel_exec();
+			fluid_density_by_summation.exec();
+			air_density_by_summation.exec();
+			air_transport_correction.exec();
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt_f = fluid_acoustic_time_step.parallel_exec();
-				Real dt_a = air_acoustic_time_step.parallel_exec();
+				Real dt_f = fluid_acoustic_time_step.exec();
+				Real dt_a = air_acoustic_time_step.exec();
 				dt = SMIN(SMIN(dt_f, dt_a), Dt);
 				/* Fluid pressure relaxation */
-				fluid_pressure_relaxation.parallel_exec(dt);
-				air_pressure_relaxation.parallel_exec(dt);
+				fluid_pressure_relaxation.exec(dt);
+				air_pressure_relaxation.exec(dt);
 				/* Fluid density relaxation */
-				fluid_density_relaxation.parallel_exec(dt);
-				air_density_relaxation.parallel_exec(dt);
+				fluid_density_relaxation.exec(dt);
+				air_density_relaxation.exec(dt);
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
@@ -216,14 +216,14 @@ int main(int ac, char* av[])
 			air_water_complex.updateConfiguration();
 	
 		}
-		tick_count t2 = tick_count::now();
+		TickCount t2 = TickCount::now();
 		/** write run-time observation into file */
 		write_real_body_states.writeToFile();
-		tick_count t3 = tick_count::now();
+		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}
-	tick_count t4 = tick_count::now();
-	tick_count::interval_t tt;
+	TickCount t4 = TickCount::now();
+	TickCount::interval_t tt;
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 	return 0;
