@@ -80,7 +80,8 @@ namespace SPH
 			Vecd kernel_gradient = level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
 			acc_[index_i] -= 2.0 * p_[index_i] * kernel_gradient / rho_[index_i];
 
-			Real penalty_pressure = 0.5 * c_0_ * c_0_ * rho_[index_i];
+			//Real penalty_pressure = 0.5 * c_0_ * c_0_ * rho_[index_i];
+			Real penalty_pressure = 0.5 * vel_[index_i].squaredNorm() * rho_[index_i];
 			Real distance_to_the_wall = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
 			Real ratio = distance_to_the_wall / (3.0 * sph_body_.sph_adaptation_->ReferenceSpacing());
 			Real penalty = ratio < 1.0 ? (1.0 - ratio) * (1.0 - ratio) * 0.5 * penalty_pressure : 0.0;
