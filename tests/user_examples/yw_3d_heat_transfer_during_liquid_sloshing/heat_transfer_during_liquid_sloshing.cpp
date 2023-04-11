@@ -18,9 +18,9 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(true);
+	system.setRunParticleRelaxation(false);
 	// Tag for computation start with relaxed body fitted particles distribution.
-	system.setReloadParticles(false);
+	system.setReloadParticles(true);
 	/* Tag for computation from restart files. 0: start with initial condition. */
 	system.setRestartStep(0);
 	//handle command line arguments
@@ -34,21 +34,21 @@ int main(int ac, char* av[])
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
 	tank.defineParticlesAndMaterial<SolidParticles, Solid>();
-	tank.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	/*tank.defineBodyLevelSetShape()->writeLevelSet(in_output);*/
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<ParticleGeneratorReload>(in_output, tank.getName())
 		: tank.generateParticles<ParticleGeneratorLattice>();
 
 
 	FluidBody water_block(system, makeShared<WaterBlock>("WaterBody"));
-	water_block.defineParticlesAndMaterial<DiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoWaterBodyMaterial>();
-	water_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	water_block.defineParticlesAndMaterial<TwoPhaseDiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoWaterBodyMaterial>();
+	//water_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	water_block.generateParticles<ParticleGeneratorLattice>();
 
 
 	FluidBody air_block(system, makeShared<AirBlock>("AirBody"));
-	air_block.defineParticlesAndMaterial<DiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoAirBodyMaterial>();
-	air_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	air_block.defineParticlesAndMaterial<TwoPhaseDiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoAirBodyMaterial>();
+	//air_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	air_block.generateParticles<ParticleGeneratorLattice>();
 
 	/*ObserverBody liquid_temperature_observer(system, "LiquidTemperatureObserver");
@@ -88,10 +88,10 @@ int main(int ac, char* av[])
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
-		random_tank_particles.parallel_exec(0.25);
+		random_tank_particles.exec(0.25);
 		//random_water_particles.parallel_exec(0.25);
 		//random_air_particles.parallel_exec(0.25);
-		tank_relaxation_step_inner.SurfaceBounding().parallel_exec();
+		tank_relaxation_step_inner.SurfaceBounding().exec();
 		//water_relaxation_step_inner.SurfaceBounding().parallel_exec();
 		//air_relaxation_step_inner.SurfaceBounding().parallel_exec();
 		write_tank_to_vtp.writeToFile(0);
@@ -103,7 +103,7 @@ int main(int ac, char* av[])
 		int ite_p = 0;
 		while (ite_p < 1000)
 		{
-			tank_relaxation_step_inner.parallel_exec();
+			tank_relaxation_step_inner.exec();
 			//water_relaxation_step_inner.parallel_exec();
 			//air_relaxation_step_inner.parallel_exec();
 			ite_p += 1;
@@ -164,8 +164,8 @@ int main(int ac, char* av[])
 	SimpleDynamics<ThermoAirBodyInitialCondition> thermo_air_initial_condition(air_block);
 	SimpleDynamics<ThermoWaterBodyInitialCondition> thermo_water_initial_condition(water_block);
 
-	GetDiffusionTimeStepSize<FluidParticles, WeaklyCompressibleFluid> get_thermal_time_step_water(water_block);
-	GetDiffusionTimeStepSize<FluidParticles, WeaklyCompressibleFluid> get_thermal_time_step_air(air_block);
+	GetDiffusionTimeStepSize<FluidParticles> get_thermal_time_step_water(water_block);
+	GetDiffusionTimeStepSize<FluidParticles> get_thermal_time_step_air(air_block);
 
 	ThermalRelaxationComplex thermal_relaxation_complex_water(water_air_complex);
 	ThermalRelaxationComplex thermal_relaxation_complex_air(air_water_complex);
@@ -188,8 +188,8 @@ int main(int ac, char* av[])
 		air_rate_of_heat_transfer(in_output, air_block, "HeatFlux");
 	ReducedQuantityRecording<ReduceDynamics<QuantityMoment<Real>>>
 		water_rate_of_heat_transfer(in_output, water_block, "HeatFlux");
-	/*ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
-	ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");*/
+	ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
+	ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");
 	/**
  * @brief Pre-simulation.
  */
@@ -198,12 +198,12 @@ int main(int ac, char* av[])
 	/** initialize configurations for all bodies. */
 	system.initializeSystemConfigurations();
 	/** computing surface normal direction for the tank. */
-	inner_normal_direction.parallel_exec();
+	inner_normal_direction.exec();
 	/** computing linear reproducing configuration for the tank. */
 	//tank_corrected_configuration.parallel_exec();
 	write_real_body_states.writeToFile(0);
-	thermo_water_initial_condition.parallel_exec();
-	thermo_air_initial_condition.parallel_exec();
+	thermo_water_initial_condition.exec();
+	thermo_air_initial_condition.exec();
 	probe_1.writeToFile(0);
 	probe_2.writeToFile(0);
 	probe_3.writeToFile(0);
@@ -211,8 +211,8 @@ int main(int ac, char* av[])
 	air_average_temperature.writeToFile(0);
 	air_rate_of_heat_transfer.writeToFile(0);
 	water_rate_of_heat_transfer.writeToFile(0);
-	/*compute_water_total_mass.writeToFile(0);
-	compute_air_total_mass.writeToFile(0);*/
+	compute_water_total_mass.writeToFile(0);
+	compute_air_total_mass.writeToFile(0);
 	if (system.RestartStep() != 0)
 	{
 		GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());
@@ -227,14 +227,14 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 5.0;			/**< End time. */
+	Real End_Time = 6.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	//Real Dt = 0.0;					/**< Default advection time step sizes for fluid. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
 	/** Statistics for computing time. */
-	tick_count t1 = tick_count::now();
-	tick_count::interval_t interval;
+	TickCount t1 = TickCount::now();
+	TickCount::interval_t interval;
 	while (GlobalStaticVariables::physical_time_ < End_Time)
 	{
 		Real integration_time = 0.0;
@@ -242,33 +242,33 @@ int main(int ac, char* av[])
 		while (integration_time < D_Time)
 		{
 			/** outer loop for dual-time criteria time-stepping. */
-			initialize_a_water_step.parallel_exec();
-			initialize_a_air_step.parallel_exec();
-			Real Dt_f = fluid_advection_time_step.parallel_exec();
-			Real Dt_a = air_advection_time_step.parallel_exec();
+			initialize_a_water_step.exec();
+			initialize_a_air_step.exec();
+			Real Dt_f = fluid_advection_time_step.exec();
+			Real Dt_a = air_advection_time_step.exec();
 			Real Dt = SMIN(Dt_f, Dt_a);
-			fluid_density_by_summation.parallel_exec();
-			air_density_by_summation.parallel_exec();
-			air_transport_correction.parallel_exec();
-			viscous_acceleration_air.parallel_exec();
-			viscous_acceleration_water.parallel_exec();
+			fluid_density_by_summation.exec();
+			air_density_by_summation.exec();
+			air_transport_correction.exec();
+			viscous_acceleration_air.exec();
+			viscous_acceleration_water.exec();
 
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt_f = fluid_acoustic_time_step.parallel_exec();
-				Real dt_a = air_acoustic_time_step.parallel_exec();
-				Real dt_thermal_water = get_thermal_time_step_water.parallel_exec();
-				Real dt_thermal_air = get_thermal_time_step_air.parallel_exec();
-				dt = SMIN(SMIN(dt_f, dt_thermal_water), SMIN(dt_thermal_air, dt_a), Dt);
+				Real dt_f = fluid_acoustic_time_step.exec();
+				Real dt_a = air_acoustic_time_step.exec();
+			/*	Real dt_thermal_water = get_thermal_time_step_water.exec();
+				Real dt_thermal_air = get_thermal_time_step_air.exec();*/
+				dt =/* SMIN(SMIN*/((dt_f, /*dt_thermal_water), SMIN(dt_thermal_air,*/ dt_a), Dt);
 				/* Fluid pressure relaxation */
-				fluid_pressure_relaxation.parallel_exec(dt);
-				air_pressure_relaxation.parallel_exec(dt);
+				fluid_pressure_relaxation.exec(dt);
+				air_pressure_relaxation.exec(dt);
 				/* Fluid density relaxation */
-				fluid_density_relaxation.parallel_exec(dt);
-				air_density_relaxation.parallel_exec(dt);
-				thermal_relaxation_complex_air.parallel_exec(dt);
-				thermal_relaxation_complex_water.parallel_exec(dt);
+				fluid_density_relaxation.exec(dt);
+				air_density_relaxation.exec(dt);
+				thermal_relaxation_complex_air.exec(dt);
+				thermal_relaxation_complex_water.exec(dt);
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
@@ -297,16 +297,17 @@ int main(int ac, char* av[])
 			air_block.updateCellLinkedListWithParticleSort(100);
 			air_block_contact.updateConfiguration();
 			air_water_complex.updateConfiguration();
-
+			air_rate_of_heat_transfer.writeToFile();
+			water_rate_of_heat_transfer.writeToFile();
 			//liquid_temperature_observer_contact.updateConfiguration();
 			//gas_temperature_observer_contact.updateConfiguration();
-			int num = water_air_complex.getInnerRelation().base_particles_.pos_.size();
+			int num = air_water_complex.getInnerRelation().base_particles_.pos_.size();
 			int count_num = 0;
-			for (size_t k = 0; k < water_air_complex.contact_configuration_.size(); ++k)
+			for (size_t k = 0; k < air_water_complex.contact_configuration_.size(); ++k)
 			{
 				for (int i = 0; i != num; ++i)
 				{
-					Neighborhood& neighborhood = water_air_complex.contact_configuration_[k][i];
+					Neighborhood& neighborhood = air_water_complex.contact_configuration_[k][i];
 					if (neighborhood.current_size_ != 0)
 					{
 						count_num += 1;
@@ -318,12 +319,10 @@ int main(int ac, char* av[])
 				std::string output_folder_ = "./output";
 				std::string filefullpath = output_folder_ + "/" + "number_of_contact_particles" + ".dat";
 				std::ofstream out_file_(filefullpath.c_str(), std::ios::app);
-				out_file_ << "\n";
-				out_file_ << "Time " << "Num" << std::endl;
 				out_file_ << GlobalStaticVariables::physical_time_ << "  " << count_num << "  " << std::endl;
 			}
 		}
-		tick_count t2 = tick_count::now();
+		TickCount t2 = TickCount::now();
 		/** write run-time observation into file */
 
 		write_real_body_states.writeToFile();
@@ -334,16 +333,15 @@ int main(int ac, char* av[])
 		air_average_temperature.writeToFile();
 		//write_temperature_liquid.writeToFile();
 		//write_temperature_gas.writeToFile();
-		air_rate_of_heat_transfer.writeToFile();
-		water_rate_of_heat_transfer.writeToFile();
 
 
-		tick_count t3 = tick_count::now();
+
+		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}
-	tick_count t4 = tick_count::now();
+	TickCount t4 = TickCount::now();
 
-	tick_count::interval_t tt;
+	TickCount::interval_t tt;
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 	return 0;

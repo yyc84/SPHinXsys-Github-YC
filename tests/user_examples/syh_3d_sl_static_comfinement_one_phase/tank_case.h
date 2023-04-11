@@ -10,8 +10,8 @@
 using namespace SPH;
 
 /* Domain bounds of the system*/
-BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3,-0.3), Vec3d(0.3, 0.5,0.3));
-Real resolution_ref = 0.01;   /* Initial particle spacing*/
+BoundingBox system_domain_bounds(Vec3d(-0.15, -0.2,-0.15), Vec3d(0.15, 0.3,0.15));
+Real resolution_ref = 0.005;   /* Initial particle spacing*/
 
 /*
 Material properties of the fluid.
@@ -24,7 +24,7 @@ Real U_g = 2.0* sqrt(gravity_g * 0.174);  	/**< dispersion velocity in shallow w
 Real c_f = 10.0 * SMAX(U_g, U_f);	/**< Reference sound speed. */
 
 Real length_scale = 1.0;
-Vec3d translation(0, 0.175, 0);
+Vec3d translation(0.0, 0.175, 0.0);
 /*
 Geometry of the tank, water, air, and sensors.
 */
@@ -95,13 +95,12 @@ public:
 	VariableGravity() : Gravity(Vecd(0.0, -gravity_g, 0.0)) {};
 	virtual Vecd InducedAcceleration(Vecd& position) override
 	{
-		time_= GlobalStaticVariables::physical_time_;
-		if (time_ > 0.25)
+		time_ = GlobalStaticVariables::physical_time_;
+		if (time_ > 2)
 		{
-			global_acceleration_[0] = 4 * PI * PI * 1.63 * 1.63 * 0.0075 * sin(2 * PI * 1.63 * (time_ - 0.25));
-			/*global_acceleration_[0] =0;*/
+			global_acceleration_[0] = 4 * PI * PI * 1.63 * 1.63 * 0.0075 * sin(2 * PI * 1.63 * (time_ - 2));
 		}
-		
+
 		return global_acceleration_;
 	}
 };

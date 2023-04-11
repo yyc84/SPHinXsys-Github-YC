@@ -31,7 +31,7 @@ int main(int ac, char* av[])
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
 	tank.defineParticlesAndMaterial<SolidParticles, Solid>();
-	//tank.defineBodyLevelSetShape()->writeLevelSet(in_output);
+	/*tank.defineBodyLevelSetShape()->writeLevelSet(in_output);*/
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<ParticleGeneratorReload>(in_output, tank.getName())
 		: tank.generateParticles<ParticleGeneratorLattice>();
@@ -154,7 +154,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 60.0;			/**< End time. */
+	Real End_Time = 20.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 

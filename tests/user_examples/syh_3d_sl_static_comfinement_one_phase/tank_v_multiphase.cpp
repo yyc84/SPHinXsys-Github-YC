@@ -104,9 +104,9 @@ int main(int ac, char* av[])
 	RestartIO							restart_io(in_output, system.real_bodies_);
 
 	
-	SharedPtr<Gravity>gravity_ptr = makeShared<VariableGravity>();
+	//SharedPtr<Gravity>gravity_ptr = makeShared<VariableGravity>();
 	//SimpleDynamics<NormalDirectionFromShapeAndOp> inner_normal_direction(tank,"InnerWall");
-	SimpleDynamics<TimeStepInitialization> initialize_a_water_step(water_block,gravity_ptr );
+	SimpleDynamics<TimeStepInitialization> initialize_a_water_step(water_block, makeShared<Gravity>(Vecd(0.0, -gravity_g, 0.0)));
 	/*SimpleDynamics<TimeStepInitialization> initialize_a_air_step(air_block, makeShared<VariableGravity>());*/
 	/* Fluid dynamics */
 	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceInner> fluid_density_by_summation(water_block_inner);
@@ -138,15 +138,15 @@ int main(int ac, char* av[])
 		write_water_mechanical_energy(in_output, water_block, gravity_ptr);
 	RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>;
 		write_recorded_water_pressure("Pressure", in_output, fluid_observer_contact);*/
-	/*BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("PorbeS1"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("PorbeS1"));
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_1(in_output, probe_s1);
 	BodyRegionByCell probe_s2(water_block, makeShared<ProbeS2>("PorbeS2"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_2(in_output, probe_s2);
 	BodyRegionByCell probe_s3(water_block, makeShared<ProbeS3>("PorbeS3"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
-		probe_3(in_output, probe_s3);*/
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
+		probe_3(in_output, probe_s3);
 	/**
  * @brief Pre-simulation.
  */
@@ -158,6 +158,9 @@ int main(int ac, char* av[])
 	/*inner_normal_direction.parallel_exec();*/
 
 	write_real_body_states.writeToFile(0);
+	probe_1.writeToFile(0);
+	probe_2.writeToFile(0);
+	probe_3.writeToFile(0);
 	/*probe_1.writeToFile(0);
 	probe_2.writeToFile(0);
 	probe_3.writeToFile(0);*/
@@ -174,16 +177,16 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = 0;
 	int screen_output_interval = 100;
 	int observation_sample_interval = screen_output_interval * 2;
-	Real end_time = 5.0;		/**< End time. */
+	Real end_time = 15.0;		/**< End time. */
 	Real output_interval = 0.1; /**< Time stamps for output of body states. */
 	Real dt = 0.0;				/**< Default acoustic time step sizes. */
 	/** statistics for computing CPU time. */
-	tick_count t1 = tick_count::now();
-	tick_count::interval_t interval;
-	tick_count::interval_t interval_computing_time_step;
-	tick_count::interval_t interval_computing_pressure_relaxation;
-	tick_count::interval_t interval_updating_configuration;
-	tick_count time_instance;
+	TickCount t1 = TickCount::now();
+	TickCount::interval_t interval;
+	TickCount::interval_t interval_computing_time_step;
+	TickCount::interval_t interval_computing_pressure_relaxation;
+	TickCount::interval_t interval_updating_configuration;
+	TickCount time_instance;
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
@@ -200,25 +203,25 @@ int main(int ac, char* av[])
 		while (integration_time < output_interval)
 		{
 			/** Acceleration due to viscous force and gravity. */
-			time_instance = tick_count::now();
-			initialize_a_water_step.parallel_exec();
-			Real Dt = fluid_advection_time_step.parallel_exec();
-			fluid_density_by_summation.parallel_exec();
-			interval_computing_time_step += tick_count::now() - time_instance;
+			time_instance = TickCount::now();
+			initialize_a_water_step.exec();
+			Real Dt = fluid_advection_time_step.exec();
+			fluid_density_by_summation.exec();
+			interval_computing_time_step += TickCount::now() - time_instance;
 
 			/** Dynamics including pressure relaxation. */
-			time_instance = tick_count::now();
+			time_instance = TickCount::now();
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				fluid_pressure_relaxation.parallel_exec(dt);
-				fluid_density_relaxation.parallel_exec(dt);
-				dt = fluid_acoustic_time_step.parallel_exec();
+				fluid_pressure_relaxation.exec(dt);
+				fluid_density_relaxation.exec(dt);
+				dt = fluid_acoustic_time_step.exec();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 			}
-			interval_computing_pressure_relaxation += tick_count::now() - time_instance;
+			interval_computing_pressure_relaxation += TickCount::now() - time_instance;
 
 			if (number_of_iterations % screen_output_interval == 0)
 			{
@@ -233,23 +236,25 @@ int main(int ac, char* av[])
 				}
 			}
 			number_of_iterations++;
-
+			probe_1.writeToFile(number_of_iterations);
+			probe_2.writeToFile(number_of_iterations);
+			probe_3.writeToFile(number_of_iterations);
 			/** Update cell linked list and configuration. */
-			time_instance = tick_count::now();
+			time_instance = TickCount::now();
 			water_block.updateCellLinkedListWithParticleSort(100);
 			water_block_inner.updateConfiguration();
 			/*fluid_observer_contact.updateConfiguration();*/
-			interval_updating_configuration += tick_count::now() - time_instance;
+			interval_updating_configuration += TickCount::now() - time_instance;
 		}
 
-		tick_count t2 = tick_count::now();
+		TickCount t2 = TickCount::now();
 		body_states_recording.writeToFile();
-		tick_count t3 = tick_count::now();
+		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}
-	tick_count t4 = tick_count::now();
+	TickCount t4 = TickCount::now();
 
-	tick_count::interval_t tt;
+	TickCount::interval_t tt;
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 	return 0;

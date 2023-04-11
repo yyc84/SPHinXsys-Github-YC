@@ -4,14 +4,13 @@
 
 #ifndef	TANK_CASE_H
 #define TANK_CASE_H
-
 #include "sphinxsys.h"
 #define PI (3.14159265358979323846)
 using namespace SPH;
 
 /* Domain bounds of the system*/
-BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3,-0.3), Vec3d(0.3, 0.5,0.3));
-Real resolution_ref = 0.01;   /* Initial particle spacing*/
+BoundingBox system_domain_bounds(Vec3d(-0.15, -0.3,-0.15), Vec3d(0.15, 0.5,0.15));
+Real resolution_ref = 0.0075;   /* Initial particle spacing*/
 
 /*
 Material properties of the fluid.
@@ -22,13 +21,14 @@ Real gravity_g = 9.81;        /*Gravity force of fluid*/
 Real U_f = 2.0* sqrt(gravity_g * 0.174);	/**< Characteristic velocity. */
 Real U_g = 2.0* sqrt(gravity_g * 0.174);  	/**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);	/**< Reference sound speed. */
-
+Real f = 1.0;
+Real a = 0.02;
 Real length_scale = 1.0;
-Vec3d translation(0, 0.175, 0);
+Vec3d translation(0.0, 0.175, 0.0);
 /*
 Geometry of the tank, water, air, and sensors.
 */
-std::string fuel_tank_outer = "./input/validation_tank_outer_slim.STL";
+std::string fuel_tank_outer = "./input/validation_tank_outer.STL";
 std::string fuel_tank_inner = "./input/validation_tank_inner.STL";
 std::string water_05 = "./input/validation_water.STL";
 std::string air_05 = "./input/validation_air.STL";
@@ -88,6 +88,25 @@ public:
 /*
 External Excitation
 */
+//class VariableGravity : public Gravity
+//{
+//	Real time_ = 0;
+//public:
+//	VariableGravity() : Gravity(Vecd(0.0, -gravity_g, 0.0)) {};
+//	virtual Vecd InducedAcceleration(Vecd& position) override
+//	{
+//		time_ = GlobalStaticVariables::physical_time_;
+//		if (1.0 < time_ && time_<2.0)
+//		{
+//			global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_ - 1.0));
+//		}
+//		else if(time_>2.01)
+//		{
+//			global_acceleration_[0] = 0;
+//		}
+//		return global_acceleration_;
+//	}
+//};
 class VariableGravity : public Gravity
 {
 	Real time_ = 0;
@@ -95,20 +114,15 @@ public:
 	VariableGravity() : Gravity(Vecd(0.0, -gravity_g, 0.0)) {};
 	virtual Vecd InducedAcceleration(Vecd& position) override
 	{
-		time_= GlobalStaticVariables::physical_time_;
-		if (4 < time_ < 5 )
+		time_ = GlobalStaticVariables::physical_time_;
+		if (time_ > 2)
 		{
-			global_acceleration_[0] = 4 * PI * PI * 1.0 * 1.0 * 0.0075 * sin(2 * PI * 1.0 * (time_ - 4));
-			/*global_acceleration_[0] =0;*/
+			global_acceleration_[0] = 4 * PI * PI * 1.63 * 1.63 * 0.0075 * sin(2 * PI * 1.63 * (time_ - 2));
 		}
-		else
-		{
-			global_acceleration_[0] =0;
-		}
+
 		return global_acceleration_;
 	}
 };
-
 /*
 Sensors: S1, S2 and S3;
 */
