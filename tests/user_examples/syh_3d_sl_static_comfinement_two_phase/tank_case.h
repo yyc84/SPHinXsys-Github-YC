@@ -88,25 +88,25 @@ public:
 /*
 External Excitation
 */
-//class VariableGravity : public Gravity
-//{
-//	Real time_ = 0;
-//public:
-//	VariableGravity() : Gravity(Vecd(0.0, -gravity_g, 0.0)) {};
-//	virtual Vecd InducedAcceleration(Vecd& position) override
-//	{
-//		time_ = GlobalStaticVariables::physical_time_;
-//		if (1.0 < time_ && time_<2.0)
-//		{
-//			global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_ - 1.0));
-//		}
-//		else if(time_>2.01)
-//		{
-//			global_acceleration_[0] = 0;
-//		}
-//		return global_acceleration_;
-//	}
-//};
+class VariableGravity : public Gravity
+{
+	Real time_ = 0;
+public:
+	VariableGravity() : Gravity(Vecd(0.0, -gravity_g, 0.0)) {};
+	virtual Vecd InducedAcceleration(Vecd& position) override
+	{
+		time_ = GlobalStaticVariables::physical_time_;
+		if (1.0 < time_ && time_<2.0)
+		{
+			global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_ - 1.0));
+		}
+		else if(time_>2.01)
+		{
+			global_acceleration_[0] = 0;
+		}
+		return global_acceleration_;
+	}
+};
 class VariableGravity : public Gravity
 {
 	Real time_ = 0;

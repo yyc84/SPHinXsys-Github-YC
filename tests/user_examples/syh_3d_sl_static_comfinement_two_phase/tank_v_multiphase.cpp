@@ -72,7 +72,7 @@ int main(int ac, char* av[])
 	Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemann> fluid_density_relaxation(water_air_complex.getInnerRelation());
 	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration1stHalfRiemann> air_pressure_relaxation(air_water_complex);
 	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemann> air_density_relaxation(air_water_complex);
-	/*InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_air_complex.getInnerRelation());*/
+	InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_air_complex.getInnerRelation());
 		/** Confinement condition for wall and structure. */
 	NearShapeSurface near_surface_water(water_block, makeShared<WallAndStructure>("WallAndStructure"));
 	near_surface_water.level_set_shape_.writeLevelSet(in_output);
@@ -225,7 +225,7 @@ int main(int ac, char* av[])
 			time_instance = TickCount::now();
 			water_block.updateCellLinkedListWithParticleSort(100);
 			water_air_complex.updateConfiguration();
-			/*compute_vorticity.exec();*/
+			compute_vorticity.exec();
 			air_block.updateCellLinkedListWithParticleSort(100);
 			air_water_complex.updateConfiguration();
 			

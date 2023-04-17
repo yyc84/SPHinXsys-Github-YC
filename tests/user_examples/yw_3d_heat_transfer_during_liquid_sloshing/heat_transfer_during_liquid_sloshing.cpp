@@ -41,13 +41,17 @@ int main(int ac, char* av[])
 
 
 	FluidBody water_block(system, makeShared<WaterBlock>("WaterBody"));
-	water_block.defineParticlesAndMaterial<TwoPhaseDiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoWaterBodyMaterial>();
+	water_block.defineParticlesAndMaterial<DiffusionWaterParticles , ThermoWaterBodyMaterial>();
 	//water_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	water_block.generateParticles<ParticleGeneratorLattice>();
-
+	water_block.addBodyStateForRecording<Vecd>("Acceleration");
+	water_block.addBodyStateForRecording<Vecd>("Acceleration");
+	water_block.addBodyStateForRecording<Real>("Pressure");
+	water_block.addBodyStateForRecording<Real>("Density");
+	water_block.addBodyStateForRecording<Real>("DensitySummation");
 
 	FluidBody air_block(system, makeShared<AirBlock>("AirBody"));
-	air_block.defineParticlesAndMaterial<TwoPhaseDiffusionReactionParticles<FluidParticles, WeaklyCompressibleFluid>, ThermoAirBodyMaterial>();
+	air_block.defineParticlesAndMaterial<DiffusionAirParticles, ThermoAirBodyMaterial>();
 	//air_block.defineBodyLevelSetShape()->writeLevelSet(in_output);
 	air_block.generateParticles<ParticleGeneratorLattice>();
 
@@ -160,30 +164,30 @@ int main(int ac, char* av[])
 		air_pressure_relaxation(air_block_contact, air_water_complex, 2.0);
 	Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfRiemannWithWall>
 		air_density_relaxation(air_block_contact, air_water_complex);
-
+	InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_air_complex.getInnerRelation());
 	SimpleDynamics<ThermoAirBodyInitialCondition> thermo_air_initial_condition(air_block);
 	SimpleDynamics<ThermoWaterBodyInitialCondition> thermo_water_initial_condition(water_block);
 
-	GetDiffusionTimeStepSize<FluidParticles> get_thermal_time_step_water(water_block);
-	GetDiffusionTimeStepSize<FluidParticles> get_thermal_time_step_air(air_block);
+	TwoPhaseGetDiffusionTimeStepSize<DiffusionWaterParticles> get_thermal_time_step_water(water_block);
+	TwoPhaseGetDiffusionTimeStepSize<DiffusionAirParticles> get_thermal_time_step_air(air_block);
 
-	ThermalRelaxationComplex thermal_relaxation_complex_water(water_air_complex);
+	ThermalRelaxationComplex_1 thermal_relaxation_complex_water(water_air_complex);
 	ThermalRelaxationComplex thermal_relaxation_complex_air(air_water_complex);
 
 	BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("PorbeS1"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_1(in_output, probe_s1);
 	BodyRegionByCell probe_s2(water_block, makeShared<ProbeS2>("PorbeS2"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_2(in_output, probe_s2);
 	BodyRegionByCell probe_s3(water_block, makeShared<ProbeS3>("PorbeS3"));
-	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight, BodyRegionByCell>>
+	ReducedQuantityRecording<ReduceDynamics<fluid_dynamics::FreeSurfaceHeight>>
 		probe_3(in_output, probe_s3);
 
-	ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
-		water_average_temperature(in_output, water_block, "Phi");
-	ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
-		air_average_temperature(in_output, air_block, "Phi");
+	//ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, DiffusionWaterParticles>>>
+		//water_average_temperature(in_output, water_block, "Phi");
+	//ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, DiffusionAirParticles>>>
+		//air_average_temperature(in_output, air_block, "Phi");
 	ReducedQuantityRecording<ReduceDynamics<QuantityMoment<Real>>>
 		air_rate_of_heat_transfer(in_output, air_block, "HeatFlux");
 	ReducedQuantityRecording<ReduceDynamics<QuantityMoment<Real>>>
@@ -207,8 +211,8 @@ int main(int ac, char* av[])
 	probe_1.writeToFile(0);
 	probe_2.writeToFile(0);
 	probe_3.writeToFile(0);
-	water_average_temperature.writeToFile(0);
-	air_average_temperature.writeToFile(0);
+	//water_average_temperature.writeToFile(0);
+	//air_average_temperature.writeToFile(0);
 	air_rate_of_heat_transfer.writeToFile(0);
 	water_rate_of_heat_transfer.writeToFile(0);
 	compute_water_total_mass.writeToFile(0);
@@ -227,7 +231,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 6.0;			/**< End time. */
+	Real End_Time = 11.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	//Real Dt = 0.0;					/**< Default advection time step sizes for fluid. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
@@ -258,9 +262,9 @@ int main(int ac, char* av[])
 			{
 				Real dt_f = fluid_acoustic_time_step.exec();
 				Real dt_a = air_acoustic_time_step.exec();
-			/*	Real dt_thermal_water = get_thermal_time_step_water.exec();
-				Real dt_thermal_air = get_thermal_time_step_air.exec();*/
-				dt =/* SMIN(SMIN*/((dt_f, /*dt_thermal_water), SMIN(dt_thermal_air,*/ dt_a), Dt);
+				Real dt_thermal_water = get_thermal_time_step_water.exec();
+				Real dt_thermal_air = get_thermal_time_step_air.exec();
+				dt = SMIN(SMIN(dt_f, dt_thermal_water), SMIN(dt_thermal_air, dt_a), Dt);
 				/* Fluid pressure relaxation */
 				fluid_pressure_relaxation.exec(dt);
 				air_pressure_relaxation.exec(dt);
@@ -324,13 +328,13 @@ int main(int ac, char* av[])
 		}
 		TickCount t2 = TickCount::now();
 		/** write run-time observation into file */
-
+		compute_vorticity.exec();
 		write_real_body_states.writeToFile();
 		probe_1.writeToFile();
 		probe_2.writeToFile();
 		probe_3.writeToFile();
-		water_average_temperature.writeToFile();
-		air_average_temperature.writeToFile();
+		//water_average_temperature.writeToFile();
+		//air_average_temperature.writeToFile();
 		//write_temperature_liquid.writeToFile();
 		//write_temperature_gas.writeToFile();
 

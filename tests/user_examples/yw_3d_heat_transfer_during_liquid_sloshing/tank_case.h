@@ -15,7 +15,7 @@ using namespace SPH;
 /*@brief Basic geometry parameters and numerical setup.
 */
 
-Real resolution_ref = 0.006;   /* Initial particle spacing*/
+Real resolution_ref = 0.005;   /* Initial particle spacing*/
 
 
 /* Domain bounds of the system*/
@@ -32,7 +32,7 @@ Real U_f = 2.0 * sqrt(gravity_g * 0.5);	/**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5);  	/**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);	/**< Reference sound speed. */
 Real f = 1.0;
-Real a = 0.08;
+Real a = 0.02;
 Real c_p_water = 4.179e3;
 Real c_p_air = 1.012e3;
 Real k_water = 0.620;
@@ -91,10 +91,15 @@ public:
 	VariableGravity() : Gravity(Vecd(0.0, -gravity_g, 0.0)) {};
 	virtual Vecd InducedAcceleration(Vecd& position) override
 	{
-		
 		time_ = GlobalStaticVariables::physical_time_;
-		if (time_ > 1.0)
-		global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_-1));
+		if (1.0 < time_ && time_ < 2.0)
+		{
+			global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_ - 1.0));
+		}
+		else if (time_ > 2.01)
+		{
+			global_acceleration_[0] = 0;
+		}
 		return global_acceleration_;
 	}
 };
@@ -141,7 +146,7 @@ public:
 		initializeAnDiffusion<IsotropicDiffusion>("Phi", "Phi", diffusion_coff_water);
 	};
 };
-using DiffusionwaterParticles = DiffusionReactionParticles<FluidParticles, ThermoWaterBodyMaterial>;
+using DiffusionWaterParticles = TwoPhaseDiffusionReactionParticles<FluidParticles, ThermoWaterBodyMaterial>;
 //----------------------------------------------------------------------
 //	Setup heat conduction material properties for diffusion solid body
 //----------------------------------------------------------------------
@@ -154,7 +159,7 @@ public:
 		initializeAnDiffusion<IsotropicDiffusion>("Phi", "Phi", diffusion_coff_air);
 	};
 };
-using DiffusionAirParticles = DiffusionReactionParticles<FluidParticles, ThermoAirBodyMaterial>;
+using DiffusionAirParticles = TwoPhaseDiffusionReactionParticles<FluidParticles, ThermoAirBodyMaterial>;
 //	Application dependent solid body initial condition
 //----------------------------------------------------------------------
 class ThermoAirBodyInitialCondition
@@ -180,14 +185,14 @@ public:
 //	Application dependent fluid body initial condition
 //----------------------------------------------------------------------
 class ThermoWaterBodyInitialCondition
-	: public TwoPhaseDiffusionReactionInitialCondition<DiffusionwaterParticles>
+	: public TwoPhaseDiffusionReactionInitialCondition<DiffusionWaterParticles>
 {
 protected:
 	size_t phi_;
 
 public:
 	explicit ThermoWaterBodyInitialCondition(SPHBody& sph_body)
-		: TwoPhaseDiffusionReactionInitialCondition<DiffusionwaterParticles>(sph_body)
+		: TwoPhaseDiffusionReactionInitialCondition<DiffusionWaterParticles>(sph_body)
 	{
 		phi_ = particles_->diffusion_reaction_material_.AllSpeciesIndexMap()["Phi"];
 	};
@@ -196,6 +201,7 @@ public:
 	{
 		all_species_[phi_][index_i] = 313.15;
 		thermal_conductivity_[index_i] = k_water;
+
 	};
 };
 //----------------------------------------------------------------------
@@ -204,12 +210,22 @@ public:
 class ThermalRelaxationComplex
 	: public TwoPhaseRelaxationOfAllDiffusionSpeciesRK2<
 	TwoPhaseRelaxationOfAllDiffusionSpeciesComplex<
-	DiffusionAirParticles, DiffusionwaterParticles>>
+	DiffusionAirParticles, DiffusionWaterParticles>>
 {
 public:
 	explicit ThermalRelaxationComplex(ComplexRelation& body_complex_relation)
 		: TwoPhaseRelaxationOfAllDiffusionSpeciesRK2(body_complex_relation) {};
 	virtual ~ThermalRelaxationComplex() {};
+};
+class ThermalRelaxationComplex_1
+	: public TwoPhaseRelaxationOfAllDiffusionSpeciesRK2<
+	TwoPhaseRelaxationOfAllDiffusionSpeciesComplex<
+	DiffusionWaterParticles, DiffusionAirParticles>>
+{
+public:
+	explicit ThermalRelaxationComplex_1(ComplexRelation& body_complex_relation)
+		: TwoPhaseRelaxationOfAllDiffusionSpeciesRK2(body_complex_relation) {};
+	virtual ~ThermalRelaxationComplex_1() {};
 };
 
 #endif //TANK_CASE_H
