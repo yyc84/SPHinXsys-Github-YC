@@ -84,7 +84,6 @@ endif()
 #------ Setup the concrete libraries
 add_subdirectory(SPHINXsys)
 add_subdirectory(modules)
-add_subdirectory(features)
 
 #------ Setup the tests
 if(SPHINXSYS_BUILD_TESTS)
