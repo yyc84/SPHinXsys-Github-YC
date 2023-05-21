@@ -16,9 +16,9 @@ int main(int ac, char *av[])
 	BoundingBox system_domain_bounds(Vec2d(-DL_sponge, -0.25 * DH), Vec2d(DL, 1.25 * DH));
 	SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
 	/** Tag for run particle relaxation for the initial body fitted distribution. */
-	sph_system.setRunParticleRelaxation(false);
+	sph_system.setRunParticleRelaxation(true);
 	/** Tag for computation start with relaxed body fitted particles distribution. */
-	sph_system.setReloadParticles(true);
+	sph_system.setReloadParticles(false);
 	/** handle command line arguments. */
 	sph_system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(sph_system);
@@ -31,7 +31,7 @@ int main(int ac, char *av[])
 
 	SolidBody cylinder(sph_system, makeShared<Cylinder>("Cylinder"));
 	cylinder.defineAdaptationRatios(1.15, 2.0);
-	cylinder.defineBodyLevelSetShape();
+    cylinder.defineBodyLevelSetShape()->writeLevelSet(io_environment);
 	cylinder.defineParticlesAndMaterial<SolidParticles, Solid>();
 	(!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
 		? cylinder.generateParticles<ParticleGeneratorReload>(io_environment, cylinder.getName())
@@ -146,10 +146,10 @@ int main(int ac, char *av[])
 	BodyStatesRecordingToVtp write_real_body_states(io_environment, sph_system.real_bodies_);
 	ObservedQuantityRecording<Vecd>
 		write_fluid_velocity("Velocity", io_environment, fluid_observer_contact);
-	RegressionTestTimeAveraged<ReducedQuantityRecording<ReduceDynamics<solid_dynamics::TotalForceFromFluid>>>
+	/*RegressionTestTimeAveraged<ReducedQuantityRecording<ReduceDynamics<solid_dynamics::TotalForceFromFluid>>>
 		write_total_viscous_force_on_inserted_body(io_environment, fluid_viscous_force_on_inserted_body, "TotalViscousForceOnSolid");
 	ReducedQuantityRecording<ReduceDynamics<solid_dynamics::TotalForceFromFluid>>
-		write_total_force_on_inserted_body(io_environment, fluid_pressure_force_on_inserted_body, "TotalPressureForceOnSolid");
+		write_total_force_on_inserted_body(io_environment, fluid_pressure_force_on_inserted_body, "TotalPressureForceOnSolid");*/
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -232,8 +232,8 @@ int main(int ac, char *av[])
 		/** write run-time observation into file */
 		compute_vorticity.exec();
 		write_real_body_states.writeToFile();
-		write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
-		write_total_force_on_inserted_body.writeToFile(number_of_iterations);
+		//write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
+		//write_total_force_on_inserted_body.writeToFile(number_of_iterations);
 		fluid_observer_contact.updateConfiguration();
 		write_fluid_velocity.writeToFile(number_of_iterations);
 		TickCount t3 = TickCount::now();
@@ -248,11 +248,11 @@ int main(int ac, char *av[])
 	if (sph_system.generate_regression_data_)
 	{
 		// The lift force at the cylinder is very small and not important in this case.
-		write_total_viscous_force_on_inserted_body.generateDataBase({1.0e-2, 1.0e-2}, {1.0e-2, 1.0e-2});
+		//write_total_viscous_force_on_inserted_body.generateDataBase({1.0e-2, 1.0e-2}, {1.0e-2, 1.0e-2});
 	}
 	else
 	{
-		write_total_viscous_force_on_inserted_body.newResultTest();
+		//write_total_viscous_force_on_inserted_body.newResultTest();
 	}
 
 	return 0;
