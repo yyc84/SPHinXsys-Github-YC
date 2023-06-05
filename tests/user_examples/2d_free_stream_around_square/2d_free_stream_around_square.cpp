@@ -5,6 +5,8 @@
 
 #include "sphinxsys.h"
 #include "2d_free_stream_around_square.h"
+#include "exclusive_shape.h"
+#include "fluid_boundary_static_confinement.h"
 
 using namespace SPH;
 
@@ -15,10 +17,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	BoundingBox system_domain_bounds(Vec2d(-DL_sponge, -0.25 * DH), Vec2d(DL, 1.25 * DH));
 	SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-	/** Tag for run particle relaxation for the initial body fitted distribution. */
-	sph_system.setRunParticleRelaxation(true);
-	/** Tag for computation start with relaxed body fitted particles distribution. */
-	sph_system.setReloadParticles(false);
 	/** handle command line arguments. */
 	sph_system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(sph_system);
@@ -29,14 +27,6 @@ int main(int ac, char *av[])
 	water_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
 	water_block.generateParticles<ParticleGeneratorLattice>();
 
-	SolidBody cylinder(sph_system, makeShared<Cylinder>("Cylinder"));
-	cylinder.defineAdaptationRatios(1.15, 2.0);
-    cylinder.defineBodyLevelSetShape()->writeLevelSet(io_environment);
-	cylinder.defineParticlesAndMaterial<SolidParticles, Solid>();
-	(!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-		? cylinder.generateParticles<ParticleGeneratorReload>(io_environment, cylinder.getName())
-		: cylinder.generateParticles<ParticleGeneratorLattice>();
-
 	ObserverBody fluid_observer(sph_system, "FluidObserver");
 	fluid_observer.generateParticles<ObserverParticleGenerator>(observation_locations);
 	//----------------------------------------------------------------------
@@ -45,52 +35,7 @@ int main(int ac, char *av[])
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation water_block_inner(water_block);
-	ComplexRelation water_block_complex(water_block_inner, {&cylinder});
-	ContactRelation cylinder_contact(cylinder, {&water_block});
 	ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
-	//----------------------------------------------------------------------
-	//	Run particle relaxation for body-fitted distribution if chosen.
-	//----------------------------------------------------------------------
-	if (sph_system.RunParticleRelaxation())
-	{
-		/** body topology only for particle relaxation */
-		InnerRelation cylinder_inner(cylinder);
-		//----------------------------------------------------------------------
-		//	Methods used for particle relaxation.
-		//----------------------------------------------------------------------
-		/** Random reset the insert body particle position. */
-		SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(cylinder);
-		/** Write the body state to Vtp file. */
-		BodyStatesRecordingToVtp write_inserted_body_to_vtp(io_environment, {&cylinder});
-		/** Write the particle reload files. */
-		ReloadParticleIO write_particle_reload_files(io_environment, {&cylinder});
-		/** A  Physics relaxation step. */
-		relax_dynamics::RelaxationStepInner relaxation_step_inner(cylinder_inner);
-		//----------------------------------------------------------------------
-		//	Particle relaxation starts here.
-		//----------------------------------------------------------------------
-		random_inserted_body_particles.exec(0.25);
-		relaxation_step_inner.SurfaceBounding().exec();
-		write_inserted_body_to_vtp.writeToFile(0);
-		//----------------------------------------------------------------------
-		//	Relax particles of the insert body.
-		//----------------------------------------------------------------------
-		int ite_p = 0;
-		while (ite_p < 1000)
-		{
-			relaxation_step_inner.exec();
-			ite_p += 1;
-			if (ite_p % 200 == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
-				write_inserted_body_to_vtp.writeToFile(ite_p);
-			}
-		}
-		std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
-		/** Output results. */
-		write_particle_reload_files.writeToFile(0);
-		return 0;
-	}
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -107,49 +52,59 @@ int main(int ac, char *av[])
 	BodyAlignedBoxByCell disposer(
 		water_block, makeShared<AlignedBoxShape>(Transform2d(Vec2d(disposer_translation)), disposer_halfsize));
 	SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_outflow_deletion(disposer, 0);
+
+	/** Time step size without considering sound wave speed. */
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
+    /** Time step size with considering sound wave speed. */
+    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
+
 	/** time-space method to detect surface particles. */
-	InteractionWithUpdate<fluid_dynamics::SpatialTemporalFreeSurfaceIdentificationComplex>
-		free_stream_surface_indicator(water_block_complex);
+    InteractionWithUpdate<fluid_dynamics::SpatialTemporalFreeSurfaceIdentificationInner>
+		free_stream_surface_indicator(water_block_inner);
+
 	/** Evaluation of density by freestream approach. */
-	InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_fluid_density(water_block_complex);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceInner> update_fluid_density(water_block_inner);
 	/** We can output a method-specific particle data for debug */
 	water_block.addBodyStateForRecording<Real>("Pressure");
 	water_block.addBodyStateForRecording<int>("SurfaceIndicator");
-	/** Time step size without considering sound wave speed. */
-	ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
-	/** Time step size with considering sound wave speed. */
-	ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
+	
 	/** modify the velocity of boundary particles with free-stream velocity. */
 	SimpleDynamics<fluid_dynamics::FreeStreamVelocityCorrection<FreeStreamVelocity>> velocity_boundary_condition_constraint(water_block);
 	/** Pressure relaxation. */
-	Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfRiemann> pressure_relaxation(water_block_inner);
 	/** correct the velocity of boundary particles with free-stream velocity through the post process of pressure relaxation. */
 	pressure_relaxation.post_processes_.push_back(&velocity_boundary_condition_constraint);
 	/** Density relaxation. */
-	Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall> density_relaxation(water_block_complex);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemann> density_relaxation(water_block_inner);
 	/** Computing viscous acceleration. */
-	InteractionDynamics<fluid_dynamics::ViscousAccelerationWithWall> viscous_acceleration(water_block_complex);
+    InteractionDynamics<fluid_dynamics::ViscousAccelerationInner> viscous_acceleration(water_block_inner);
 	/** Apply transport velocity formulation. */
-	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex> transport_velocity_correction(water_block_complex);
+    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionInner> transport_velocity_correction(water_block_inner);
 	/** compute the vorticity. */
 	InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_block_inner);
+
+    NearShapeSurface near_surface(water_block, makeShared<ExclusiveShape<Cylinder>>("Cylinder"));
+    near_surface.level_set_shape_.writeLevelSet(io_environment);
+    fluid_dynamics::StaticConfinementGeneral confinement_condition(near_surface);
+
+	update_fluid_density.post_processes_.push_back(&confinement_condition.density_summation_);
+    pressure_relaxation.post_processes_.push_back(&confinement_condition.pressure_relaxation_);
+    density_relaxation.post_processes_.push_back(&confinement_condition.density_relaxation_);
+    transport_velocity_correction.post_processes_.push_back(&confinement_condition.transport_velocity_);
+    viscous_acceleration.post_processes_.push_back(&confinement_condition.viscous_acceleration_);
 	//----------------------------------------------------------------------
 	//	Algorithms of FSI.
 	//----------------------------------------------------------------------
-	SimpleDynamics<NormalDirectionFromBodyShape> cylinder_normal_direction(cylinder);
+	//SimpleDynamics<NormalDirectionFromBodyShape> cylinder_normal_direction(cylinder);
 	/** Compute the force exerted on solid body due to fluid pressure and viscosity. */
-	InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_inserted_body(cylinder_contact);
-	InteractionDynamics<solid_dynamics::ViscousForceFromFluid> fluid_viscous_force_on_inserted_body(cylinder_contact);
+	//InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> fluid_pressure_force_on_inserted_body(cylinder_contact);
+	//InteractionDynamics<solid_dynamics::ViscousForceFromFluid> fluid_viscous_force_on_inserted_body(cylinder_contact);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations and observations of the simulation.
 	//----------------------------------------------------------------------
 	BodyStatesRecordingToVtp write_real_body_states(io_environment, sph_system.real_bodies_);
 	ObservedQuantityRecording<Vecd>
 		write_fluid_velocity("Velocity", io_environment, fluid_observer_contact);
-	/*RegressionTestTimeAveraged<ReducedQuantityRecording<ReduceDynamics<solid_dynamics::TotalForceFromFluid>>>
-		write_total_viscous_force_on_inserted_body(io_environment, fluid_viscous_force_on_inserted_body, "TotalViscousForceOnSolid");
-	ReducedQuantityRecording<ReduceDynamics<solid_dynamics::TotalForceFromFluid>>
-		write_total_force_on_inserted_body(io_environment, fluid_pressure_force_on_inserted_body, "TotalPressureForceOnSolid");*/
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -159,7 +114,7 @@ int main(int ac, char *av[])
 	/** initialize configurations for all bodies. */
 	sph_system.initializeSystemConfigurations();
 	/** computing surface normal direction for the insert body. */
-	cylinder_normal_direction.exec();
+	//cylinder_normal_direction.exec();
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
@@ -189,7 +144,7 @@ int main(int ac, char *av[])
 			Real Dt = get_fluid_advection_time_step_size.exec();
 			free_stream_surface_indicator.exec();
 			update_fluid_density.exec();
-			viscous_acceleration.exec();
+			//viscous_acceleration.exec();
 			transport_velocity_correction.exec();
 
 			size_t inner_ite_dt = 0;
@@ -222,10 +177,10 @@ int main(int ac, char *av[])
 			disposer_outflow_deletion.exec();
 
 			water_block.updateCellLinkedListWithParticleSort(100);
-			water_block_complex.updateConfiguration();
+			water_block_inner.updateConfiguration();
 			/** one need update configuration after periodic condition. */
 			/** write run-time observation into file */
-			cylinder_contact.updateConfiguration();
+			//cylinder_contact.updateConfiguration();
 		}
 
 		TickCount t2 = TickCount::now();
@@ -244,16 +199,5 @@ int main(int ac, char *av[])
 	TimeInterval tt;
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
-
-	if (sph_system.generate_regression_data_)
-	{
-		// The lift force at the cylinder is very small and not important in this case.
-		//write_total_viscous_force_on_inserted_body.generateDataBase({1.0e-2, 1.0e-2}, {1.0e-2, 1.0e-2});
-	}
-	else
-	{
-		//write_total_viscous_force_on_inserted_body.newResultTest();
-	}
-
 	return 0;
 }

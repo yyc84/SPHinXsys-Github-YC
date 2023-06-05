@@ -113,12 +113,18 @@ namespace SPH
 			density_relaxation_(near_surface), surface_bounding_(near_surface)
 		{}
 		//=================================================================================================//
-		StaticConfinementWithPenalty::StaticConfinementWithPenalty(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength)
+        StaticConfinementWithPenalty::StaticConfinementWithPenalty(NearShapeSurface &near_surface, Real sound_speed, Real penalty_strength)
 			: density_summation_(near_surface), pressure_relaxation_(near_surface),
 			density_relaxation_(near_surface), transport_velocity_(near_surface),
 			viscous_acceleration_(near_surface), extend_intergration_1st_half_(near_surface, penalty_strength),
 			surface_bounding_(near_surface), extend_intergration_1st_half_Velocity(near_surface, sound_speed, penalty_strength)
 		{}
+        //=================================================================================================//
+        StaticConfinementGeneral::StaticConfinementGeneral(NearShapeSurface &near_surface)
+            : density_summation_(near_surface), pressure_relaxation_(near_surface),
+                density_relaxation_(near_surface), transport_velocity_(near_surface),
+                viscous_acceleration_(near_surface), surface_bounding_(near_surface)
+        {}
 	}
 	//=================================================================================================//
 }

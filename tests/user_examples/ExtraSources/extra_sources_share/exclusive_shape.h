@@ -38,49 +38,38 @@ namespace SPH
  * @class ExclusiveShape
  * @brief A template shape which has the fluid outside of the geometry.
  */
-class Shape;
+    class Shape;
 
-template <class BaseShapeType>
-class ExclusiveShape : public BaseShapeType
-{
-
-  public:
-    /** template constructor for general shapes. */
-    template <typename... ConstructorArgs>
-    explicit ExclusiveShape(ConstructorArgs &&...args)
-        : BaseShapeType(std::forward<ConstructorArgs>(args)...), 
-        base_shape_(base_shape_keeper_.createPtr<BaseShapeType>(std::forward<ConstructorArgs>(args)...))
-    {};
-
-    virtual ~ExclusiveShape(){};
-
-    /*reverse the value of checkContain function*/
-    virtual bool checkContain(const Vecd &probe_point, bool BOUNDARY_INCLUDED = true) override
+    template <class BaseShapeType>
+    class ExclusiveShape : public BaseShapeType
     {
-        bool is_inside = base_shape_->checkContain(probe_point);
-        return !is_inside;
-    };
-    template <class BaseShapeType, typename... Args>
-    virtual Vecd findClosestPoint(const Vecd &probe_point) override
-    {
-        Vecd input_pnt_origin = transformd_.shiftBaseStationToFrame(probe_point);
-        Vecd closest_point_origin = BaseShapeType::findClosestPoint(input_pnt_origin);
-        return transformd_.shiftFrameStationToBase(closest_point_origin);
-    };
 
-  protected:
+      public:
+        /** template constructor for general shapes. */
+        template <typename... ConstructorArgs>
+        explicit ExclusiveShape(ConstructorArgs &&...args)
+            : BaseShapeType(std::forward<ConstructorArgs>(args)...), 
+            base_shape_(base_shape_keeper_.createPtr<BaseShapeType>(std::forward<ConstructorArgs>(args)...))
+        {};
 
-    virtual BoundingBox findBounds() override
-    {
-        BoundingBox original_bound = BaseShapeType::findBounds();
-        return BoundingBox(transformd_.shiftFrameStationToBase(original_bound.first_),
-                           transformd_.shiftFrameStationToBase(original_bound.second_));
+        virtual ~ExclusiveShape(){};
+
+        /*reverse the value of checkContain function*/
+        virtual bool checkContain(const Vecd &probe_point, bool BOUNDARY_INCLUDED = true) override
+        {
+            bool is_inside = base_shape_->checkContain(probe_point);
+            return !is_inside;
+        };
+
+        virtual Vecd findClosestPoint(const Vecd &probe_point) override
+        {
+            return base_shape_->findClosestPoint(probe_point);
+        };
+
+      private:
+            UniquePtrKeeper<BaseShapeType> base_shape_keeper_;
+            Shape *base_shape_;
     };
-
-  private:
-        UniquePtrKeeper<BaseShapeType> base_shape_keeper_;
-        Shape *base_shape_
-};
 } // namespace SPH
 
 #endif // TRANSFORM_SHAPE_H

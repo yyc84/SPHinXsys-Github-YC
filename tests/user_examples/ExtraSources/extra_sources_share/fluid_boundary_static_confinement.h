@@ -175,7 +175,19 @@ namespace SPH
             virtual ~StaticConfinementWithPenalty() {};
         };
 
+        class StaticConfinementGeneral
+        {
+        public:
+            SimpleDynamics<StaticConfinementDensity> density_summation_;
+            SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
+            SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
+            SimpleDynamics<StaticConfinementTransportVelocity> transport_velocity_;
+            SimpleDynamics<StaticConfinementViscousAcceleration> viscous_acceleration_;
+            SimpleDynamics<StaticConfinementBounding> surface_bounding_;
 
+            StaticConfinementGeneral(NearShapeSurface &near_surface);
+            virtual ~StaticConfinementGeneral(){};
+        };
     }
 }
 #endif // FLUID_BOUNDARY_STATIC_COFINEMENT_H
