@@ -13,7 +13,7 @@ namespace SPH
 			coefficient_(coefficient),
 			level_set_shape_(&near_surface.level_set_shape_) {}
 		//=================================================================================================//
-		void StaticConfinementTransportVelocity::update(size_t index_i, Real dt)
+        void StaticConfinementTransportVelocity::interaction(size_t index_i, Real dt)
 		{
 			Vecd acceleration_trans = Vecd::Zero();
 			// acceleration for transport velocity

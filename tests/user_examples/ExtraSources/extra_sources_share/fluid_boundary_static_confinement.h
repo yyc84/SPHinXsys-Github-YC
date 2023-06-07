@@ -48,7 +48,7 @@ namespace SPH
         public:
             StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient = 0.2);
             virtual ~StaticConfinementTransportVelocity() {};
-            void update(size_t index_i, Real dt = 0.0);
+            void interaction(size_t index_i, Real dt = 0.0);
 
         protected:
             StdLargeVec<Vecd>& pos_;
@@ -165,7 +165,7 @@ namespace SPH
             SimpleDynamics<StaticConfinementDensity> density_summation_;
             SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
-            SimpleDynamics<StaticConfinementTransportVelocity> transport_velocity_;
+            InteractionDynamics<StaticConfinementTransportVelocity> transport_velocity_;
             SimpleDynamics<StaticConfinementViscousAcceleration> viscous_acceleration_;
             SimpleDynamics<StaticConfinementExtendIntegration1stHalf> extend_intergration_1st_half_;
             SimpleDynamics<StaticConfinementIntegration1stHalfPenaltyVelocity> extend_intergration_1st_half_Velocity;
@@ -181,7 +181,7 @@ namespace SPH
             SimpleDynamics<StaticConfinementDensity> density_summation_;
             SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
-            SimpleDynamics<StaticConfinementTransportVelocity> transport_velocity_;
+            InteractionDynamics<StaticConfinementTransportVelocity> transport_velocity_;
             SimpleDynamics<StaticConfinementViscousAcceleration> viscous_acceleration_;
             SimpleDynamics<StaticConfinementBounding> surface_bounding_;
 
