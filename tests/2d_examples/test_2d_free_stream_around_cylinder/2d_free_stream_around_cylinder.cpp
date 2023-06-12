@@ -28,6 +28,7 @@ int main(int ac, char *av[])
 	FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
 	water_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
 	water_block.generateParticles<ParticleGeneratorLattice>();
+    water_block.addBodyStateForRecording<int>("SurfaceIndicator");
 
 	SolidBody cylinder(sph_system, makeShared<Cylinder>("Cylinder"));
 	cylinder.defineAdaptationRatios(1.15, 2.0);
@@ -130,7 +131,8 @@ int main(int ac, char *av[])
 	/** Computing viscous acceleration. */
 	InteractionDynamics<fluid_dynamics::ViscousAccelerationWithWall> viscous_acceleration(water_block_complex);
 	/** Apply transport velocity formulation. */
-	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex> transport_velocity_correction(water_block_complex);
+    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex, SequencedPolicy> transport_velocity_correction(water_block_complex);
+    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionInner, SequencedPolicy> transport_velocity_correction_inner(water_block_inner);
 	/** compute the vorticity. */
 	InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_block_inner);
 	//----------------------------------------------------------------------
@@ -169,7 +171,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = 0;
 	int screen_output_interval = 100;
-	Real end_time = 200.0;
+	Real end_time = 50.0;
 	Real output_interval = end_time / 400.0;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
@@ -190,7 +192,8 @@ int main(int ac, char *av[])
 			free_stream_surface_indicator.exec();
 			update_fluid_density.exec();
 			viscous_acceleration.exec();
-			transport_velocity_correction.exec();
+            //transport_velocity_correction.exec(Real(number_of_iterations));
+            //transport_velocity_correction_inner.exec();
 
 			size_t inner_ite_dt = 0;
 			Real relaxation_time = 0.0;

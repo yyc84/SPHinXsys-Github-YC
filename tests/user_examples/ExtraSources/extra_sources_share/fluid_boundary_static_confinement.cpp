@@ -16,11 +16,20 @@ namespace SPH
         void StaticConfinementTransportVelocity::interaction(size_t index_i, Real dt)
 		{
 			Vecd acceleration_trans = Vecd::Zero();
+            /*below for debuging*/
+            Vecd pos_tem = pos_[index_i];
+
 			// acceleration for transport velocity
 			acceleration_trans -= 2.0 * level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
 			/** correcting particle position */
-			if (surface_indicator_[index_i] == 0)
-				pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+            //if (surface_indicator_[index_i] == 1 || surface_indicator_[index_i]==0)
+			pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+
+			std::string output_folder = "./output";
+			std::string filefullpath = output_folder + "/" + "transportVelocity_wall" + std::to_string(dt) + ".dat";
+			std::ofstream out_file(filefullpath.c_str(), std::ios::app);
+			out_file << index_i << " " << surface_indicator_[index_i] << " " << acceleration_trans[0] << " " << acceleration_trans[1]
+						<< " " << pos_tem[0] << " " << pos_tem[1] << " " << pos_[index_i][0] << " " << pos_[index_i][1] << " " << dt << std::endl;
 		}
 		//=================================================================================================//
 		StaticConfinementViscousAcceleration::StaticConfinementViscousAcceleration(NearShapeSurface& near_surface)
@@ -29,7 +38,7 @@ namespace SPH
 			mu_(particles_->fluid_.ReferenceViscosity()), vel_(particles_->vel_),
 			level_set_shape_(&near_surface.level_set_shape_) {}
 		//=================================================================================================//
-		void StaticConfinementViscousAcceleration::update(size_t index_i, Real dt)
+        void StaticConfinementViscousAcceleration::interaction(size_t index_i, Real dt)
 		{
 			Vecd acceleration = Vecd::Zero();
 			Vecd vel_derivative = Vecd::Zero();

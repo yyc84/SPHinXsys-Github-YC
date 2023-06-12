@@ -79,7 +79,7 @@ int main(int ac, char *av[])
 	/** Computing viscous acceleration. */
     InteractionDynamics<fluid_dynamics::ViscousAccelerationInner> viscous_acceleration(water_block_inner);
 	/** Apply transport velocity formulation. */
-    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionInner> transport_velocity_correction(water_block_inner);
+    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionInner, SequencedPolicy> transport_velocity_correction(water_block_inner);
 	/** compute the vorticity. */
 	InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_block_inner);
 
@@ -124,7 +124,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = 0;
 	int screen_output_interval = 100;
-	Real end_time = 200.0;
+	Real end_time = 50.0;
 	Real output_interval = end_time / 400.0;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
@@ -145,7 +145,7 @@ int main(int ac, char *av[])
 			free_stream_surface_indicator.exec();
 			update_fluid_density.exec();
 			//viscous_acceleration.exec();
-			transport_velocity_correction.exec();
+            transport_velocity_correction.exec(GlobalStaticVariables::physical_time_);
 
 			size_t inner_ite_dt = 0;
 			Real relaxation_time = 0.0;
