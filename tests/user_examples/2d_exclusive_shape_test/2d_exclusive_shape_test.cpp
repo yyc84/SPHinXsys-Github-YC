@@ -95,6 +95,18 @@ public:
 	}
 
 };
+
+Vec2d insert_circle_center(3.3, 0.5);	/**< Location of the cylinder center. */
+Real insert_circle_radius = 0.25;
+class Circle : public MultiPolygonShape
+{
+public:
+	explicit Circle(const std::string& shape_name) : MultiPolygonShape(shape_name)
+	{
+        multi_polygon_.addACircle(insert_circle_center, insert_circle_radius, 100, ShapeBooleanOps::add);
+	}
+
+};
     //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
@@ -151,7 +163,7 @@ int main(int ac, char *av[])
         near_surface_wall.level_set_shape_.writeLevelSet(io_environment);
     fluid_dynamics::StaticConfinement confinement_condition_wall(near_surface_wall);
     /** Confinement condition for structure. */
-	NearShapeSurface near_surface_triangle(water_block, makeShared<ExclusiveShape<Triangle>>("Triangle"));
+	NearShapeSurface near_surface_triangle(water_block, makeShared<ExclusiveShape<Circle>>("Circle"));
 		near_surface_triangle.level_set_shape_.writeLevelSet(io_environment);
     fluid_dynamics::StaticConfinement confinement_condition_triangle(near_surface_triangle);
 

@@ -17,19 +17,21 @@ namespace SPH
 		{
 			Vecd acceleration_trans = Vecd::Zero();
             /*below for debuging*/
-            Vecd pos_tem = pos_[index_i];
+            //Vecd pos_tem = pos_[index_i];
 
 			// acceleration for transport velocity
 			acceleration_trans -= 2.0 * level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
 			/** correcting particle position */
             //if (surface_indicator_[index_i] == 1 || surface_indicator_[index_i]==0)
-			pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
-
-			std::string output_folder = "./output";
-			std::string filefullpath = output_folder + "/" + "transportVelocity_wall" + std::to_string(dt) + ".dat";
+            if (surface_indicator_[index_i] == 0)
+            {
+                pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+            }
+			/*std::string output_folder = "./output";
+			std::string filefullpath = output_folder + "/" + "transportVelocity_wall_level_" + std::to_string(dt) + ".dat";
 			std::ofstream out_file(filefullpath.c_str(), std::ios::app);
 			out_file << index_i << " " << surface_indicator_[index_i] << " " << acceleration_trans[0] << " " << acceleration_trans[1]
-						<< " " << pos_tem[0] << " " << pos_tem[1] << " " << pos_[index_i][0] << " " << pos_[index_i][1] << " " << dt << std::endl;
+						<< " " << pos_tem[0] << " " << pos_tem[1] << " " << pos_[index_i][0] << " " << pos_[index_i][1] << " " << dt << std::endl;*/
 		}
 		//=================================================================================================//
 		StaticConfinementViscousAcceleration::StaticConfinementViscousAcceleration(NearShapeSurface& near_surface)

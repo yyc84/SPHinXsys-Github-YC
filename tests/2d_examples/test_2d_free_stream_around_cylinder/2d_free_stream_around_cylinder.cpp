@@ -193,7 +193,7 @@ int main(int ac, char *av[])
 			update_fluid_density.exec();
 			viscous_acceleration.exec();
             //transport_velocity_correction.exec(Real(number_of_iterations));
-            //transport_velocity_correction_inner.exec();
+            transport_velocity_correction_inner.exec(number_of_iterations);
 
 			size_t inner_ite_dt = 0;
 			Real relaxation_time = 0.0;

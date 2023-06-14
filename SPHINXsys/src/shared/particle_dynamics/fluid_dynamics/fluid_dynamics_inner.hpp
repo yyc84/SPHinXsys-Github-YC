@@ -103,7 +103,7 @@ namespace SPH
 			interaction(size_t index_i, Real dt)
 		{
             /*below for debuging*/
-            Vecd pos_tem = pos_[index_i];
+           // Vecd pos_tem = pos_[index_i];
 
 			Vecd acceleration_trans = Vecd::Zero();
 			const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
@@ -119,11 +119,11 @@ namespace SPH
 				pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
 
 			/*below for debuging*/
-			std::string output_folder = "./output";
+			/*std::string output_folder = "./output";
             std::string filefullpath = output_folder + "/" + "transportVelocity_inner" + std::to_string(dt) + ".dat";
             std::ofstream out_file(filefullpath.c_str(), std::ios::app);
             out_file << index_i << " " << surface_indicator_[index_i] << " " << acceleration_trans[0] << " " << acceleration_trans[1] 
-				<< " " << pos_tem[0] << " " << pos_tem[1] << " " << pos_[index_i][0] << " " << pos_[index_i][1] << " " << dt << std::endl;
+				<< " " << pos_tem[0] << " " << pos_tem[1] << " " << pos_[index_i][0] << " " << pos_[index_i][1] << " " << dt << std::endl;*/
 		}
 		//=================================================================================================//
 		void VorticityInner::interaction(size_t index_i, Real dt)

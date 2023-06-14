@@ -144,7 +144,7 @@ int main(int ac, char *av[])
 			Real Dt = get_fluid_advection_time_step_size.exec();
 			free_stream_surface_indicator.exec();
 			update_fluid_density.exec();
-			//viscous_acceleration.exec();
+			viscous_acceleration.exec();
             transport_velocity_correction.exec(GlobalStaticVariables::physical_time_);
 
 			size_t inner_ite_dt = 0;
