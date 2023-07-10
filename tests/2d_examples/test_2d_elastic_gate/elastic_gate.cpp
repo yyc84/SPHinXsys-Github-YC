@@ -147,7 +147,7 @@ int main(int ac, char *av[])
     //	Creating body, materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(system, makeShared<WaterBlock>("WaterBlock"));
-    water_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_f, c_f);
+    water_block.defineParticlesAndMaterial<BaseParticles, WeaklyCompressibleFluid>(rho0_f, c_f);
     water_block.generateParticles<ParticleGeneratorLattice>();
 
     SolidBody wall_boundary(system, makeShared<WallBoundary>("WallBoundary"));
@@ -190,13 +190,13 @@ int main(int ac, char *av[])
     SimpleDynamics<OffsetInitialPosition> gate_offset_position(gate, offset);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
     SimpleDynamics<NormalDirectionFromBodyShape> gate_normal_direction(gate);
-    InteractionDynamics<solid_dynamics::CorrectConfiguration> gate_corrected_configuration(gate_inner_relation);
+    InteractionWithUpdate<CorrectedConfigurationInner> gate_corrected_configuration(gate_inner_relation);
     InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluidRiemann> fluid_pressure_force_on_gate(gate_water_contact_relation);
     solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(gate);
     //----------------------------------------------------------------------
     //	Algorithms of Elastic dynamics.
     //----------------------------------------------------------------------
-    Dynamics1Level<solid_dynamics::Integration1stHalf> gate_stress_relaxation_first_half(gate_inner_relation);
+    Dynamics1Level<solid_dynamics::Integration1stHalfPK2> gate_stress_relaxation_first_half(gate_inner_relation);
     Dynamics1Level<solid_dynamics::Integration2ndHalf> gate_stress_relaxation_second_half(gate_inner_relation);
     ReduceDynamics<solid_dynamics::AcousticTimeStepSize> gate_computing_time_step_size(gate);
 

@@ -1,9 +1,9 @@
-# ![](SPHINXsys/logo.png) SPHinXsys
+# ![](assets/logo.png) SPHinXsys
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
-[![Windows](https://svgshare.com/i/ZhY.svg)](https://svgshare.com/i/ZhY.svg)
-[![macOS](https://svgshare.com/i/ZjP.svg)](https://svgshare.com/i/ZjP.svg)
+[![Linux](https://img.shields.io/badge/os-Linux-green.svg)](https://shields.io/)
+[![Windows](https://img.shields.io/badge/os-Windows-green.svg)](https://shields.io/)
+[![macOS](https://img.shields.io/badge/os-macOs-green.svg)](https://shields.io/)
 ![ci workflow](https://github.com/Xiangyu-Hu/SPHinXsys/actions/workflows/ci.yml/badge.svg?event=push)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/sphinxsys.svg?style=social&label=Follow%20%40sphinxsys)](https://twitter.com/sphinxsys)
 [![YouTube](https://img.shields.io/badge/YouTube-FF0000.svg?style=flat&logo=YouTube&logoColor=white)](https://www.youtube.com/channel/UCexdJbxOn9dvim6Jg1dnCFQ)
@@ -40,7 +40,9 @@ Here, we present several short examples in flow, solid dynamics, fluid structure
 
 Main Reference:
 
-1. C. Zhang, M. Rezavand, Y. Zhu, Y. Yu, D. Wu, W. Zhang, J. Wang, X. Hu, "SPHinXsys: an open-source multi-physics and multi-resolution library based on smoothed particle hydrodynamics", Computer Physics Communications, 267, 108066, 2021.
+1. C. Zhang, M. Rezavand, Y. Zhu, Y. Yu, D. Wu, W. Zhang, J. Wang, X. Hu, 
+"SPHinXsys: an open-source multi-physics and multi-resolution library based on smoothed particle hydrodynamics", 
+Computer Physics Communications, 267, 108066, 2021.
 
 The algorithms in SPHinXsys are based on the following publications:
 1. Chi Zhang and Yujie Zhu and Dong Wu and Nikolaus A Adams and Xiagnyu Hu, 
@@ -84,6 +86,8 @@ Volume 236, (2021) 109540
 12. Chi Zhang, Hao Gao, Xiangyu Hu, "A multi-order smoothed particle hydrodynamics method for cardiac electromechanics with the Purkinje network", Computer Methods in Applied Mechanics and Engineering, 407, 115885, 2023.
 
 13. Yongchuan Yu, Yujie Zhu, Chi Zhang, Oskar J. Haidn, Xiangyu Hu, "Level-set based pre-processing techniques for particle method", Computer Physics Communications 289, 108744, 2023.
+
+14. Shuoguo Zhang, Wenbin Zhang, Chi Zhang, Xiangyu Hu, "A Lagrangian free-stream boundary condition for weakly compressible smoothed particle hydrodynamics", Journal of Computational Physics, in press, 2023.
 
 ## Software Architecture
 
