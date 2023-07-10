@@ -32,6 +32,7 @@
 
 #include "fluid_dynamics_inner.h"
 #include "fluid_boundary.h"
+#include "fluid_surface_inner.h"
 #include <mutex>
 
 namespace SPH
@@ -116,6 +117,25 @@ namespace SPH
             StdLargeVec<Vecd>& pos_, & vel_, & acc_;
             LevelSetShape* level_set_shape_;
             AcousticRiemannSolver riemann_solver_;
+        };
+
+         /**
+        * @class StaticConfinementFreeSurfaceIndication
+        * @brief static confinement condition for free surface particle indicate
+        */
+        class StaticConfinementFreeSurfaceIndication : public LocalDynamics, public FluidDataSimple
+        {
+        public:
+            StaticConfinementFreeSurfaceIndication(NearShapeSurface& near_surface, FreeSurfaceIndicationInner& free_surface_indication_inner);
+            virtual ~StaticConfinementFreeSurfaceIndication() {};
+            void interaction(size_t index_i, Real dt = 0.0);
+
+        protected:
+            StdLargeVec<Vecd>& pos_;
+            StdLargeVec<Real>& pos_div_;
+            StdLargeVec<int> &surface_indicator_;
+            LevelSetShape* level_set_shape_;
+            FreeSurfaceIndicationInner& free_surface_indication_inner_;
         };
 
         /**

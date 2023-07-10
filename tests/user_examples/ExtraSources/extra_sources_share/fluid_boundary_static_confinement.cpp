@@ -100,6 +100,18 @@ namespace SPH
 			acc_[index_i] -= 2.0 * penalty_strength_ * penalty * kernel_gradient / rho_[index_i];
 		}
 		//=================================================================================================//
+		StaticConfinementFreeSurfaceIndication::
+			StaticConfinementFreeSurfaceIndication(NearShapeSurface& near_surface):
+			pos_(particles_->pos_), surface_indicator_(particles_->surface_indicator_),
+			level_set_shape_(&near_surface.level_set_shape_), pos_div_(particles_->)
+		{}
+		//=================================================================================================//
+		void StaticConfinementFreeSurfaceIndication::interaction(size_t index_i, Real dt = 0.0)
+		{
+			Real pos_div = 0.0;
+			Vecd kernel_gradient = level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
+		}
+		//=================================================================================================//
 		StaticConfinementBounding::StaticConfinementBounding(NearShapeSurface& near_surface)
 			: LocalDynamics(near_surface.getSPHBody()), FluidDataSimple(sph_body_),
 			pos_(particles_->pos_),
