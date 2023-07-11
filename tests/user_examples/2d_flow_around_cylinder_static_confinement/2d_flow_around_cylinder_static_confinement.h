@@ -66,6 +66,18 @@ MultiPolygon createBufferShape()
 	multi_polygon.addAPolygon(buffer_shape, ShapeBooleanOps::add);
 	return multi_polygon;
 }
+/** create a square shape. */
+std::vector<Vecd> createSquareShape()
+{
+	std::vector<Vecd> square_shape;
+	square_shape.push_back(Vecd(3.0, 4.0));
+	square_shape.push_back(Vecd(3.0, 6.0));
+	square_shape.push_back(Vecd(5.0, 6.0));
+	square_shape.push_back(Vecd(5.0, 4.0));
+	square_shape.push_back(Vecd(3.0, 4.0));
+
+	return square_shape;
+}
 /** Water block shape definition */
 class WaterBlock : public ComplexShape
 {
@@ -76,6 +88,7 @@ public:
 		MultiPolygon multi_polygon;
 		multi_polygon.addAPolygon(createWaterBlockShape(), ShapeBooleanOps::add);
 		multi_polygon.addACircle(insert_circle_center, insert_circle_radius, 100, ShapeBooleanOps::sub);
+		//multi_polygon.addAPolygon(createSquareShape(), ShapeBooleanOps::sub);
 		add<MultiPolygonShape>(multi_polygon);
 	}
 };
@@ -100,6 +113,17 @@ public:
 	explicit Cylinder(const std::string &shape_name) : MultiPolygonShape(shape_name)
 	{
 		multi_polygon_.addACircle(insert_circle_center, insert_circle_radius, 100, ShapeBooleanOps::add);
+	}
+};
+//----------------------------------------------------------------------
+//	Definition of the cylinder
+//----------------------------------------------------------------------
+class Square : public MultiPolygonShape
+{
+public:
+	explicit Square(const std::string &shape_name) : MultiPolygonShape(shape_name)
+	{
+		multi_polygon_.addAPolygon(createSquareShape(), ShapeBooleanOps::add);
 	}
 };
 //----------------------------------------------------------------------

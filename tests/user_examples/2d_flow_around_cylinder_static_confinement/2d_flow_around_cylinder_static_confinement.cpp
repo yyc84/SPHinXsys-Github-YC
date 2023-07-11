@@ -27,7 +27,7 @@ int main(int ac, char *av[])
 	//	Creating body, materials and particles.
 	//----------------------------------------------------------------------
 	FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBlock"));
-	water_block.defineParticlesAndMaterial<FluidParticles, ParameterizedWaterMaterial>(parameterization_io, rho0_f, c_f, mu_f);
+	water_block.defineParticlesAndMaterial<BaseParticles, ParameterizedWaterMaterial>(parameterization_io, rho0_f, c_f, mu_f);
 	water_block.generateParticles<ParticleGeneratorLattice>();
 
 	ObserverBody fluid_observer(sph_system, "FluidObserver");
@@ -72,12 +72,17 @@ int main(int ac, char *av[])
 
 	NearShapeSurface near_surface(water_block, makeShared<ExclusiveShape<Cylinder>>("Cylinder"));
     near_surface.level_set_shape_.writeLevelSet(io_environment);
-    fluid_dynamics::StaticConfinementGeneral confinement_condition(near_surface);
+
+	/*NearShapeSurface near_surface(water_block, makeShared<ExclusiveShape<Square>>("Square"));
+    near_surface.level_set_shape_.writeLevelSet(io_environment);*/
+    //fluid_dynamics::StaticConfinementGeneral confinement_condition(near_surface);
+	fluid_dynamics::StaticConfinementGeneral confinement_condition(near_surface);
 
 	update_density_by_summation.post_processes_.push_back(&confinement_condition.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition.pressure_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition.density_relaxation_);
-    transport_velocity_correction.post_processes_.push_back(&confinement_condition.transport_velocity_);
+	//density_relaxation.post_processes_.push_back(&confinement_condition.surface_bounding_);
+    //transport_velocity_correction.post_processes_.push_back(&confinement_condition.transport_velocity_);
     viscous_acceleration.post_processes_.push_back(&confinement_condition.viscous_acceleration_);
 
 	//----------------------------------------------------------------------
@@ -181,13 +186,13 @@ int main(int ac, char *av[])
 			/** one need update configuration after periodic condition. */
 			water_block_inner.updateConfiguration();
 			//cylinder_contact.updateConfiguration();
-			write_real_body_states.writeToFile();
+			//write_real_body_states.writeToFile();
 		}
 
 		TickCount t2 = TickCount::now();
 		/** write run-time observation into file */
 		compute_vorticity.exec();
-		//write_real_body_states.writeToFile();
+		write_real_body_states.writeToFile();
 		//write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
 		//write_total_force_on_inserted_body.writeToFile(number_of_iterations);
 		fluid_observer_contact.updateConfiguration();

@@ -44,7 +44,7 @@ namespace SPH
          * @class StaticConfinementTransportVelocity
          * @brief static confinement condition for transport velocity
          */
-        class StaticConfinementTransportVelocity : public LocalDynamics, public FluidDataSimple
+        class StaticConfinementTransportVelocity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient = 0.2);
@@ -63,7 +63,7 @@ namespace SPH
          * @class StaticConfinementViscousAcceleration
          * @brief static confinement condition for viscous acceleration
          */
-        class StaticConfinementViscousAcceleration : public LocalDynamics, public FluidDataSimple
+        class StaticConfinementViscousAcceleration : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementViscousAcceleration(NearShapeSurface& near_surface);
@@ -83,7 +83,7 @@ namespace SPH
         * @class StaticConfinementIntegration1stHalf
         * @brief static confinement condition for pressure relaxation
         */
-        class StaticConfinementExtendIntegration1stHalf : public LocalDynamics, public FluidDataSimple
+        class StaticConfinementExtendIntegration1stHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real penalty_strength = 2.0);
@@ -103,7 +103,7 @@ namespace SPH
         * @class StaticConfinementIntegration1stHalf
         * @brief static confinement condition for pressure relaxation
         */
-        class StaticConfinementIntegration1stHalfPenaltyVelocity : public LocalDynamics, public FluidDataSimple
+        class StaticConfinementIntegration1stHalfPenaltyVelocity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementIntegration1stHalfPenaltyVelocity(NearShapeSurface& near_surface, Real  sound_speed, Real penalty_strength = 2.0);
@@ -123,10 +123,10 @@ namespace SPH
         * @class StaticConfinementFreeSurfaceIndication
         * @brief static confinement condition for free surface particle indicate
         */
-        class StaticConfinementFreeSurfaceIndication : public LocalDynamics, public FluidDataSimple
+        class StaticConfinementFreeSurfaceIndication : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
-            StaticConfinementFreeSurfaceIndication(NearShapeSurface& near_surface, FreeSurfaceIndicationInner& free_surface_indication_inner);
+            StaticConfinementFreeSurfaceIndication(NearShapeSurface& near_surface);
             virtual ~StaticConfinementFreeSurfaceIndication() {};
             void interaction(size_t index_i, Real dt = 0.0);
 
@@ -135,14 +135,13 @@ namespace SPH
             StdLargeVec<Real>& pos_div_;
             StdLargeVec<int> &surface_indicator_;
             LevelSetShape* level_set_shape_;
-            FreeSurfaceIndicationInner& free_surface_indication_inner_;
         };
 
         /**
         * @class StaticConfinementIntegration1stHalf
         * @brief static confinement condition for pressure relaxation
         */
-        class StaticConfinementBounding : public LocalDynamics, public FluidDataSimple
+        class StaticConfinementBounding : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
             StaticConfinementBounding(NearShapeSurface& near_surface);
@@ -203,6 +202,7 @@ namespace SPH
             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
             InteractionDynamics<StaticConfinementTransportVelocity, SequencedPolicy> transport_velocity_;
             InteractionDynamics<StaticConfinementViscousAcceleration> viscous_acceleration_;
+            InteractionDynamics<StaticConfinementFreeSurfaceIndication> free_surface_indication_;
             SimpleDynamics<StaticConfinementBounding> surface_bounding_;
 
             StaticConfinementGeneral(NearShapeSurface &near_surface);
@@ -210,4 +210,4 @@ namespace SPH
         };
     }
 }
-#endif // FLUID_BOUNDARY_STATIC_COFINEMENT_H
+#endif  FLUID_BOUNDARY_STATIC_COFINEMENT_H
