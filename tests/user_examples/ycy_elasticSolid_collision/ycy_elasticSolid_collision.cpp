@@ -12,7 +12,7 @@ using namespace SPH;   // Namespace cite here.
 Real PL = 4.0;				  /**< plate length. */
 Real PW = 4.0;				  /**< plate width. */
 Real SH = 4.0;					/**< system high. */
-Real resolution_ref = 0.025;  /**< reference resolution. */
+Real resolution_ref = 0.05;  /**< reference resolution. */
 Real PH = 4* resolution_ref; /**< plate thickness for BCs. */
 BoundingBox system_domain_bounds(Vec3d(0.0, 0.0, 0.0), Vec3d(PL, PW, SH));
 Vec3d ball_center_1(2.0, 2.0, 2.0);
