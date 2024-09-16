@@ -6,14 +6,14 @@ path = os.path.abspath('../../../../../PythonScriptStore/RegressionTest')
 sys.path.append(path)
 from regression_test_base_tool import SphinxsysRegressionTest
 
-
 """
-case name: test_3d_passive_cantilever
+case name: test_2d_T_pipe_VIPO_shell
 """
 
-case_name = "test_3d_passive_cantilever_LG"
-body_name = "CantileverObserver"
-parameter_name = "Position"
+case_name = "test_2d_T_pipe_VIPO_shell"
+body_name = "VelocityObserver"
+parameter_name = "Velocity"
+
 
 number_of_run_times = 0
 converged = 0
@@ -27,7 +27,7 @@ while True:
     converged = sphinxsys.read_dat_file()
     print("Please note: This is the", number_of_run_times, "run!")
     if number_of_run_times <= 200:
-        if converged == "true":
+        if (converged == "true"):
             print("The tested parameters of all variables are converged, and the run will stop here!")
             break
         elif converged != "true":
