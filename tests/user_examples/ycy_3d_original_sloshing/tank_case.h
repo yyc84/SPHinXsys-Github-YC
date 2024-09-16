@@ -28,8 +28,8 @@ Real gravity_g = 9.81;        /*Gravity force of fluid*/
 Real U_f = 2.0 * sqrt(gravity_g * 0.5);	/**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5);  	/**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);	/**< Reference sound speed. */
-Real f = 1.3;
-Real a = 0.02;
+Real f = 1.7;
+Real a = 0.08;
 Real c_p_water = 4.179e3;
 Real c_p_air = 1.012e3;
 Real k_water = 0.620;
@@ -89,7 +89,7 @@ public:
 	virtual Vecd InducedAcceleration(const Vecd& position  = Vecd::Zero()) override
 	{
 		time_ = GlobalStaticVariables::physical_time_;
-		if (time_ <= 1.0)
+		if (time_ <= 0.5)
 		{
 			global_acceleration_ = global_acceleration_;
 		}
