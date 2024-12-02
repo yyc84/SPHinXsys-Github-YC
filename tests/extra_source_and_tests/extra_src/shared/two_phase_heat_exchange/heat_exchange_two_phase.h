@@ -38,119 +38,11 @@ namespace SPH
  * @class GetDiffusionTimeStepSize
  * @brief Computing the time step size based on diffusion coefficient and particle smoothing length
  */
-template <class DiffusionType>
-class GetDiffusionTimeStepSize : public BaseDynamics<Real>
-{
-  public:
-    explicit GetDiffusionTimeStepSize(SPHBody &sph_body, DiffusionType &diffusion);
-    virtual ~GetDiffusionTimeStepSize(){};
 
-    virtual Real exec(Real dt = 0.0) override { return diff_time_step_; };
-
-  protected:
-    Real diff_time_step_;
-};
 
 template <typename... InteractionTypes>
 class DiffusionRelaxation;
 
-template <class DataDelegationType, class DiffusionType>
-class DiffusionRelaxation<DataDelegationType, DiffusionType>
-    : public LocalDynamics,
-      public DataDelegationType
-{
-  protected:
-    StdVec<DiffusionType *> diffusions_;
-    Real *Vol_;
-    StdVec<Real *> diffusion_species_;
-    StdVec<Real *> gradient_species_;
-    StdVec<Real *> diffusion_dt_;
-
-  public:
-    template <class BodyRelationType>
-    explicit DiffusionRelaxation(BodyRelationType &body_relation, StdVec<DiffusionType *> diffusions);
-
-    template <class BodyRelationType>
-    explicit DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion);
-
-    template <typename BodyRelationType, typename FirstArg>
-    explicit DiffusionRelaxation(ConstructorArgs<BodyRelationType, FirstArg> parameters)
-        : DiffusionRelaxation(parameters.body_relation_, std::get<0>(parameters.others_)){};
-
-    /** So that contact diffusion can be integrated independently without inner interaction. */
-    void initialization(size_t index_i, Real dt = 0.0);
-    void update(size_t index_i, Real dt = 0.0);
-
-  private:
-    void registerSpecies();
-};
-
-class KernelGradientInner
-{
-  public:
-    explicit KernelGradientInner(BaseParticles *inner_particles){};
-    Vecd operator()(size_t index_i, size_t index_j, Real dW_ijV_j, const Vecd &e_ij)
-    {
-        return dW_ijV_j * e_ij;
-    };
-};
-
-class CorrectedKernelGradientInner
-{
-    Matd *B_;
-
-  public:
-    explicit CorrectedKernelGradientInner(BaseParticles *inner_particles)
-        : B_(inner_particles->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")){};
-    Vecd operator()(size_t index_i, size_t index_j, Real dW_ijV_j, const Vecd &e_ij)
-    {
-        return 0.5 * dW_ijV_j * (B_[index_i] + B_[index_j]) * e_ij;
-    };
-};
-
-/**
- * @class DiffusionRelaxationInner
- * @brief Compute the diffusion relaxation process of all species
- */
-template <class KernelGradientType, class DiffusionType>
-class DiffusionRelaxation<Inner<KernelGradientType>, DiffusionType>
-    : public DiffusionRelaxation<DataDelegateInner, DiffusionType>
-{
-  protected:
-    KernelGradientType kernel_gradient_;
-
-  public:
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&... args);
-
-    virtual ~DiffusionRelaxation(){};
-    inline void interaction(size_t index_i, Real dt = 0.0);
-};
-
-class KernelGradientContact
-{
-  public:
-    KernelGradientContact(BaseParticles *inner_particles, BaseParticles *contact_particles){};
-    Vecd operator()(size_t index_i, size_t index_j, Real dW_ijV_j, const Vecd &e_ij)
-    {
-        return dW_ijV_j * e_ij;
-    };
-};
-
-class CorrectedKernelGradientContact
-{
-    Matd *B_;
-    Matd *contact_B_;
-
-  public:
-    CorrectedKernelGradientContact(BaseParticles *inner_particles, BaseParticles *contact_particles)
-        : B_(inner_particles->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")),
-          contact_B_(contact_particles->getVariableDataByName<Matd>("LinearGradientCorrectionMatrix")){};
-    Vecd operator()(size_t index_i, size_t index_j, Real dW_ijV_j, const Vecd &e_ij)
-    {
-        return 0.5 * dW_ijV_j * (B_[index_i] + contact_B_[index_j]) * e_ij;
-    };
-};
 
 template <class ContactKernelGradientType, class DiffusionType>
 class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>
