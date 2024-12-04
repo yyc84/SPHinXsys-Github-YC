@@ -298,8 +298,8 @@ template <class DiffusionRelaxationType>
 class DiffusionRelaxationRK2 : public BaseDynamics<void>
 {
   protected:
-    Dynamics1Level<FirstStageRK2<DiffusionRelaxationType>> rk2_1st_stage_;
-    Dynamics1Level<SecondStageRK2<DiffusionRelaxationType>> rk2_2nd_stage_;
+    Dynamics1Level<FirstStageRK2<DiffusionRelaxationType>, SequencedPolicy> rk2_1st_stage_;
+    Dynamics1Level<SecondStageRK2<DiffusionRelaxationType>, SequencedPolicy> rk2_2nd_stage_;
 
   public:
     template <typename FirstArg, typename... OtherArgs>

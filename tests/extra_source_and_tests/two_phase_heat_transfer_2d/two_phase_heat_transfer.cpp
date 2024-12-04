@@ -80,6 +80,8 @@ public:
 	ThermoRightBodyMaterial()
 		: DiffusionReaction<WeaklyCompressibleFluid>({ "Phi" }, rho0_r,c_)
 	{
+
+
 		initializeAnDiffusion<IsotropicDiffusion>("Phi", "Phi", diffusion_coff_r);
 	};
 };
@@ -171,6 +173,27 @@ public:
 		}
 	}
 };
+
+class DiffusionInitialCondition : public LocalDynamics
+{
+  public:
+    explicit DiffusionInitialCondition(SPHBody &sph_body)
+        : LocalDynamics(sph_body),
+          phi_(particles_->registerStateVariable<Real>("Phi")){};
+
+    void update(size_t index_i, Real dt)
+    {
+        phi_[index_i] = initial_temperature;
+    };
+
+  protected:
+    Real *phi_;
+};
+//----------------------------------------------------------------------
+//	Set thermal relaxation between different bodies
+//----------------------------------------------------------------------
+using ThermalRelaxationComplex = DiffusionBodyRelaxationComplex<
+    IsotropicDiffusion, KernelGradientInner, KernelGradientContact, Dirichlet>;
 
 //----------------------------------------------------------------------
 //	Main program starts here.
