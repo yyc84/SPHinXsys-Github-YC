@@ -63,6 +63,30 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>
     virtual ~DiffusionRelaxation(){};
 };
 
+template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
+class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>
+    : public DiffusionRelaxation<DataDelegateContact, DiffusionType>
+{
+  protected:
+    StdVec<ContactDiffusionType *> diffusions_;
+    StdVec<ContactKernelGradientType> contact_kernel_gradients_;
+    StdVec<Real *> contact_Vol_;
+    //StdVec<StdVec<Real *>> contact_transfer_;
+
+  public:
+    template <typename... Args>
+    explicit DiffusionRelaxation(Args &&...args, const StdVec<ContactDiffusionType *> contact_diffusions);
+          
+    template <typename... Args>
+    explicit DiffusionRelaxation(Args &&...args, const ContactDiffusionType *contact_diffusion)
+        : DiffusionRelaxation(Args && ...args, const StdVec<ContactDiffusionType *>{contact_diffusion}){};
+
+    template <typename... Args>
+    explicit DiffusionRelaxation(Args &&...args);
+    virtual ~DiffusionRelaxation(){};
+};
+
+
 template <typename... ControlTypes>
 class Dirichlet; /**< Contact interaction with Dirichlet boundary condition */
 

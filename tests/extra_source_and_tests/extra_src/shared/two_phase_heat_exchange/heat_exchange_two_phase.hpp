@@ -11,8 +11,33 @@
 
 namespace SPH
 {
+//=================================================================================================//
+template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
+template <typename... Args>
+DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
+    DiffusionRelaxation(Args &&...args, const StdVec<ContactDiffusionType *> contact_diffusions)
+    : DiffusionRelaxation<DataDelegateContact, DiffusionType>(
+          std::forward<Args>(args)...), diffusions_(contact_diffusions)
+{
+    static_assert((... || std::is_same_v < std::decay_t<Args>, DiffusionType),
+                  "One of the arguments in args must be of type StdVec<DiffusionType> or DiffusionType");
 
+    contact_transfer_.resize(this->contact_particles_.size());
+    for (size_t k = 0; k != this->contact_particles_.size(); ++k)
+    {
+        BaseParticles *contact_particles_k = this->contact_particles_[k];
+        contact_kernel_gradients_.push_back(ContactKernelGradientType(this->particles_, contact_particles_k));
+        contact_Vol_.push_back(contact_particles_k->template registerStateVariable<Real>("VolumetricMeasure"));
 
+        std::string diffusion_direction = "From" + this->contact_bodies_[k]->getName();
+        for (auto &diffusion : this->diffusions_)
+        {
+            std::string variable_name = diffusion->GradientSpeciesName() + "Transfer" + diffusion_direction;
+            contact_transfer_[k].push_back(
+                this->particles_->template registerStateVariable<Real>(variable_name));
+        }
+    }
+}
 //=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType>
 template <typename... Args>
