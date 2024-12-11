@@ -3,6 +3,7 @@
  * @brief 	Heat Transfer in Slabs
  */
 #include "sphinxsys.h" //SPHinXsys Library.
+#include "heat_exchange_two_phase.h"
 #define PI (3.14159265358979323846)
 
 using namespace SPH;   // Namespace cite here.
@@ -20,7 +21,7 @@ Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
 Real dp = 0.0125;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
-Real initial_temperature_rigth = 1.0;
+Real initial_temperature_right = 1.0;
 
 Real c_ = 1.0;				 /**< Reference sound speed. */
 //----------------------------------------------------------------------
@@ -38,7 +39,7 @@ std::vector<Vecd> createOverallShape()
 	return over_all_shape;
 }
 
-MultiPolygon createRightBlockShape()
+std::vector<Vecd> createRightBlockShape()
 {
     std::vector<Vecd> right_block_shape;
 	right_block_shape.push_back(Vecd(40*dp, 0.0));
@@ -47,14 +48,11 @@ MultiPolygon createRightBlockShape()
 	right_block_shape.push_back(Vecd(80*dp, 0.0));
 	right_block_shape.push_back(Vecd(40*dp, 0.0));
 
-    MultiPolygon multi_polygon;
-    multi_polygon.addAPolygon(right_block_shape, ShapeBooleanOps::add);
-
-    return multi_polygon;
+    return right_block_shape;
 }
 
 
-MultiPolygon createLeftBlockShape()
+std::vector<Vecd> createLeftBlockShape()
 {
     std::vector<Vecd> left_block_shape;
 	left_block_shape.push_back(Vecd(0.0, 0.0));
@@ -63,96 +61,78 @@ MultiPolygon createLeftBlockShape()
 	left_block_shape.push_back(Vecd(40*dp, 0.0));
 	left_block_shape.push_back(Vecd(0.0, 0.0));
 
-    MultiPolygon multi_polygon;
-    multi_polygon.addAPolygon(left_block_shape, ShapeBooleanOps::add);
-
-    return multi_polygon;
+    return left_block_shape;
 }
-class OverallBlock :public MultiPolygonShape
-{
-public:
-	explicit OverallBlock(const std::string& shape_name) : MultiPolygonShape(shape_name)
-	{
-		multi_polygon_.addAPolygon(createOverallShape(), ShapeBooleanOps::add);
-	}
-};
+
 
 //----------------------------------------------------------------------
 //	cases-dependent geometric shape for right block.
 //----------------------------------------------------------------------
-//class RightBlock : public MultiPolygonShape
-//{
-//public:
-//	explicit RightBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
-//	{
-//		multi_polygon_.addAPolygon(createRightBlockShape(), ShapeBooleanOps::add);
-//	}
-//};
+class RightBlock : public MultiPolygonShape
+{
+public:
+	explicit RightBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
+	{
+		multi_polygon_.addAPolygon(createRightBlockShape(), ShapeBooleanOps::add);
+	}
+};
 
 //----------------------------------------------------------------------
 //	cases-dependent geometric shape for left block.
 //----------------------------------------------------------------------
-
+class LeftBlock : public MultiPolygonShape
+{
+public:
+	explicit LeftBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
+	{
+		multi_polygon_.addAPolygon(createLeftBlockShape(), ShapeBooleanOps::add);
+	}
+};
 
 
 //----------------------------------------------------------------------
 //	Application dependent initial condition.
 //----------------------------------------------------------------------
-template <class DynamicsIdentifier>
-class LocalQuantityDefinition
-    : public BaseLocalDynamics<DynamicsIdentifier>
-{
-  public:
-    LocalQuantityDefinition(DynamicsIdentifier &identifier)
-        : BaseLocalDynamics<DynamicsIdentifier>(identifier){};
-    virtual ~LocalQuantityDefinition(){};
-};
 
-class LocalDiffusivityDefinition : public LocalQuantityDefinition<BodyPartByParticle>
+class LeftDiffusionInitialCondition : public LocalDynamics
 {
   public:
-	  explicit LocalDiffusivityDefinition(BodyPartByParticle& body_part, Real local_diff, Real initial_phi)
-		  : LocalQuantityDefinition<BodyPartByParticle>(body_part),
-		  thermal_conductivity(particles_->getVariableDataByName<Real>("ThermalConductivity")),
-		  phi(particles_->registerStateVariable<Real>("Phi")), initial_phi(initial_phi),
-		  local_diff(local_diff)
-	  {
-		  particles_->addVariableToWrite<Real>("Phi");
-	  };
+    explicit LeftDiffusionInitialCondition(SPHBody &sph_body)
+        : LocalDynamics(sph_body),
+          phi_(particles_->registerStateVariable<Real>("Phi")){};
 
     void update(size_t index_i, Real dt)
     {
-        thermal_conductivity[index_i] = local_diff;
-		phi[index_i] = initial_phi;
+        phi_[index_i] = initial_temperature_left;
     };
 
   protected:
-    Real *thermal_conductivity;
-    Real local_diff;
-	Real *phi;
-	Real initial_phi;
+    Real *phi_;
 };
 
-//class DiffusionInitialCondition : public LocalDynamics
-//{
-//  public:
-//    explicit DiffusionInitialCondition(SPHBody &sph_body)
-//        : LocalDynamics(sph_body),
-//          phi_(particles_->registerStateVariable<Real>("Phi")){};
-//
-//    void update(size_t index_i, Real dt)
-//    {
-//        phi_[index_i] = initial_temperature_left;
-//    };
-//
-//  protected:
-//    Real *phi_;
-//};
+class RightDiffusionInitialCondition : public LocalDynamics
+{
+  public:
+    explicit RightDiffusionInitialCondition(SPHBody &sph_body)
+        : LocalDynamics(sph_body),
+          phi_(particles_->registerStateVariable<Real>("Phi")){};
+
+    void update(size_t index_i, Real dt)
+    {
+        phi_[index_i] = initial_temperature_right;
+    };
+
+  protected:
+    Real *phi_;
+};
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
 //----------------------------------------------------------------------
-using ThermalRelaxationInner = DiffusionRelaxationRK2<
-         DiffusionRelaxation<Inner<KernelGradientInner>, LocalIsotropicDiffusion>>;
+using ThermalRelaxInner = DiffusionRelaxation<Inner<KernelGradientInner>, IsotropicDiffusion>;
+//using ThermalRelaxContact = DiffusionRelaxation<Dirichlet<KernelGradientContact>, IsotropicDiffusion>;
+using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
+
+//using ThermalRelaxationComplex = TwoPhaseHeatExchangeBodyRelaxationComplex<HeatTransferDiffusion, HeatTransferDiffusion, KernelGradientInner, KernelGradientContact, TwoPhaseHeatExchange>;
 
 StdVec<Vecd> createObservationPoints()
 {
@@ -182,9 +162,11 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Creating bodies with corresponding materials and particles.
 	//----------------------------------------------------------------------
-	FluidBody diffusion_body(sph_system, makeShared<OverallBlock>("DiffusionBody"));
-    LocalIsotropicDiffusion *overall_diffusion = diffusion_body.defineMaterial<LocalIsotropicDiffusion>("Phi", "Phi", diffusion_coff_l);
-    diffusion_body.generateParticles<BaseParticles, Lattice>();
+	FluidBody right_body(sph_system, makeShared<RightBlock>("RightBody"));
+    right_body.generateParticles<BaseParticles, Lattice>();
+
+	FluidBody left_body(sph_system, makeShared<LeftBlock>("LeftBody"));
+    right_body.generateParticles<BaseParticles, Lattice>();
 
 	ObserverBody temperature_observer(sph_system, "TemperatureObserver");
     temperature_observer.generateParticles<ObserverParticles>(createObservationPoints());
@@ -193,28 +175,40 @@ int main(int ac, char *av[])
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	ContactRelation temperature_observer_contact(temperature_observer, {& diffusion_body });
-	InnerRelation overall_inner(diffusion_body);
-	// Define body regions
-    BodyRegionByParticle right_body_particles(diffusion_body, makeShared<MultiPolygonShape>(createRightBlockShape()));
-    BodyRegionByParticle left_body_particles(diffusion_body, makeShared<MultiPolygonShape>(createLeftBlockShape()));
+	ContactRelation temperature_observer_contact(temperature_observer, {& left_body, &right_body });
+	InnerRelation left_inner(left_body);
+	InnerRelation right_inner(right_body);
+	ContactRelation left_body_contact(left_body, { &right_body });
+	ContactRelation right_body_contact(right_body, { &left_body });
+
+	ComplexRelation left_complex(left_inner, { &left_body_contact });
+	ComplexRelation right_complex(right_inner, { &right_body_contact });
 	//----------------------------------------------------------------------
 	//	Define the numerical methods used in the simulation.
 	//	Note that there may be data dependence on the sequence of constructions.
 	//----------------------------------------------------------------------
 	 // Define diffusion coefficient
-    SimpleDynamics<LocalDiffusivityDefinition> right_diffusivity(right_body_particles, diffusion_coff_r, 1.0);
-    SimpleDynamics<LocalDiffusivityDefinition> left_diffusivity(left_body_particles, diffusion_coff_l, 0.0);
+	IsotropicDiffusion left_heat_diffusion("Phi", "Phi", diffusion_coff_l);
+	IsotropicDiffusion right_heat_diffusion("Phi", "Phi", diffusion_coff_r);
 
-	ThermalRelaxationInner temperature_relaxation(overall_inner,overall_diffusion);
+	Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion );
+	Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);
 
-	GetDiffusionTimeStepSize get_time_step_size_right(diffusion_body, *overall_diffusion);
-	//GetDiffusionTimeStepSize get_time_step_size_left(diffusion_body, left_diffusivity);
-	//SimpleDynamics<DiffusionInitialCondition> setup_diffusion_initial_condition(diffusion_body);
+	SimpleDynamics<ThermalRelaxContact> left_thermal_relax_contact(left_body_contact, left_heat_diffusion, right_heat_diffusion);
+	SimpleDynamics<ThermalRelaxContact> right_thermal_relax_contact(right_body_contact, right_heat_diffusion, left_heat_diffusion);
 
-	/** Initialize particle acceleration. */
-	//SimpleDynamics<ThermoRightBodyInitialCondition> thermo_right_initial_condition(right_block);
-	//SimpleDynamics<ThermoLeftBodyInitialCondition> thermo_left_initial_condition(left_block);
+	/*ThermalRelaxationComplex thermal_relax_left_complex ( 
+		ConstructorArgs(left_inner, &left_heat_diffusion),
+        ConstructorArgs(left_body_contact, &left_heat_diffusion, &right_heat_diffusion));
+	ThermalRelaxationComplex thermal_relax_right_complex ( 
+		ConstructorArgs(right_inner, &right_heat_diffusion),
+        ConstructorArgs(right_body_contact, &right_heat_diffusion, &left_heat_diffusion));*/
+
+	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
+	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
+
+	GetDiffusionTimeStepSize get_time_step_size_right(right_body, right_heat_diffusion);
+	GetDiffusionTimeStepSize get_time_step_size_left(left_body, left_heat_diffusion);
 
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations
@@ -222,7 +216,8 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//RestartIO restart_io(io_environment, sph_system.real_bodies_);
 	BodyStatesRecordingToVtp write_real_body_states(sph_system);
-    write_real_body_states.addToWrite<Real>(diffusion_body, "Phi");
+    write_real_body_states.addToWrite<Real>(right_body, "Phi");
+	write_real_body_states.addToWrite<Real>(left_body, "Phi");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
@@ -234,8 +229,8 @@ int main(int ac, char *av[])
     //setup_diffusion_initial_condition.exec();
    
     // thermal conductivity initialization
-    right_diffusivity.exec();
-    left_diffusivity.exec();
+    left_diffusion_initial_condition.exec();
+    right_diffusion_initial_condition.exec();
 
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
@@ -262,8 +257,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	//thermo_right_initial_condition.parallel_exec();
-	//thermo_left_initial_condition.parallel_exec();
 	write_real_body_states.writeToFile(0);
 	write_temperature.writeToFile(0);
 	//----------------------------------------------------------------------
@@ -283,10 +276,14 @@ int main(int ac, char *av[])
 			while (relaxation_time < Observe_time)
 			{
 				Real dt_thermal_right = get_time_step_size_right.exec();
-				//Real dt_thermal_left = get_time_step_size_left.exec();
-				//dt = SMIN(dt_thermal_right, dt_thermal_left);
-				dt = dt_thermal_right;
-				temperature_relaxation.exec(dt);
+				Real dt_thermal_left = get_time_step_size_left.exec();
+				dt = SMIN(dt_thermal_right, dt_thermal_left);
+				left_thermal_relax_inner.exec(dt);
+				right_thermal_relax_inner.exec(dt);
+				left_thermal_relax_contact.exec(dt);
+				right_thermal_relax_contact.exec(dt);
+				//thermal_relax_left_complex.exec(dt);
+				//thermal_relax_right_complex.exec(dt);
 
 				if (ite % 100== 0)
 				{
@@ -302,10 +299,12 @@ int main(int ac, char *av[])
 
 			interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;
 			/** Update cell linked list and configuration. */
-			diffusion_body.updateCellLinkedList();
-			
+			left_body.updateCellLinkedList();
+			right_body.updateCellLinkedList();
 
-			overall_inner.updateConfiguration();
+			left_complex.updateConfiguration();
+			right_complex.updateConfiguration();
+
 			temperature_observer_contact.updateConfiguration();
 			write_temperature.writeToFile();
 			time_instance = TickCount::now();
