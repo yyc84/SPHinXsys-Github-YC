@@ -40,9 +40,9 @@ DiffusionRelaxation<TwoPhaseHeatExchange<ContactKernelGradientType>, DiffusionTy
     for (size_t k = 0; k != this->contact_particles_.size(); ++k)
     {
         BaseParticles *contact_particles_k = this->contact_particles_[k];
-        for (auto &diffusion : this->contact_diffusions_)
+        for (auto &contact_diffusion : this->contact_diffusions_)
         {
-            std::string gradient_species_name = diffusion->GradientSpeciesName();
+            std::string gradient_species_name = contact_diffusion->GradientSpeciesName();
             contact_gradient_species_[k].push_back(
                 contact_particles_k->template registerStateVariable<Real>(gradient_species_name));
             contact_particles_k->template addVariableToWrite<Real>(gradient_species_name);

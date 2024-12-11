@@ -40,6 +40,39 @@ namespace SPH
  * @brief Computing the time step size based on diffusion coefficient and particle smoothing length
  */
 
+//template <class InteractionType, class DiffusionType, class ExtraType = void>
+//class DiffusionRelaxation;
+//
+//template <class DataDelegationType, class DiffusionType, class ExtraType = void>
+//class DiffusionRelaxation<DataDelegationType, DiffusionType>
+//    : public LocalDynamics,
+//      public DataDelegationType
+//{
+//  protected:
+//    StdVec<DiffusionType *> diffusions_;
+//    Real *Vol_;
+//    StdVec<Real *> diffusion_species_;
+//    StdVec<Real *> gradient_species_;
+//    StdVec<Real *> diffusion_dt_;
+//
+//  public:
+//    template <class BodyRelationType>
+//    explicit DiffusionRelaxation(BodyRelationType &body_relation, StdVec<DiffusionType *> diffusions);
+//
+//    template <class BodyRelationType>
+//    explicit DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion);
+//
+//    template <typename BodyRelationType, typename FirstArg>
+//    explicit DiffusionRelaxation(ConstructorArgs<BodyRelationType, FirstArg> parameters)
+//        : DiffusionRelaxation(parameters.body_relation_, std::get<0>(parameters.others_)){};
+//
+//    /** So that contact diffusion can be integrated independently without inner interaction. */
+//    void initialization(size_t index_i, Real dt = 0.0);
+//    void update(size_t index_i, Real dt = 0.0);
+//
+//  private:
+//    void registerSpecies();
+//};
 
 //template <typename... InteractionTypes>
 //class DiffusionRelaxation;
@@ -146,6 +179,10 @@ class DiffusionRelaxation<TwoPhaseHeatExchange<ContactKernelGradientType>, Diffu
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&... args, const StdVec<ContactDiffusionType *> contact_diffusions);
+
+    template <typename... Args>
+    explicit DiffusionRelaxation(Args &&...args, const ContactDiffusionType * contact_diffusion)
+        :DiffusionRelaxation(Args &&...args, const StdVec<ContactDiffusionType *>{contact_diffusion}){};
     virtual ~DiffusionRelaxation(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
     inline Real getInterParticleThermalConductivity(Real thermal_conductivity_i, Real thermal_conductivity_j)
@@ -166,13 +203,11 @@ class HeatTransferDiffusion : public IsotropicDiffusion
     HeatTransferDiffusion(const std::string &species_name, Real diff_cf = 1.0);
     virtual ~HeatTransferDiffusion(){};
 
-    virtual void initializeLocalParameters(BaseParticles *base_particles) override;
-
     virtual Real getReferenceDiffusivity() override { return diff_cf_; };
-    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return local_diffusivity_[index_i]; };
+    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return diff_cf_; };
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
     {
-        return 0.5 * (local_diffusivity_[index_i] + local_diffusivity_[index_j]);
+        return diff_cf_;
     };
     Real getDiffusionCoeff() { return diff_cf_; };
 };
