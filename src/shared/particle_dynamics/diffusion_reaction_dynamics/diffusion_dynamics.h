@@ -174,15 +174,17 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
     : public DiffusionRelaxation<DataDelegateContact, DiffusionType>
 {
   protected:
-    StdVec<ContactDiffusionType *> contact_diffusions_;
+    //StdVec<ContactDiffusionType *> contact_diffusions_;
+    ContactDiffusionType *contact_diffusion_;
     StdVec<ContactKernelGradientType> contact_kernel_gradients_;
     StdVec<Real *> contact_Vol_;
 
   public:
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&...args, const StdVec<ContactDiffusionType *> &contact_diffusions)
-        : DiffusionRelaxation<DataDelegateContact, DiffusionType>(std::forward<Args>(args)...),
-          contact_diffusions_(contact_diffusions)
+    //template <typename... Args>
+    template <typename BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
+        : DiffusionRelaxation<DataDelegateContact, DiffusionType>(body_relation, diffusion),
+          contact_diffusion_(contact_diffusion)
     {
         for (size_t k = 0; k != this->contact_particles_.size(); ++k)
         {
@@ -192,10 +194,10 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
         }
     };
 
-    template <typename... Args>
+    /*template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args, ContactDiffusionType *contact_diffusion)
         : DiffusionRelaxation<DataDelegateContact, DiffusionType>(std::forward<Args>(args)...),
-          contact_diffusions_({contact_diffusion}){};
+          contact_diffusions_({contact_diffusion}){};*/
 
     virtual ~DiffusionRelaxation(){};
 };
@@ -209,13 +211,13 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
 //
 //  public:
 //    template <typename... Args>
-//    explicit DiffusionRelaxation(Contact<ContactKernelGradientType> &contact, DiffusionType &diffusion, const StdVec<ContactDiffusionType *> &contact_diffusions)
-//        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>(contact, diffusion),
+//    explicit DiffusionRelaxation(Args &&...args, DiffusionType &diffusion, const StdVec<ContactDiffusionType *> &contact_diffusions)
+//        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>(std::forward<Args>(args)..., diffusion),
 //          contact_diffusions_(contact_diffusions) {}
 //
 //    template <typename... Args>
 //    explicit DiffusionRelaxation(Contact<ContactKernelGradientType> &contact, DiffusionType &diffusion, ContactDiffusionType *contact_diffusion)
-//        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>(contact, diffusion),
+//        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>(std::forward<Args>(args)..., diffusion),
 //          contact_diffusions_({contact_diffusion}) {}
 //
 //    virtual ~DiffusionRelaxation() {}
@@ -234,8 +236,8 @@ class DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType
 
   public:
     template <typename... Args>
-    explicit DiffusionRelaxation(Args &&...args)
-        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>(std::forward<Args>(args)...)
+    explicit DiffusionRelaxation(Args &&...args, DiffusionType *diffusion, const StdVec<ContactDiffusionType *> &contact_diffusions)
+        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>(std::forward<Args>(args)..., diffusion, contact_diffusions)
     {
         contact_gradient_species_.resize(this->contact_particles_.size());
         for (size_t k = 0; k != this->contact_particles_.size(); ++k)

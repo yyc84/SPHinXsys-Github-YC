@@ -3,7 +3,7 @@
  * @brief 	Heat Transfer in Slabs
  */
 #include "sphinxsys.h" //SPHinXsys Library.
-#include "heat_exchange_two_phase.h"
+//#include "heat_exchange_two_phase.h"
 #define PI (3.14159265358979323846)
 
 using namespace SPH;   // Namespace cite here.
@@ -129,9 +129,8 @@ class RightDiffusionInitialCondition : public LocalDynamics
 //	Set thermal relaxation between different bodies
 //----------------------------------------------------------------------
 using ThermalRelaxInner = DiffusionRelaxation<Inner<KernelGradientInner>, IsotropicDiffusion>;
-//using ThermalRelaxContact = DiffusionRelaxation<Dirichlet<KernelGradientContact>, IsotropicDiffusion>;
 using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
-
+//using ThermalRelaxContact = DiffusionRelaxation<HeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
 //using ThermalRelaxationComplex = TwoPhaseHeatExchangeBodyRelaxationComplex<HeatTransferDiffusion, HeatTransferDiffusion, KernelGradientInner, KernelGradientContact, TwoPhaseHeatExchange>;
 
 StdVec<Vecd> createObservationPoints()
@@ -152,51 +151,56 @@ StdVec<Vecd> createObservationPoints()
 //----------------------------------------------------------------------
 int main(int ac, char *av[])
 {
-	//----------------------------------------------------------------------
-	//	Build up an SPHSystem.
-	//----------------------------------------------------------------------
-	BoundingBox system_domain_bounds(Vec2d(0.0, 0.0), Vec2d(80*dp, 40*dp));
-	SPHSystem sph_system(system_domain_bounds, dp);
-	sph_system.handleCommandlineOptions(ac, av);
-	IOEnvironment io_environment(sph_system);
-	//----------------------------------------------------------------------
-	//	Creating bodies with corresponding materials and particles.
-	//----------------------------------------------------------------------
-	FluidBody right_body(sph_system, makeShared<RightBlock>("RightBody"));
+    //----------------------------------------------------------------------
+    //	Build up an SPHSystem.
+    //----------------------------------------------------------------------
+    BoundingBox system_domain_bounds(Vec2d(0.0, 0.0), Vec2d(80 * dp, 40 * dp));
+    SPHSystem sph_system(system_domain_bounds, dp);
+    sph_system.handleCommandlineOptions(ac, av);
+    IOEnvironment io_environment(sph_system);
+    //----------------------------------------------------------------------
+    //	Creating bodies with corresponding materials and particles.
+    //----------------------------------------------------------------------
+    FluidBody right_body(sph_system, makeShared<RightBlock>("RightBody"));
     right_body.generateParticles<BaseParticles, Lattice>();
 
-	FluidBody left_body(sph_system, makeShared<LeftBlock>("LeftBody"));
+    FluidBody left_body(sph_system, makeShared<LeftBlock>("LeftBody"));
     right_body.generateParticles<BaseParticles, Lattice>();
 
-	ObserverBody temperature_observer(sph_system, "TemperatureObserver");
+    ObserverBody temperature_observer(sph_system, "TemperatureObserver");
     temperature_observer.generateParticles<ObserverParticles>(createObservationPoints());
-	//----------------------------------------------------------------------
-	//	Define body relation map.
-	//	The contact map gives the topological connections between the bodies.
-	//	Basically the the range of bodies to build neighbor particle lists.
-	//----------------------------------------------------------------------
-	ContactRelation temperature_observer_contact(temperature_observer, {& left_body, &right_body });
-	InnerRelation left_inner(left_body);
-	InnerRelation right_inner(right_body);
-	ContactRelation left_body_contact(left_body, { &right_body });
-	ContactRelation right_body_contact(right_body, { &left_body });
+    //----------------------------------------------------------------------
+    //	Define body relation map.
+    //	The contact map gives the topological connections between the bodies.
+    //	Basically the the range of bodies to build neighbor particle lists.
+    //----------------------------------------------------------------------
+    ContactRelation temperature_observer_contact(temperature_observer, {&left_body, &right_body});
+    InnerRelation left_inner(left_body);
+    InnerRelation right_inner(right_body);
+    ContactRelation left_body_contact(left_body, {&right_body});
+    ContactRelation right_body_contact(right_body, {&left_body});
 
-	ComplexRelation left_complex(left_inner, { &left_body_contact });
-	ComplexRelation right_complex(right_inner, { &right_body_contact });
-	//----------------------------------------------------------------------
-	//	Define the numerical methods used in the simulation.
-	//	Note that there may be data dependence on the sequence of constructions.
-	//----------------------------------------------------------------------
-	 // Define diffusion coefficient
-	IsotropicDiffusion left_heat_diffusion("Phi", "Phi", diffusion_coff_l);
-	IsotropicDiffusion right_heat_diffusion("Phi", "Phi", diffusion_coff_r);
+    ComplexRelation left_complex(left_inner, {&left_body_contact});
+    ComplexRelation right_complex(right_inner, {&right_body_contact});
+    //----------------------------------------------------------------------
+    //	Define the numerical methods used in the simulation.
+    //	Note that there may be data dependence on the sequence of constructions.
+    //----------------------------------------------------------------------
+    // Define diffusion coefficient
+    IsotropicDiffusion left_heat_diffusion("Phi", "Phi", diffusion_coff_l);
+    IsotropicDiffusion right_heat_diffusion("Phi", "Phi", diffusion_coff_r);
 
-	Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion );
-	Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);
+    Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
+    Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);
 
-	SimpleDynamics<ThermalRelaxContact> left_thermal_relax_contact(left_body_contact, left_heat_diffusion, right_heat_diffusion);
-	SimpleDynamics<ThermalRelaxContact> right_thermal_relax_contact(right_body_contact, right_heat_diffusion, left_heat_diffusion);
+    // Dynamics1Level<ThermalRelaxContact> left_thermal_relax_contact(left_body_contact, &left_heat_diffusion, {&right_heat_diffusion});
+    // Dynamics1Level<ThermalRelaxContact> right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, {&left_heat_diffusion});
 
+    // ThermalRelaxContact thermal_diffusion(right_body_contact, &right_heat_diffusion, {&left_heat_diffusion});
+    /*DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion> left_thermal_relax_contact(
+            left_body_contact, &left_heat_diffusion);*/
+    DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion> left_thermal_relax_contact(
+        left_body_contact, &left_heat_diffusion, {&right_heat_diffusion});
 	/*ThermalRelaxationComplex thermal_relax_left_complex ( 
 		ConstructorArgs(left_inner, &left_heat_diffusion),
         ConstructorArgs(left_body_contact, &left_heat_diffusion, &right_heat_diffusion));
@@ -226,7 +230,6 @@ int main(int ac, char *av[])
 	sph_system.initializeSystemCellLinkedLists();
 	sph_system.initializeSystemConfigurations();
 
-    //setup_diffusion_initial_condition.exec();
    
     // thermal conductivity initialization
     left_diffusion_initial_condition.exec();
@@ -280,8 +283,8 @@ int main(int ac, char *av[])
 				dt = SMIN(dt_thermal_right, dt_thermal_left);
 				left_thermal_relax_inner.exec(dt);
 				right_thermal_relax_inner.exec(dt);
-				left_thermal_relax_contact.exec(dt);
-				right_thermal_relax_contact.exec(dt);
+				//left_thermal_relax_contact.exec(dt);
+				//right_thermal_relax_contact.exec(dt);
 				//thermal_relax_left_complex.exec(dt);
 				//thermal_relax_right_complex.exec(dt);
 
