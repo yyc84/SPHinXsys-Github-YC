@@ -40,59 +40,25 @@ namespace SPH
  * @brief Computing the time step size based on diffusion coefficient and particle smoothing length
  */
 
-//template <class InteractionType, class DiffusionType, class ExtraType = void>
-//class DiffusionRelaxation;
-//
-//template <class DataDelegationType, class DiffusionType, class ExtraType = void>
-//class DiffusionRelaxation<DataDelegationType, DiffusionType>
-//    : public LocalDynamics,
-//      public DataDelegationType
-//{
-//  protected:
-//    StdVec<DiffusionType *> diffusions_;
-//    Real *Vol_;
-//    StdVec<Real *> diffusion_species_;
-//    StdVec<Real *> gradient_species_;
-//    StdVec<Real *> diffusion_dt_;
-//
-//  public:
-//    template <class BodyRelationType>
-//    explicit DiffusionRelaxation(BodyRelationType &body_relation, StdVec<DiffusionType *> diffusions);
-//
-//    template <class BodyRelationType>
-//    explicit DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion);
-//
-//    template <typename BodyRelationType, typename FirstArg>
-//    explicit DiffusionRelaxation(ConstructorArgs<BodyRelationType, FirstArg> parameters)
-//        : DiffusionRelaxation(parameters.body_relation_, std::get<0>(parameters.others_)){};
-//
-//    /** So that contact diffusion can be integrated independently without inner interaction. */
-//    void initialization(size_t index_i, Real dt = 0.0);
-//    void update(size_t index_i, Real dt = 0.0);
-//
-//  private:
-//    void registerSpecies();
-//};
-
-//template <typename... InteractionTypes>
-//class DiffusionRelaxation;
-//
-//
-//template <class ContactKernelGradientType, class DiffusionType>
-//class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType>
+//template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
+//class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>
 //    : public DiffusionRelaxation<DataDelegateContact, DiffusionType>
 //{
 //  protected:
+//    StdVec<ContactDiffusionType *> contact_diffusions_;
 //    StdVec<ContactKernelGradientType> contact_kernel_gradients_;
 //    StdVec<Real *> contact_Vol_;
-//    StdVec<StdVec<Real *>> contact_transfer_;
-//
-//    void resetContactTransfer(size_t index_i);
-//    void accumulateDiffusionRate(size_t index_i);
 //
 //  public:
 //    template <typename... Args>
-//    explicit DiffusionRelaxation(Args &&... args);
+//    explicit DiffusionRelaxation(Args &&...args, const StdVec<ContactDiffusionType *> &contact_diffusions)
+//        : DiffusionRelaxation<DataDelegateContact, DiffusionType>(
+//          std::forward<Args>(args)...), contact_diffusions_(contact_diffusions)
+//          
+//    template <typename... Args>
+//    explicit DiffusionRelaxation(Args &&...args, const ContactDiffusionType *contact_diffusion)
+//        : DiffusionRelaxation(std::forward<Args>(args)..., StdVec<ContactDiffusionType *>{contact_diffusion}){};
+//
 //    virtual ~DiffusionRelaxation(){};
 //};
 
@@ -105,53 +71,14 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
     StdVec<ContactKernelGradientType> contact_kernel_gradients_;
     StdVec<Real *> contact_Vol_;
 
-    StdVec<StdVec<Real *>> contact_gradient_species_;
-    //StdVec<StdVec<Real *>> contact_transfer_;
-
   public:
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&...args, const StdVec<ContactDiffusionType *> &contact_diffusions)
-        : DiffusionRelaxation<DataDelegateContact, DiffusionType>(
-          std::forward<Args>(args)...), contact_diffusions_(contact_diffusions)
-            {
-                for (size_t k = 0; k != this->contact_particles_.size(); ++k)
-                {
-                    BaseParticles *contact_particles_k = this->contact_particles_[k];
-                    contact_kernel_gradients_.push_back(ContactKernelGradientType(this->particles_, contact_particles_k));
-                    contact_Vol_.push_back(contact_particles_k->template registerStateVariable<Real>("VolumetricMeasure"));
-                }
+    template <typename BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType &contact_body_relation, DiffusionType *diffusion, const StdVec<ContactDiffusionType *> &contact_diffusions);
 
-                contact_gradient_species_.resize(this->contact_particles_.size());
-                for (size_t k = 0; k != this->contact_particles_.size(); ++k)
-                {
-                    BaseParticles *contact_particles_k = this->contact_particles_[k];
-                    for (auto &contact_diffusion : this->contact_diffusions_)
-                    {
-                        std::string gradient_species_name = contact_diffusion->GradientSpeciesName();
-                        contact_gradient_species_[k].push_back(
-                            contact_particles_k->template registerStateVariable<Real>(gradient_species_name));
-                        contact_particles_k->template addVariableToWrite<Real>(gradient_species_name);
-                    }
-                }
-            };
-          
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&...args, const ContactDiffusionType *contact_diffusion)
-        : DiffusionRelaxation(std::forward<Args>(args)..., StdVec<ContactDiffusionType *>{contact_diffusion}){};
-
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&...args)
-        :DiffusionRelaxation<DataDelegateContact, DiffusionType>(std::forward<Args>(args)...){};
-    virtual ~DiffusionRelaxation(){};
-
-    void interaction(size_t index_i, Real dt = 0.0);
-    inline Real getInterParticleThermalConductivity(Real thermal_conductivity_i, Real thermal_conductivity_j)
-    {
-        return 2 * thermal_conductivity_i * thermal_conductivity_j /( thermal_conductivity_i + thermal_conductivity_j);
-    };
-    void getDiffusionChangeRateTwoPhaseHeatExchange(
-        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-        const StdVec<Real *> &gradient_species_k);
+    template <typename BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType & contact_body_relation, DiffusionType * diffusion, const ContactDiffusionType *contact_diffusion);
+ 
+    virtual ~DiffusionRelaxation() {};
 };
 
 
@@ -169,39 +96,16 @@ class DiffusionRelaxation<TwoPhaseHeatExchange<ContactKernelGradientType>, Diffu
     StdVec<StdVec<Real *>> contact_gradient_species_;
     //StdVec<StdVec<Real *>> contact_diffusion_dt_;
     //StdVec<StdVec<Real *>> contact_thermal_conductivity_;
-    void getDiffusionChangeRateTwoPhaseHeatExchange(
-        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-        const StdVec<Real *> &gradient_species_k);
+
+    void getDiffusionChangeRateTwoPhaseHeatExchange(size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, const StdVec<Real *> &gradient_species_k);
 
   public:
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&... args, const StdVec<ContactDiffusionType *> contact_diffusions)
-        : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>(std::forward<Args>(args)...), contact_diffusions_(contact_diffusions)
-    {
-        for (size_t k = 0; k != this->contact_particles_.size(); ++k)
-        {
-            BaseParticles *contact_particles_k = this->contact_particles_[k];
-            contact_kernel_gradients_.push_back(ContactKernelGradientType(this->particles_, contact_particles_k));
-            contact_Vol_.push_back(contact_particles_k->template registerStateVariable<Real>("VolumetricMeasure"));
-        }
+    template <typename BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType &contact_body_relation, DiffusionType *diffusion, const StdVec<ContactDiffusionType *> &contact_diffusions);
 
-        contact_gradient_species_.resize(this->contact_particles_.size());
-        for (size_t k = 0; k != this->contact_particles_.size(); ++k)
-        {
-            BaseParticles *contact_particles_k = this->contact_particles_[k];
-            for (auto &contact_diffusion : this->contact_diffusions_)
-            {
-                std::string gradient_species_name = contact_diffusion->GradientSpeciesName();
-                contact_gradient_species_[k].push_back(
-                    contact_particles_k->template registerStateVariable<Real>(gradient_species_name));
-                contact_particles_k->template addVariableToWrite<Real>(gradient_species_name);
-            }
-        }
-    };
-
-    template <typename... Args>
-    explicit DiffusionRelaxation(Args &&...args, const ContactDiffusionType * contact_diffusion)
-        :DiffusionRelaxation(std::forward<Args>(args)..., StdVec<ContactDiffusionType *>{contact_diffusion}){};
+    template <typename BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType &contact_body_relation, DiffusionType *diffusion, const ContactDiffusionType *contact_diffusion);
+    
     virtual ~DiffusionRelaxation(){};
     inline void interaction(size_t index_i, Real dt = 0.0);
     inline Real getInterParticleThermalConductivity(Real thermal_conductivity_i, Real thermal_conductivity_j)

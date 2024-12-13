@@ -404,5 +404,27 @@ void DiffusionRelaxationRK2<DiffusionRelaxationType>::exec(Real dt)
     rk2_2nd_stage_.exec(dt);
 }
 //=================================================================================================//
+template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
+template <typename BodyRelationType>
+DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
+    DiffusionRelaxation(BodyRelationType &contact_body_relation, DiffusionType *diffusion, StdVec<ContactDiffusionType *> contact_diffusions) 
+    : DiffusionRelaxation<DataDelegateContact, DiffusionType>(contact_body_relation, diffusion),
+      contact_diffusions_(contact_diffusions) 
+{
+    for (size_t k = 0; k != this->contact_particles_.size(); ++k)
+    {
+        BaseParticles *contact_particles_k = this->contact_particles_[k];
+        contact_kernel_gradients_.push_back(ContactKernelGradientType(this->particles_, contact_particles_k));
+        contact_Vol_.push_back(contact_particles_k->template registerStateVariable<Real>("VolumetricMeasure"));
+    }
+}
+//=================================================================================================//
+template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
+template <typename BodyRelationType>
+DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
+    DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
+    : DiffusionRelaxation<DataDelegateContact, DiffusionType>(body_relation, diffusion),
+      contact_diffusions_({contact_diffusion}) {}
+//=================================================================================================//
 } // namespace SPH
 #endif // DIFFUSION_DYNAMICS_HPP

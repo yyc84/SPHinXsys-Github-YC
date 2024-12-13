@@ -200,7 +200,10 @@ int main(int ac, char *av[])
     /*DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion> left_thermal_relax_contact(
             left_body_contact, &left_heat_diffusion);*/
     DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion> left_thermal_relax_contact(
-        left_body_contact, &left_heat_diffusion, {&right_heat_diffusion});
+        left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
+    /*DiffusionRelaxation<TwoPhaseHeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion> left_thermal_relax_contact(
+        left_body_contact, &left_heat_diffusion, {&right_heat_diffusion});*/
+
 	/*ThermalRelaxationComplex thermal_relax_left_complex ( 
 		ConstructorArgs(left_inner, &left_heat_diffusion),
         ConstructorArgs(left_body_contact, &left_heat_diffusion, &right_heat_diffusion));
