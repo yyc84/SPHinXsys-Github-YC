@@ -394,5 +394,85 @@ class DiffusionBodyRelaxationComplex
                                  DiffusionType>>(first_arg, std::forward<OtherArgs>(other_args)...){};
     virtual ~DiffusionBodyRelaxationComplex(){};
 };
+
+/*test*/
+//template <class DiffusionType, class ContactDiffusionType, class KernelGradientType, class ContactKernelGradientType,
+//          template <typename... Parameters> typename... ContactInteractionTypes>
+//class HeatExchangeBodyRelaxationComplex
+//    : public DiffusionRelaxationRK2<
+//          ComplexInteraction<DiffusionRelaxation<
+//                                 Inner<KernelGradientType>, ContactInteractionTypes<ContactKernelGradientType, ContactDiffusionType>...>,
+//                             DiffusionType>>
+//{
+//  public:
+//    template <typename FirstArg, typename... OtherArgs>
+//    explicit HeatExchangeBodyRelaxationComplex(FirstArg &&first_arg, OtherArgs &&...other_args)
+//        : DiffusionRelaxationRK2<
+//              ComplexInteraction<DiffusionRelaxation<
+//                                     Inner<KernelGradientType>, ContactInteractionTypes<ContactKernelGradientType, ContactDiffusionType>...>,
+//                                 DiffusionType>>(first_arg, std::forward<OtherArgs>(other_args)...){};
+//    virtual ~HeatExchangeBodyRelaxationComplex(){};
+//};
+
+/*test*/
+//template <class DiffusionType, class ContactDiffusionType, class KernelGradientType, class ContactKernelGradientType, 
+//          template <typename... Parameters> typename... ContactInteractionTypes>
+//class HeatDiffusionBodyRelaxationComplex
+//    : public DiffusionRelaxationRK2<
+//          ComplexInteraction<DiffusionRelaxation<
+//                                 Inner<KernelGradientType>, ContactInteractionTypes<ContactKernelGradientType>>...>,
+//                                    DiffusionType, ContactDiffusionType>>
+//{
+//  public:
+//    template <typename FirstArg, typename... OtherArgs>
+//    explicit HeatDiffusionBodyRelaxationComplex(FirstArg &&first_arg, OtherArgs &&...other_args)
+//        : DiffusionRelaxationRK2<
+//              ComplexInteraction<DiffusionRelaxation<
+//                                     Inner<KernelGradientType>, ContactInteractionTypes<ContactKernelGradientType>...>,
+//                                 DiffusionType, ContactDiffusionType>>(first_arg, std::forward<OtherArgs>(other_args)...){};
+//    virtual ~HeatDiffusionBodyRelaxationComplex(){};
+//};
+
+template <typename KernelGradientType, typename ContactKernelGradientType, typename DiffusionType, typename ContactDiffusionType>
+class HeatExchangeDiffusionComplex : public LocalDynamics
+{
+  public:
+    using InnerHeatExchange = DiffusionRelaxation<Inner<KernelGradientType>, DiffusionType>;
+    using ContactHeatExchange = DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>;
+
+    /*template <typename FirstArg, typename SecondArg>
+    explicit HeatExchangeDiffusionComplex(FirstArg &&first_arg, SecondArg &&second_arg)
+        : inner_relaxation_(std::forward<FirstArg>(first_arg)...),
+          heat_exchange_relaxation_(std::forward<SecondArg>(second_arg)...){};*/
+    /*template <typename... Args>
+    explicit HeatExchangeDiffusionComplex(Args &&...args)
+        : heat_exchange_relaxation_(args...) {}*/
+    template <typename BodyRelationInnerType, typename BodyRelationContactType>
+    explicit HeatExchangeDiffusionComplex(BodyRelationInnerType &body_relation, BodyRelationContactType &contact_body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
+        : LocalDynamics(body_relation.getSPHBody()), inner_relaxation_(body_relation, diffusion),
+          heat_exchange_relaxation_(contact_body_relation, diffusion, contact_diffusion){};
+
+    virtual ~HeatExchangeDiffusionComplex(){};
+
+    void initialization(size_t index_i, Real dt = 0.0)
+    {
+        inner_relaxation_.initialization(index_i, dt);
+    };
+
+    void interaction(size_t index_i, Real dt = 0.0)
+    {
+        inner_relaxation_.interaction(index_i, dt);
+        heat_exchange_relaxation_.interaction(index_i, dt);
+    };
+
+    void update(size_t index_i, Real dt = 0.0)
+    {
+        inner_relaxation_.update(index_i, dt);
+    };
+
+  private:
+    InnerHeatExchange inner_relaxation_;
+    ContactHeatExchange heat_exchange_relaxation_;
+};
 } // namespace SPH
 #endif // DIFFUSION_DYNAMICS_H

@@ -130,8 +130,10 @@ class RightDiffusionInitialCondition : public LocalDynamics
 //----------------------------------------------------------------------
 using ThermalRelaxInner = DiffusionRelaxation<Inner<KernelGradientInner>, IsotropicDiffusion>;
 //using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
-using ThermalRelaxContact = DiffusionRelaxation<HeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
+//using ThermalRelaxContact = DiffusionRelaxation<HeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
 //using ThermalRelaxationComplex = TwoPhaseHeatExchangeBodyRelaxationComplex<HeatTransferDiffusion, HeatTransferDiffusion, KernelGradientInner, KernelGradientContact, TwoPhaseHeatExchange>;
+//using HeatExchangeComplex = HeatExchangeBodyRelaxationComplex<IsotropicDiffusion, IsotropicDiffusion, KernelGradientInner, KernelGradientContact, HeatExchange>;
+using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, IsotropicDiffusion,IsotropicDiffusion>;
 
 StdVec<Vecd> createObservationPoints()
 {
@@ -194,7 +196,12 @@ int main(int ac, char *av[])
     Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);
 
     // Dynamics1Level<ThermalRelaxContact> left_thermal_relax_contact(left_body_contact, &left_heat_diffusion, {&right_heat_diffusion});
-    Dynamics1Level<ThermalRelaxContact> right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    /*HeatExchangeComplex heat_exchange_complex_right(
+        ConstructorArgs(right_inner, &right_heat_diffusion),
+        ConstructorArgs(right_body_contact, &right_heat_diffusion, &left_heat_diffusion));*/
+    //HeatExchangeComplex test(left_inner, &left_heat_diffusion);
+    Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
 
     // ThermalRelaxContact thermal_diffusion(right_body_contact, &right_heat_diffusion, {&left_heat_diffusion});
     /*DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion> left_thermal_relax_contact(
