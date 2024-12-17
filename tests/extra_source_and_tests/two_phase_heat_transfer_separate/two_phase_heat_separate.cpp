@@ -167,7 +167,7 @@ int main(int ac, char *av[])
     right_body.generateParticles<BaseParticles, Lattice>();
 
     FluidBody left_body(sph_system, makeShared<LeftBlock>("LeftBody"));
-    right_body.generateParticles<BaseParticles, Lattice>();
+    left_body.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody temperature_observer(sph_system, "TemperatureObserver");
     temperature_observer.generateParticles<ObserverParticles>(createObservationPoints());
@@ -177,8 +177,9 @@ int main(int ac, char *av[])
     //	Basically the the range of bodies to build neighbor particle lists.
     //----------------------------------------------------------------------
     ContactRelation temperature_observer_contact(temperature_observer, {&left_body, &right_body});
-    InnerRelation left_inner(left_body);
     InnerRelation right_inner(right_body);
+	InnerRelation left_inner(left_body);
+    
     ContactRelation left_body_contact(left_body, {&right_body});
     ContactRelation right_body_contact(right_body, {&left_body});
 
@@ -192,35 +193,12 @@ int main(int ac, char *av[])
     IsotropicDiffusion left_heat_diffusion("Phi", "Phi", diffusion_coff_l);
     IsotropicDiffusion right_heat_diffusion("Phi", "Phi", diffusion_coff_r);
 
-    Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
-    Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);
+    /*Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
+    Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);*/
 
-    // Dynamics1Level<ThermalRelaxContact> left_thermal_relax_contact(left_body_contact, &left_heat_diffusion, {&right_heat_diffusion});
-    //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
-    /*HeatExchangeComplex heat_exchange_complex_right(
-        ConstructorArgs(right_inner, &right_heat_diffusion),
-        ConstructorArgs(right_body_contact, &right_heat_diffusion, &left_heat_diffusion));*/
-    //HeatExchangeComplex test(left_inner, &left_heat_diffusion);
-    Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
-
-    // ThermalRelaxContact thermal_diffusion(right_body_contact, &right_heat_diffusion, {&left_heat_diffusion});
-    /*DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion> left_thermal_relax_contact(
-            left_body_contact, &left_heat_diffusion);*/
-    /*DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion> left_thermal_relax_contact(
-        left_body_contact, &left_heat_diffusion, &right_heat_diffusion);*/
-
-    /*DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion> left_thermal_relax_contact(
-        {&right_heat_diffusion}, left_body_contact, &left_heat_diffusion);*/
-    /*DiffusionRelaxation<HeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion> left_thermal_relax_contact(
-        left_body_contact, &left_heat_diffusion, &right_heat_diffusion);*/
-
-	/*ThermalRelaxationComplex thermal_relax_left_complex ( 
-		ConstructorArgs(left_inner, &left_heat_diffusion),
-        ConstructorArgs(left_body_contact, &left_heat_diffusion, &right_heat_diffusion));
-	ThermalRelaxationComplex thermal_relax_right_complex ( 
-		ConstructorArgs(right_inner, &right_heat_diffusion),
-        ConstructorArgs(right_body_contact, &right_heat_diffusion, &left_heat_diffusion));*/
-
+    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_left(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
+    
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
 
@@ -294,12 +272,8 @@ int main(int ac, char *av[])
 				Real dt_thermal_right = get_time_step_size_right.exec();
 				Real dt_thermal_left = get_time_step_size_left.exec();
 				dt = SMIN(dt_thermal_right, dt_thermal_left);
-				left_thermal_relax_inner.exec(dt);
-				right_thermal_relax_inner.exec(dt);
-				//left_thermal_relax_contact.exec(dt);
-				//right_thermal_relax_contact.exec(dt);
-				//thermal_relax_left_complex.exec(dt);
-				//thermal_relax_right_complex.exec(dt);
+                heat_exchange_complex_right.exec(dt);
+                heat_exchange_complex_left.exec(dt);
 
 				if (ite % 100== 0)
 				{
