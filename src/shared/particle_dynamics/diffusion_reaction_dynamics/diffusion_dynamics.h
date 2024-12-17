@@ -449,8 +449,13 @@ class HeatExchangeDiffusionComplex : public LocalDynamics
         : heat_exchange_relaxation_(args...) {}*/
     template <typename BodyRelationInnerType, typename BodyRelationContactType>
     explicit HeatExchangeDiffusionComplex(BodyRelationInnerType &body_relation, BodyRelationContactType &contact_body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
+        : HeatExchangeDiffusionComplex(body_relation, contact_body_relation, diffusion, StdVec<ContactDiffusionType *>{contact_diffusion}){};
+    
+    template <typename BodyRelationInnerType, typename BodyRelationContactType>
+    explicit HeatExchangeDiffusionComplex(BodyRelationInnerType &body_relation, BodyRelationContactType &contact_body_relation, DiffusionType *diffusion, StdVec<ContactDiffusionType *> contact_diffusions)
         : LocalDynamics(body_relation.getSPHBody()), inner_relaxation_(body_relation, diffusion),
-          heat_exchange_relaxation_(contact_body_relation, diffusion, contact_diffusion){};
+          heat_exchange_relaxation_(contact_body_relation, diffusion, contact_diffusions){};
+        
 
     virtual ~HeatExchangeDiffusionComplex(){};
 

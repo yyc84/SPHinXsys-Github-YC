@@ -423,8 +423,7 @@ template <class ContactKernelGradientType, class DiffusionType, class ContactDif
 template <typename BodyRelationType>
 DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
     DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
-    : DiffusionRelaxation<DataDelegateContact, DiffusionType>(body_relation, diffusion),
-      contact_diffusions_({contact_diffusion}) {}
+    : DiffusionRelaxation<DataDelegateContact, DiffusionType, ContactDiffusionType>(body_relation, diffusion, StdVec<ContactDiffusionType *>{contact_diffusion}) {}
 //=================================================================================================//
 // template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
 // template <typename... Args>
