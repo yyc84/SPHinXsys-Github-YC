@@ -115,4 +115,16 @@ void LocalDirectionalDiffusion::initializeLocalParameters(BaseParticles *base_pa
     std::cout << "\n Local diffusion parameters setup finished " << std::endl;
 };
 //=================================================================================================//
+HeatIsotropicDiffusion::HeatIsotropicDiffusion(const std::string &diffusion_species_name,
+                                       const std::string &gradient_species_name,
+                                               Real diff_cf, Real density, Real specific_heat)
+    : BaseDiffusion(diffusion_species_name, gradient_species_name),
+      diff_cf_(diff_cf), density_(density), specific_heat_(specific_heat)
+{
+    material_type_name_ = "IsotropicDiffusion";
+}
+//=================================================================================================//
+HeatIsotropicDiffusion::HeatIsotropicDiffusion(const std::string &species_name, Real diff_cf, Real density, Real specific_heat)
+    : HeatIsotropicDiffusion(species_name, species_name, diff_cf, density, specific_heat) {}
+//=================================================================================================//
 } // namespace SPH

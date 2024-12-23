@@ -403,6 +403,63 @@ void DiffusionRelaxationRK2<DiffusionRelaxationType>::exec(Real dt)
     rk2_1st_stage_.exec(dt);
     rk2_2nd_stage_.exec(dt);
 }
+/*for heat exchange*/
+//=================================================================================================//
+template <class KernelGradientType, class DiffusionType>
+template <typename... Args>
+DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::
+    DiffusionRelaxation(Args &&...args)
+    : DiffusionRelaxation<DataDelegateInner, DiffusionType>(std::forward<Args>(args)...),
+      kernel_gradient_(this->particles_) {}
+//=================================================================================================//
+template <class KernelGradientType, class DiffusionType>
+void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interaction(size_t index_i, Real dt)
+{
+    for (size_t m = 0; m < this->diffusions_.size(); ++m)
+    {
+        auto diffusion_m = this->diffusions_[m];
+        Real *gradient_species = this->gradient_species_[m];
+        Real rho_i = this->diffusions_[m]->getDensity();
+        Real c_v_i = this->diffusions_[m]->getSpecificHeat();
+        Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
+        Real thermal_conductivity_j = this->diffusions_[m]->getThermalConductivity();
+        Real d_species = 0.0;
+        Neighborhood &inner_neighborhood = this->inner_configuration_[index_i];
+        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = inner_neighborhood.j_[n];
+            Real dW_ijV_j = inner_neighborhood.dW_ij_[n] * this->Vol_[index_j];
+            Real r_ij_ = inner_neighborhood.r_ij_[n];
+            Vecd &e_ij = inner_neighborhood.e_ij_[n];
+
+            
+            Real diff_coeff_ij = this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
+            const Vecd &grad_ijV_j = this->kernel_gradient_(index_i, index_j, dW_ijV_j, e_ij);
+            Real surface_area_ij = 2.0 * grad_ijV_j.dot(e_ij) / r_ij_;
+            Real phi_ij = gradient_species[index_i] - gradient_species[index_j];
+            d_species += diff_coeff_ij * phi_ij * surface_area_ij;
+
+        }
+        this->diffusion_dt_[m][index_i] += d_species / rho_i / c_v_i;
+    }
+}
+//=================================================================================================//
+//template <class KernelGradientType, class DiffusionType>
+//void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::
+//    getDiffusionChangeRateInnerHeatExchange(size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij)
+//{
+//    for (size_t m = 0; m < this->diffusions_.size(); ++m)
+//    {
+//        Real rho_i = this->diffusions_[m]->getDensity();
+//        Real c_v_i = this->diffusions_[m]->getSpecificHeat();
+//        Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
+//        Real thermal_conductivity_j = this->diffusions_[m]->getThermalConductivity();
+//        Real diff_coeff_ij =
+//            this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
+//        Real phi_ij = (this->gradient_species_[m][particle_i] - gradient_species_[m][particle_j]);
+//        this->diffusion_dt_[m][particle_i] += diff_coeff_ij * phi_ij * surface_area_ij / rho_i / c_v_i;
+//    }
+//};
 //=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
 template <typename BodyRelationType>
@@ -425,31 +482,9 @@ DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDi
     DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
     : DiffusionRelaxation<DataDelegateContact, DiffusionType, ContactDiffusionType>(body_relation, diffusion, StdVec<ContactDiffusionType *>{contact_diffusion}) {}
 //=================================================================================================//
-// template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
-// template <typename... Args>
-// DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
-//    DiffusionRelaxation(const StdVec<ContactDiffusionType *> &contact_diffusions, Args &&...args)
-//    : DiffusionRelaxation<DataDelegateContact, DiffusionType>(std::forward<Args>(args)...),
-//      contact_diffusions_(contact_diffusions)
-//{
-//    for (size_t k = 0; k != this->contact_particles_.size(); ++k)
-//    {
-//        BaseParticles *contact_particles_k = this->contact_particles_[k];
-//        contact_kernel_gradients_.push_back(ContactKernelGradientType(this->particles_, contact_particles_k));
-//        contact_Vol_.push_back(contact_particles_k->template registerStateVariable<Real>("VolumetricMeasure"));
-//    }
-//}
-////=================================================================================================//
-// template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
-// template <typename... Args>
-// DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
-//     DiffusionRelaxation(const ContactDiffusionType *contact_diffusion, Args &&...args)
-//     : DiffusionRelaxation<DataDelegateContact, DiffusionType>(std::forward<Args>(args)...),
-//       contact_diffusions_({contact_diffusion}) {}
-//=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
 template <typename... Args>
-DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
+DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
     DiffusionRelaxation(Args &&...args)
     : DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>(std::forward<Args>(args)...)
 {
@@ -467,29 +502,25 @@ DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, Cont
     }
 }
 //=================================================================================================//
-//template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
-//template <typename BodyRelationType>
-//DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
-//    DiffusionRelaxation(BodyRelationType& contact_body_relation, DiffusionType *diffusion, const ContactDiffusionType *contact_diffusion)
-//    : DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>(contact_body_relation, diffusion, StdVec<ContactDiffusionType *>{contact_diffusion}) {}
-//=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
-void DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
-getDiffusionChangeRateTwoPhaseHeatExchange(size_t particle_i, size_t particle_j, Vecd& e_ij, Real surface_area_ij, const StdVec<Real*>& gradient_species_k)
+void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
+    getDiffusionChangeRateTwoPhaseHeatExchange(size_t particle_i, size_t particle_j, Vecd& e_ij, Real surface_area_ij, const StdVec<Real*>& gradient_species_k)
 {
     for (size_t m = 0; m < this->diffusions_.size(); ++m)
     {
-        Real thermal_conductivity_i = this->diffusions_[m]->getReferenceDiffusivity();
-        Real thermal_conductivity_j = this->contact_diffusions_[m]->getReferenceDiffusivity();
+        Real rho_i = this->diffusions_[m]->getDensity();
+        Real c_v_i = this->diffusions_[m]->getSpecificHeat();
+        Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
+        Real thermal_conductivity_j = this->contact_diffusions_[m]->getThermalConductivity();
         Real diff_coeff_ij =
             this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
-        Real phi_ij = 2.0 * (this->gradient_species_[m][particle_i] - gradient_species_k[m][particle_j]);
-        this->diffusion_dt_[m][particle_i] += diff_coeff_ij * phi_ij * surface_area_ij;
+        Real phi_ij = (this->gradient_species_[m][particle_i] - gradient_species_k[m][particle_j]);
+        this->diffusion_dt_[m][particle_i] += diff_coeff_ij * phi_ij * surface_area_ij / rho_i / c_v_i;
     }
 };
 //=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
-void DiffusionRelaxation<HeatExchange<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::interaction(size_t index_i, Real dt)
+void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::interaction(size_t index_i, Real dt)
 {
     for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
     {

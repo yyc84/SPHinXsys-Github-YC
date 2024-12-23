@@ -133,7 +133,7 @@ using ThermalRelaxInner = DiffusionRelaxation<Inner<KernelGradientInner>, Isotro
 //using ThermalRelaxContact = DiffusionRelaxation<HeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
 //using ThermalRelaxationComplex = TwoPhaseHeatExchangeBodyRelaxationComplex<HeatTransferDiffusion, HeatTransferDiffusion, KernelGradientInner, KernelGradientContact, TwoPhaseHeatExchange>;
 //using HeatExchangeComplex = HeatExchangeBodyRelaxationComplex<IsotropicDiffusion, IsotropicDiffusion, KernelGradientInner, KernelGradientContact, HeatExchange>;
-using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, IsotropicDiffusion,IsotropicDiffusion>;
+using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion,HeatIsotropicDiffusion>;
 
 StdVec<Vecd> createObservationPoints()
 {
@@ -190,11 +190,11 @@ int main(int ac, char *av[])
     //	Note that there may be data dependence on the sequence of constructions.
     //----------------------------------------------------------------------
     // Define diffusion coefficient
-    IsotropicDiffusion left_heat_diffusion("Phi", "Phi", diffusion_coff_l);
-    IsotropicDiffusion right_heat_diffusion("Phi", "Phi", diffusion_coff_r);
+    HeatIsotropicDiffusion left_heat_diffusion("Phi", "Phi", k_l, rho0_l, c_p_l);
+    HeatIsotropicDiffusion right_heat_diffusion("Phi", "Phi", k_r, rho0_r, c_p_r);
 
-    /*Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
-    Dynamics1Level<ThermalRelaxInner> right_thermal_relax_inner(right_inner, &right_heat_diffusion);*/
+    //Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
+    //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_inner(right_inner, &right_heat_diffusion, &left_heat_diffusion);
 
     Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
     Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_left(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
