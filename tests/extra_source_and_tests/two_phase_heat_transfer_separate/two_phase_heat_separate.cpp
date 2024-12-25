@@ -139,11 +139,11 @@ StdVec<Vecd> createObservationPoints()
 {
     StdVec<Vecd> observation_points;
 
-	size_t number_of_observation_points = 80;
+	size_t number_of_observation_points = 161;
 		
 		for(int i = 0;i< number_of_observation_points;i++)
 		{
-			observation_points.push_back(Vecd(i*dp,20*dp));
+			observation_points.push_back(Vecd(i*0.5*dp,20*dp));
 		}
     return observation_points;
 };

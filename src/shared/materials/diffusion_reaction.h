@@ -102,7 +102,7 @@ class HeatIsotropicDiffusion : public BaseDiffusion
     HeatIsotropicDiffusion(const std::string &species_name, Real diff_cf = 1.0, Real density = 1.0, Real specific_heat = 1.0);
     virtual ~HeatIsotropicDiffusion() {};
 
-    virtual Real getReferenceDiffusivity() override { return diff_cf_; };
+    virtual Real getReferenceDiffusivity() override { return diff_cf_ / (specific_heat_ * density_); };
     virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return diff_cf_; }
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
     {
