@@ -152,8 +152,8 @@ int main(int ac, char* av[])
 	//Gravity gravity(Vecd(0.0, -gravity_g, 0.0));
 	VariableGravity gravity(Vecd(0.0, -gravity_g, 0.0));
 	
-    SimpleDynamics<GravityForce> constant_gravity_to_water(water_block, gravity);
-    SimpleDynamics<GravityForce> constant_gravity_to_air(air_block, gravity);
+    SimpleDynamics<GravityForce<VariableGravity>> constant_gravity_to_water(water_block, gravity);
+    SimpleDynamics<GravityForce<VariableGravity>> constant_gravity_to_air(air_block, gravity);
 
 	SimpleDynamics<NormalDirectionFromSubShapeAndOp> inner_normal_direction(tank, "InnerWall");
     InteractionDynamics<fluid_dynamics::BoundingFromWall> air_near_wall_bounding(air_tank_contact);
@@ -175,11 +175,11 @@ int main(int ac, char* av[])
         update_air_density_by_summation(air_inner, air_water_contact, air_tank_contact);
     InteractionWithUpdate<fluid_dynamics::MultiPhaseTransportVelocityCorrectionComplex<AllParticles>>
         air_transport_correction(air_inner, air_water_contact, air_tank_contact);
-
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_f);
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_air_advection_time_step_size(air_block, U_g);
-    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_water_time_step_size(water_block);
-    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_air_time_step_size(air_block);
+    
+    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_water_advection_time_step_size(water_block, U_f);
+    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_air_advection_time_step_size(air_block, U_g);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_water_time_step_size(water_block);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_air_time_step_size(air_block);
 
 
 	InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall> viscous_acceleration_water(water_inner,  water_air_contact, water_tank_contact);
@@ -245,10 +245,10 @@ int main(int ac, char* av[])
 	
 	//compute_water_total_mass.writeToFile(0);
 	//compute_air_total_mass.writeToFile(0);
-
+    Real &physical_time = *system.getSystemVariableDataByName<Real>("PhysicalTime");
 	if (system.RestartStep() != 0)
 	{
-		GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());
+        physical_time = restart_io.readRestartFiles(system.RestartStep());
 		water_block.updateCellLinkedList();
 		air_block.updateCellLinkedList();
 		water_air_complex.updateConfiguration();
@@ -274,7 +274,7 @@ int main(int ac, char* av[])
     TickCount time_instance;
 
 
-	while (GlobalStaticVariables::physical_time_ < End_Time)
+	while (physical_time < End_Time)
 	{
 		Real integration_time = 0.0;
 		/** Integrate time (loop) until the next output time. */
@@ -324,7 +324,7 @@ int main(int ac, char* av[])
 				//thermal_relaxation_complex_water.parallel_exec(dt);
 				relaxation_time += dt;
 				integration_time += dt;
-				GlobalStaticVariables::physical_time_ += dt;
+                physical_time += dt;
 
 			}
 			interval_computing_pressure_relaxation += TickCount::now() - time_instance;
@@ -333,7 +333,7 @@ int main(int ac, char* av[])
 			if (number_of_iterations % screen_output_interval == 0)
 			{
 				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-					<< GlobalStaticVariables::physical_time_
+                    << physical_time
 					<< "	Dt = " << Dt << "	dt = " << dt << "\n";
 
 				if (number_of_iterations % restart_output_interval == 0)
@@ -369,11 +369,11 @@ int main(int ac, char* av[])
 			number_of_iterations++;
 			time_instance = TickCount::now();
 			/** Update cell linked list and configuration. */
-			water_block.updateCellLinkedListWithParticleSort(100);
-			water_tank_contact.updateConfiguration();
+            water_block.updateCellLinkedList();
+			//water_tank_contact.updateConfiguration();
 			water_air_complex.updateConfiguration();
-			air_block.updateCellLinkedListWithParticleSort(100);
-			air_tank_contact.updateConfiguration();
+            air_block.updateCellLinkedList();
+			//air_tank_contact.updateConfiguration();
 			air_water_complex.updateConfiguration();
 			//write_real_body_states.writeToFile();
 			interval_updating_configuration += TickCount::now() - time_instance;

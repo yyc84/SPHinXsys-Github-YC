@@ -28,8 +28,8 @@ Real gravity_g = 9.81;        /*Gravity force of fluid*/
 Real U_f = 2.0 * sqrt(gravity_g * 0.5);	/**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5);  	/**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);	/**< Reference sound speed. */
-Real f = 1.7;
-Real a = 0.08;
+Real f = 1.5;
+Real a = 0.03;
 Real c_p_water = 4.179e3;
 Real c_p_air = 1.012e3;
 Real k_water = 0.620;
@@ -86,20 +86,20 @@ class VariableGravity : public Gravity
 	Real time_ = 0;
 public:
 	VariableGravity(Vecd gravity_vector) : Gravity(gravity_vector) {};
-	virtual Vecd InducedAcceleration(const Vecd& position  = Vecd::Zero()) override
-	{
-		time_ = GlobalStaticVariables::physical_time_;
-		if (time_ <= 0.5)
-		{
-			global_acceleration_ = global_acceleration_;
-		}
-		else {
-			global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * time_);
-		}
+	Vecd InducedAcceleration(const Vecd &position, Real physical_time) const
+    {
+        Vecd acceleration(Vecd::Zero());
+        if (physical_time <= 0.5)
+        {
+            acceleration = Gravity::InducedAcceleration();
+        }
+        else
+        {
+            acceleration[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * physical_time);
+        }
 
-
-		return global_acceleration_;
-	}
+        return acceleration;
+    }
 };
 
 class ProbeS1 : public ComplexShape
