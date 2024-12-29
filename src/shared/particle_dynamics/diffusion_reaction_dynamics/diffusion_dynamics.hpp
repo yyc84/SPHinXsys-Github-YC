@@ -418,7 +418,7 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interact
     for (size_t m = 0; m < this->diffusions_.size(); ++m)
     {
         auto diffusion_m = this->diffusions_[m];
-        Real *gradient_species = this->gradient_species_[m];
+        StdLargeVec<Real> *gradient_species = this->gradient_species_[m];
         Real rho_i = this->diffusions_[m]->getDensity();
         Real c_v_i = this->diffusions_[m]->getSpecificHeat();
         Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
@@ -508,7 +508,7 @@ void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, 
     for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
     {
         StdVec<Real *> &gradient_species_k = this->contact_gradient_species_[k];
-        Real *contact_Vol_k = this->contact_Vol_[k];
+        StdLargeVec<Real> &contact_Vol_k = this->contact_Vol_[k];
         Neighborhood &contact_neighborhood = (*this->contact_configuration_[k])[index_i];
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
