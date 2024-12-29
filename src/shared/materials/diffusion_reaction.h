@@ -305,5 +305,31 @@ class ReactionDiffusion : public BaseMaterial
         }
     };
 };
+
+/*heat exchange*/
+class HeatIsotropicDiffusion : public BaseDiffusion
+{
+  protected:
+    Real diff_cf_; /**< diffusion coefficient. */
+    Real density_;
+    Real specific_heat_;
+
+  public:
+    HeatIsotropicDiffusion(const std::string &diffusion_species_name,
+                       const std::string &gradient_species_name,
+                           Real diff_cf = 1.0, Real density= 1.0, Real specific_heat = 1.0);
+    HeatIsotropicDiffusion(const std::string &species_name, Real diff_cf = 1.0, Real density = 1.0, Real specific_heat = 1.0);
+    virtual ~HeatIsotropicDiffusion() {};
+
+    virtual Real getReferenceDiffusivity() override { return diff_cf_ / (specific_heat_ * density_); };
+    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return diff_cf_; }
+    virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
+    {
+        return diff_cf_;
+    };
+    Real getDensity() { return density_; };
+    Real getSpecificHeat() { return specific_heat_; };
+    Real getThermalConductivity() { return diff_cf_; };
+};
 } // namespace SPH
 #endif // DIFFUSION_REACTION_H
