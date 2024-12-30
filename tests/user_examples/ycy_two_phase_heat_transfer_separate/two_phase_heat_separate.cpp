@@ -128,12 +128,14 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
 //----------------------------------------------------------------------
-using ThermalRelaxInner = DiffusionRelaxation<Inner<KernelGradientInner>, IsotropicDiffusion>;
-//using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
-//using ThermalRelaxContact = DiffusionRelaxation<HeatExchange<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
+using ThermalRelaxInner = DiffusionRelaxation<HeatInner<KernelGradientInner>, HeatIsotropicDiffusion>;
+//using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
+//using NormalDiffusionContact = DiffusionRelaxation<Contact<KernelGradientContact>, HeatIsotropicDiffusion>;
+using ThermalRelaxContact = DiffusionRelaxation<HeatContact<KernelGradientContact>, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
+using ThermalDiffusionContact = DiffusionRelaxation<HeatContact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
 //using ThermalRelaxationComplex = TwoPhaseHeatExchangeBodyRelaxationComplex<HeatTransferDiffusion, HeatTransferDiffusion, KernelGradientInner, KernelGradientContact, TwoPhaseHeatExchange>;
 //using HeatExchangeComplex = HeatExchangeBodyRelaxationComplex<IsotropicDiffusion, IsotropicDiffusion, KernelGradientInner, KernelGradientContact, HeatExchange>;
-using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion,HeatIsotropicDiffusion>;
+using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
 
 StdVec<Vecd> createObservationPoints()
 {
@@ -192,13 +194,20 @@ int main(int ac, char *av[])
     // Define diffusion coefficient
     HeatIsotropicDiffusion left_heat_diffusion("Phi", "Phi", k_l, rho0_l, c_p_l);
     HeatIsotropicDiffusion right_heat_diffusion("Phi", "Phi", k_r, rho0_r, c_p_r);
+    IsotropicDiffusion right_diffusion("Phi", "Phi", k_r);
 
     //Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
     //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_inner(right_inner, &right_heat_diffusion, &left_heat_diffusion);
-
-    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
-    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_left(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
+    //ThermalRelaxContact right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, {&left_heat_diffusion});
+    //NormalDiffusionContact left_thermal_relax_contact(left_body_contact, &left_heat_diffusion);
+    ThermalDiffusionContact right_thermal_diffusion_contact(right_body_contact, &right_diffusion, &right_diffusion);
+    //Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    //Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_left(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
+    //Dynamics1Level<ThermalRelaxInner> heat_exchange_inner_left(left_inner, &left_heat_diffusion);
+    //Dynamics1Level<ThermalRelaxContact> heat_exchange_contact_left(left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
     
+	//HeatExchangeComplex heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+   
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
 
@@ -272,8 +281,8 @@ int main(int ac, char *av[])
 				Real dt_thermal_right = get_time_step_size_right.exec();
 				Real dt_thermal_left = get_time_step_size_left.exec();
 				dt = SMIN(dt_thermal_right, dt_thermal_left);
-                heat_exchange_complex_right.exec(dt);
-                heat_exchange_complex_left.exec(dt);
+                //heat_exchange_complex_right.exec(dt);
+                //heat_exchange_complex_left.exec(dt);
 
 				if (ite % 100== 0)
 				{

@@ -363,14 +363,14 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
   protected:
     StdVec<ContactDiffusionType *> contact_diffusions_;
     StdVec<ContactKernelGradientType> contact_kernel_gradients_;
-    StdVec<Real *> contact_Vol_;
+    StdVec<StdLargeVec<Real> *> contact_Vol_;
 
   public:
     template <typename BodyRelationType>
     explicit DiffusionRelaxation(BodyRelationType &contact_body_relation, DiffusionType *diffusion, StdVec<ContactDiffusionType *> contact_diffusions);
 
     template <typename BodyRelationType>
-    explicit DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion);
+    explicit DiffusionRelaxation(BodyRelationType &contact_body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion);
 
     virtual ~DiffusionRelaxation() {};
 };
@@ -383,7 +383,7 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
     : public DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>
 {
   protected:
-    StdVec<StdVec<Real *>> contact_gradient_species_;
+    StdVec<StdVec<StdLargeVec<Real> *>> contact_gradient_species_;
 
   public:
     template <typename... Args>
@@ -393,7 +393,7 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
 
     void getDiffusionChangeRateTwoPhaseHeatExchange(
         size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-        const StdVec<Real *> &gradient_species_k);
+        const StdVec<StdLargeVec<Real> *> &gradient_species_k);
 
     void interaction(size_t index_i, Real dt = 0.0);
 
@@ -410,13 +410,6 @@ class HeatExchangeDiffusionComplex : public LocalDynamics
     using InnerHeatExchange = DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>;
     using ContactHeatExchange = DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>;
 
-    /*template <typename FirstArg, typename SecondArg>
-    explicit HeatExchangeDiffusionComplex(FirstArg &&first_arg, SecondArg &&second_arg)
-        : inner_relaxation_(std::forward<FirstArg>(first_arg)...),
-          heat_exchange_relaxation_(std::forward<SecondArg>(second_arg)...){};*/
-    /*template <typename... Args>
-    explicit HeatExchangeDiffusionComplex(Args &&...args)
-        : heat_exchange_relaxation_(args...) {}*/
     template <typename BodyRelationInnerType, typename BodyRelationContactType>
     explicit HeatExchangeDiffusionComplex(BodyRelationInnerType &body_relation, BodyRelationContactType &contact_body_relation, DiffusionType *diffusion, ContactDiffusionType *contact_diffusion)
         : HeatExchangeDiffusionComplex(body_relation, contact_body_relation, diffusion, StdVec<ContactDiffusionType *>{contact_diffusion}){};
