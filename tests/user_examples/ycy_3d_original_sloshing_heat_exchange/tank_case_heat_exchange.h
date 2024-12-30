@@ -12,7 +12,7 @@ using namespace SPH;
 /*@brief Basic geometry parameters and numerical setup.
 */
 
-Real resolution_ref = 0.008;   /* Initial particle spacing*/
+Real resolution_ref = 0.01;   /* Initial particle spacing*/
 
 
 /* Domain bounds of the system*/

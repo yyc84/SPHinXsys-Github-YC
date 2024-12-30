@@ -267,8 +267,10 @@ int main(int ac, char* av[])
 	Real End_Time = 10.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
-
-
+    Real dt_th_a = 0.0;
+    Real dt_th_w = 0.0;
+    Real dt_water = 0.0;
+    Real dt_air = 0.0;
 	/** statistics for computing CPU time. */
     TickCount t1 = TickCount::now();
     TimeInterval interval;
@@ -310,8 +312,12 @@ int main(int ac, char* av[])
                 Real dt_a = get_air_time_step_size.exec();
 				Real dt_thermal_water = get_diffusion_time_step_size_water.exec();
                 Real dt_thermal_air = get_diffusion_time_step_size_air.exec();
-				dt = SMIN(SMIN(dt_f, dt_thermal_water), SMIN(dt_thermal_air, dt_a), Dt);
-				//dt = SMIN(SMIN(dt_f, dt_a), Dt);
+                dt_th_a = dt_thermal_air;
+                dt_th_w = dt_thermal_water;
+                dt_water = dt_f;
+                dt_air = dt_a;
+				//dt = SMIN(SMIN(dt_f, dt_thermal_water), SMIN(dt_thermal_air, dt_a), Dt);
+				dt = SMIN(SMIN(dt_f, dt_a), Dt);
 				
 				/* Fluid pressure relaxation */
                 water_pressure_relaxation.exec(dt);
@@ -322,8 +328,8 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                water_heat_exchange_complex.exec(dt);
-                air_heat_exchange_complex.exec(dt);
+                //water_heat_exchange_complex.exec(dt);
+                //air_heat_exchange_complex.exec(dt);
 				relaxation_time += dt;
 				integration_time += dt;
                 physical_time += dt;
@@ -336,7 +342,8 @@ int main(int ac, char* av[])
 			{
 				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                     << physical_time
-					<< "	Dt = " << Dt << "	dt = " << dt << "\n";
+                                      << " Dt = " << Dt << " Dt_f =" << Dt_f << " Dt_a = " << Dt_a << " dt = " 
+					<< dt << " dt_Th_a=" << dt_th_a << " dt_Th_w=" << dt_th_w << " dt_a=" << dt_air << " dt_w="<<dt_water << "\n";
 
 				if (number_of_iterations % restart_output_interval == 0)
 					restart_io.writeToFile(number_of_iterations);
