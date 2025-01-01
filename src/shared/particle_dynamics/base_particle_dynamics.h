@@ -78,7 +78,7 @@ class BaseDynamics : public GlobalStaticVariables
         sph_body_.setNewlyUpdated();
         is_newly_updated_ = true;
     };
-
+    
     /** There is the interface functions for computing. */
     virtual ReturnType exec(Real dt = 0.0) = 0;
 
