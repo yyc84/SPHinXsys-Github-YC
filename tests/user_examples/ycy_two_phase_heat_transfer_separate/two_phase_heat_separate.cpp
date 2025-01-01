@@ -3,7 +3,8 @@
  * @brief 	Heat Transfer in Slabs
  */
 #include "sphinxsys.h" //SPHinXsys Library.
-//#include "heat_exchange_two_phase.h"
+//#include "heat_diffusion_dynamics.h"
+//#include "heat_diffusion_dynamics.hpp"
 #define PI (3.14159265358979323846)
 
 using namespace SPH;   // Namespace cite here.
@@ -128,14 +129,12 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
 //----------------------------------------------------------------------
-using ThermalRelaxInner = DiffusionRelaxation<HeatInner<KernelGradientInner>, HeatIsotropicDiffusion>;
-//using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
-//using NormalDiffusionContact = DiffusionRelaxation<Contact<KernelGradientContact>, HeatIsotropicDiffusion>;
-using ThermalRelaxContact = DiffusionRelaxation<HeatContact<KernelGradientContact>, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
-using ThermalDiffusionContact = DiffusionRelaxation<HeatContact<KernelGradientContact>, IsotropicDiffusion, IsotropicDiffusion>;
-//using ThermalRelaxationComplex = TwoPhaseHeatExchangeBodyRelaxationComplex<HeatTransferDiffusion, HeatTransferDiffusion, KernelGradientInner, KernelGradientContact, TwoPhaseHeatExchange>;
-//using HeatExchangeComplex = HeatExchangeBodyRelaxationComplex<IsotropicDiffusion, IsotropicDiffusion, KernelGradientInner, KernelGradientContact, HeatExchange>;
-using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
+//using ThermalRelaxInner = HeatDiffusionRelaxation<HeatInner<KernelGradientInner>, HeatIsotropicDiffusion>;
+
+using ThermalRelaxContact = DiffusionRelaxation<Contact<KernelGradientContact>, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
+using NormalDiffusionContact = DiffusionRelaxation<Contact<KernelGradientContact>, IsotropicDiffusion>;
+
+//using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
 
 StdVec<Vecd> createObservationPoints()
 {
@@ -198,16 +197,11 @@ int main(int ac, char *av[])
 
     //Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
     //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_inner(right_inner, &right_heat_diffusion, &left_heat_diffusion);
-    //ThermalRelaxContact right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, {&left_heat_diffusion});
-    //NormalDiffusionContact left_thermal_relax_contact(left_body_contact, &left_heat_diffusion);
-    ThermalDiffusionContact right_thermal_diffusion_contact(right_body_contact, &right_diffusion, &right_diffusion);
-    //Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
-    //Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_left(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
-    //Dynamics1Level<ThermalRelaxInner> heat_exchange_inner_left(left_inner, &left_heat_diffusion);
-    //Dynamics1Level<ThermalRelaxContact> heat_exchange_contact_left(left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
-    
-	//HeatExchangeComplex heat_exchange_complex_right(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
-   
+    //ThermalRelaxContact right_thermal_relax_contact(right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    //ThermalRelaxInner left_thermal_relax_contact(right_inner, &right_heat_diffusion);
+    NormalDiffusionContact heat_exchange_complex_right(right_body_contact, &right_diffusion);
+    ThermalRelaxContact right_heat_relaxation(right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
 
