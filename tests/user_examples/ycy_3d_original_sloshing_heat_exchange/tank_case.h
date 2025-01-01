@@ -12,7 +12,7 @@ using namespace SPH;
 /*@brief Basic geometry parameters and numerical setup.
 */
 
-Real resolution_ref = 0.004;   /* Initial particle spacing*/
+Real resolution_ref = 0.008;   /* Initial particle spacing*/
 
 
 /* Domain bounds of the system*/
@@ -83,26 +83,26 @@ public:
 	}
 };
 
-
 class VariableGravity : public Gravity
 {
-	//Real time_ = 0;
-public:
-	VariableGravity(Vecd gravity_vector) : Gravity(gravity_vector) {};
-  Vecd InducedAcceleration(const Vecd &position, Real physical_time) const
-	{
-		Vecd acceleration(Vecd::Zero()); 
-		if (physical_time <= 0.5)
-		{
-            acceleration = Gravity::InducedAcceleration();
-		}
-		else {
-            acceleration[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * physical_time);
-		}
+    Real time_ = 0;
 
+  public:
+    VariableGravity(Vecd gravity_vector) : Gravity(gravity_vector){};
+    virtual Vecd InducedAcceleration(const Vecd &position = Vecd::Zero()) override
+    {
+        time_ = GlobalStaticVariables::physical_time_;
+        if (time_ <= 0.5)
+        {
+            global_acceleration_ = global_acceleration_;
+        }
+        else
+        {
+            global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * time_);
+        }
 
-		return acceleration;
-	}
+        return global_acceleration_;
+    }
 };
 
 class ProbeS1 : public ComplexShape
@@ -135,28 +135,27 @@ public:
 	}
 };
 
-class ThermoAirBodyInitialCondition : public LocalDynamics
+class ThermoAirBodyInitialCondition : public LocalDynamics, public DataDelegateSimple
 {
   public:
     explicit ThermoAirBodyInitialCondition(SPHBody &sph_body)
-        : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>("Phi")){};
-
+        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
     void update(size_t index_i, Real dt)
     {
         phi_[index_i] = initial_temperature_air;
     };
 
   protected:
-    Real *phi_;
+    StdLargeVec<Real> &phi_;
 };
 
-class ThermoWaterBodyInitialCondition : public LocalDynamics
+class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegateSimple
 {
   public:
     explicit ThermoWaterBodyInitialCondition(SPHBody &sph_body)
-        : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>("Phi")){};
+        : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
+          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
 
     void update(size_t index_i, Real dt)
     {
@@ -164,116 +163,11 @@ class ThermoWaterBodyInitialCondition : public LocalDynamics
     };
 
   protected:
-    Real *phi_;
+    StdLargeVec<Real> &phi_;
 };
 
-using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion,HeatIsotropicDiffusion>;
-//----------------------------------------------------------------------
-//	Setup heat conduction material properties for diffusion fluid body
-//----------------------------------------------------------------------
-//class ThermoWaterBodyMaterial : public DiffusionReaction<WeaklyCompressibleFluid>
-//{
-//public:
-//	ThermoWaterBodyMaterial()
-//		: DiffusionReaction<WeaklyCompressibleFluid>({ "Phi" }, rho0_f, c_f, mu_water)
-//	{
-//		initializeAnDiffusion<IsotropicDiffusion>("Phi", "Phi", diffusion_coff_water);
-//	};
-//};
-//----------------------------------------------------------------------
-//	Setup heat conduction material properties for diffusion solid body
-//----------------------------------------------------------------------
-//class ThermoAirBodyMaterial : public DiffusionReaction<WeaklyCompressibleFluid>
-//{
-//public:
-//	ThermoAirBodyMaterial() : DiffusionReaction<WeaklyCompressibleFluid>({ "Phi" }, rho0_a, c_f, mu_air)
-//	{
-//		// only default property is given, as no heat transfer within solid considered here.
-//		initializeAnDiffusion<IsotropicDiffusion>("Phi", "Phi", diffusion_coff_air);
-//	};
-//};
-//----------------------------------------------------------------------
-//	Application dependent solid body initial condition
-//----------------------------------------------------------------------
-//class ThermoAirBodyInitialCondition
-//	: public DiffusionReactionInitialCondition<FluidParticles, WeaklyCompressibleFluid>
-//{
-//protected:
-//	size_t phi_;
-//
-//public:
-//	explicit ThermoAirBodyInitialCondition(SPHBody& sph_body)
-//		: DiffusionReactionInitialCondition<FluidParticles, WeaklyCompressibleFluid>(sph_body)
-//	{
-//		phi_ = particles_->diffusion_reaction_material_.SpeciesIndexMap()["Phi"];
-//	};
-//
-//	void update(size_t index_i, Real dt)
-//	{
-//		species_n_[phi_][index_i] = 353.15;
-//		thermal_conductivity_[index_i] = k_air;
-//	};
-//};
-//----------------------------------------------------------------------
-//	Application dependent fluid body initial condition
-//----------------------------------------------------------------------
-//class ThermoWaterBodyInitialCondition
-//	: public DiffusionReactionInitialCondition<FluidParticles, WeaklyCompressibleFluid>
-//{
-//protected:
-//	size_t phi_;
-//
-//public:
-//	explicit ThermoWaterBodyInitialCondition(SPHBody& sph_body)
-//		: DiffusionReactionInitialCondition<FluidParticles, WeaklyCompressibleFluid>(sph_body)
-//	{
-//		phi_ = particles_->diffusion_reaction_material_.SpeciesIndexMap()["Phi"];
-//	};
-//
-//	void update(size_t index_i, Real dt)
-//	{
-//		species_n_[phi_][index_i] = 313.15;
-//		thermal_conductivity_[index_i] = k_water;
-//	};
-//};
-//----------------------------------------------------------------------
-//	Set thermal relaxation between different bodies
-//----------------------------------------------------------------------
-//class ThermalRelaxationComplex
-//	: public TwoPhaseRelaxationOfAllDiffusionSpeciesRK2<
-//	TwoPhaseRelaxationOfAllDiffusionSpeciesComplex<
-//	FluidParticles, WeaklyCompressibleFluid, FluidParticles, WeaklyCompressibleFluid>>
-//{
-//public:
-//	explicit ThermalRelaxationComplex(ComplexRelation& body_complex_relation)
-//		: TwoPhaseRelaxationOfAllDiffusionSpeciesRK2(body_complex_relation) {};
-//	virtual ~ThermalRelaxationComplex() {};
-//};
-/*
-class LiquidTemperatureObserverParticleGenerator : public ObserverParticleGenerator
-{
-public:
-	explicit LiquidTemperatureObserverParticleGenerator(SPHBody& sph_body)
-		: ObserverParticleGenerator(sph_body)
-	{
-			positions_.push_back(Vecd(0.0, 0.35, 0.0));
-			//positions_.push_back(Vecd(0.0, 0.5, 0.0));
-			//positions_.push_back(Vecd(0.0, 0.6, 0.0));
-	}
-};*/
+using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
 
-
-//class GasTemperatureObserverParticleGenerator : public ObserverParticleGenerator
-//{
-//public:
-//	explicit GasTemperatureObserverParticleGenerator(SPHBody& sph_body)
-//		: ObserverParticleGenerator(sph_body)
-//	{
-//		//positions_.push_back(Vecd(0.0, 0.4, 0.0));
-//		//positions_.push_back(Vecd(0.0, 0.5, 0.0));
-//		positions_.push_back(Vecd(0.0, 0.65, 0.0));
-//	}
-//};
 StdVec<Vecd> LiquidTemperatureObserverParticle()
 {
     StdVec<Vecd> observation_points;
