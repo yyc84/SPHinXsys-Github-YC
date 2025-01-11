@@ -391,6 +391,8 @@ class DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>
 {
   protected:
     KernelGradientType kernel_gradient_;
+    StdVec<StdLargeVec<Real> *> heat_flux_inner_dt_;
+    StdVec<StdLargeVec<Real> *> heat_flux_inner_;
 
   public:
     template <typename... Args>
@@ -403,6 +405,8 @@ class DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>
     {
         return 2 * thermal_conductivity_i * thermal_conductivity_j / (thermal_conductivity_i + thermal_conductivity_j);
     };
+    void initialization(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
 };
 
 //template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>

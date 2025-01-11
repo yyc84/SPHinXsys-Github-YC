@@ -410,7 +410,18 @@ template <typename... Args>
 DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::
     DiffusionRelaxation(Args &&...args)
     : DiffusionRelaxation<DataDelegateInner, DiffusionType>(std::forward<Args>(args)...),
-      kernel_gradient_(this->particles_) {}
+      kernel_gradient_(this->particles_)
+{
+    for(size_t m = 0; m < this->diffusions_.size(); ++m)
+	{
+		std::string diffusion_species_name = diffusion->DiffusionSpeciesName();
+        heat_flux_inner_.push_back(this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxInner"));
+        heat_flux_inner_dt_.push_back(this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxInnerChangeRate"));
+        this->particles_->template addVariableToSort<Real>(diffusion_species_name + "FluxInner");
+        this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxInner");
+	}
+    
+}
 //=================================================================================================//
 template <class KernelGradientType, class DiffusionType>
 void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interaction(size_t index_i, Real dt)
@@ -441,7 +452,27 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interact
 
         }
         (*this->diffusion_dt_[m])[index_i] += d_species / rho_i / c_v_i;
+        heat_flux_inner_dt_[index_i] =(*this->diffusion_dt_[m])[index_i]
     }
+}
+//=================================================================================================//
+template <class KernelGradientType, class DiffusionType>
+void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::initialization(size_t index_i, Real dt)
+{
+	DiffusionRelaxation<DataDelegateInner, DiffusionType>::initialization(index_i, dt);
+	heat_flux_inner_dt_[index_i] = 0.0;
+}
+//=================================================================================================//
+template <class KernelGradientType, class DiffusionType>
+void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::update(size_t index_i, Real dt)
+{
+    DiffusionRelaxation<DataDelegateInner, DiffusionType>::update(index_i, dt);
+    for(size_t m = 0; m < this->diffusions_.size(); ++m)
+	{
+		Real rho_i = this->diffusions_[m]->getDensity();
+		Real c_v_i = this->diffusions_[m]->getSpecificHeat();
+		heat_flux_inner_[index_i] = dt * this->Vol_[index_i] * rho_i * c_v_i * (*heat_flux_inner_dt_)[index_i];
+	}
 }
 //=================================================================================================//
 //template <class DiffusionType>
