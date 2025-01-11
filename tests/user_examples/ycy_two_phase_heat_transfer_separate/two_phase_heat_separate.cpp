@@ -101,8 +101,8 @@ class LeftDiffusionInitialCondition : public LocalDynamics, public DataDelegateS
     explicit LeftDiffusionInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),DataDelegateSimple(sph_body),
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
-		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner"))
-	{};
+		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")){};
     void update(size_t index_i, Real dt)
     {
         phi_[index_i] = initial_temperature_left;
@@ -111,6 +111,7 @@ class LeftDiffusionInitialCondition : public LocalDynamics, public DataDelegateS
   protected:
     StdLargeVec<Real> &phi_;
 	StdLargeVec<Real> &heat_flux_inner_;
+    StdLargeVec<Real> &heat_flux_contact_;
     
 };
 
@@ -120,7 +121,8 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
     explicit RightDiffusionInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),DataDelegateSimple(sph_body),
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
-	heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")){};
+		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")){};
 
     void update(size_t index_i, Real dt)
     {
@@ -130,6 +132,7 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
   protected:
     StdLargeVec<Real> &phi_;
 	StdLargeVec<Real> &heat_flux_inner_;
+    StdLargeVec<Real> &heat_flux_contact_;
 };
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
@@ -212,8 +215,8 @@ int main(int ac, char *av[])
 	//Dynamics1Level<ThermalDiffusionInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
 	//Dynamics1Level<ThermalDiffusionContact> left_thermal_relax_contact(left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
     
-    Dynamics1Level<ThermalDiffusionComplex> left_thermal_relax_complex(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
-    Dynamics1Level<ThermalDiffusionComplex> right_thermal_relax_complex(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    Dynamics1Level<ThermalDiffusionComplex,SequencedPolicy> left_thermal_relax_complex(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
+    Dynamics1Level<ThermalDiffusionComplex,SequencedPolicy> right_thermal_relax_complex(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
 
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
@@ -230,8 +233,10 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
-	ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_inner(right_body,"PhiFluxInner");
-	ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_inner(left_body,"PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real,SPHBody>> write_right_heat_flux_inner(right_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real,SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
 
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
@@ -274,6 +279,8 @@ int main(int ac, char *av[])
 	write_temperature.writeToFile(0);
 	write_right_heat_flux_inner.writeToFile(0);
 	write_left_heat_flux_inner.writeToFile(0);
+    write_right_heat_flux_contact.writeToFile(0);
+    write_left_heat_flux_contact.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -326,6 +333,8 @@ int main(int ac, char *av[])
 		write_real_body_states.writeToFile();
 		write_right_heat_flux_inner.writeToFile();
 		write_left_heat_flux_inner.writeToFile();
+		write_right_heat_flux_contact.writeToFile();
+		write_left_heat_flux_contact.writeToFile();
 		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}

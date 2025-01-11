@@ -121,6 +121,8 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
     StdVec<ContactKernelGradientType> contact_kernel_gradients_;
     StdVec<StdLargeVec<Real> *> contact_Vol_;
     StdVec<StdVec<StdLargeVec<Real> *>> contact_gradient_species_;
+    StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_contact_dt_;
+    StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_contact_;
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args);
@@ -132,7 +134,9 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
         };
     void getDiffusionChangeRateTwoPhaseContact(
         size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-        const StdVec<StdLargeVec<Real> *> &gradient_species_k);
+            const StdVec<StdLargeVec<Real> *> &gradient_species_k, StdVec<StdLargeVec<Real> *> &heat_flux_contact_dt_k);
+    void initialization(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
 };
 /*above is for heat transfer*/
 
@@ -478,6 +482,7 @@ class HeatExchangeDiffusionComplex : public LocalDynamics, public DataDelegateIn
     void initialization(size_t index_i, Real dt = 0.0)
     {
         inner_relaxation_.initialization(index_i, dt);
+        heat_exchange_relaxation_.initialization(index_i, dt);
     };
 
     void interaction(size_t index_i, Real dt = 0.0)
@@ -489,6 +494,7 @@ class HeatExchangeDiffusionComplex : public LocalDynamics, public DataDelegateIn
     void update(size_t index_i, Real dt = 0.0)
     {
         inner_relaxation_.update(index_i, dt);
+        heat_exchange_relaxation_.update(index_i, dt);
     };
 
   private:
