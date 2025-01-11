@@ -358,7 +358,8 @@ class DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>
 {
   protected:
     KernelGradientType kernel_gradient_;
-
+    Real * heat_flux_inner_dt_;
+    Real * heat_flux_inner_;
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args);
@@ -371,6 +372,8 @@ class DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>
         return 2 * thermal_conductivity_i * thermal_conductivity_j / (thermal_conductivity_i + thermal_conductivity_j);
     };
 
+    void initialization(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
     /*void getDiffusionChangeRateInnerHeatExchange(
         size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij);*/
 };
@@ -403,7 +406,8 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
 {
   protected:
     StdVec<StdVec<Real *>> contact_gradient_species_;
-
+    StdVec<Real *> heat_flux_contact_dt_;
+    StdVec<Real *> heat_flux_contact_;
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args);
@@ -420,6 +424,8 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
     {
         return 2 * thermal_conductivity_i * thermal_conductivity_j / (thermal_conductivity_i + thermal_conductivity_j);
     };
+    void initialization(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
 };
 
 template <typename KernelGradientType, typename ContactKernelGradientType, typename DiffusionType, typename ContactDiffusionType>
@@ -451,6 +457,7 @@ class HeatExchangeDiffusionComplex : public LocalDynamics
     void initialization(size_t index_i, Real dt = 0.0)
     {
         inner_relaxation_.initialization(index_i, dt);
+        heat_exchange_relaxation_.initialization(index_i, dt);
     };
 
     void interaction(size_t index_i, Real dt = 0.0)
@@ -462,6 +469,7 @@ class HeatExchangeDiffusionComplex : public LocalDynamics
     void update(size_t index_i, Real dt = 0.0)
     {
         inner_relaxation_.update(index_i, dt);
+        heat_exchange_relaxation_.update(index_i, dt);
     };
 
   private:

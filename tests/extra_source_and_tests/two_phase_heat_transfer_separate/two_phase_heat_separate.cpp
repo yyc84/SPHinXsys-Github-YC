@@ -99,7 +99,15 @@ class LeftDiffusionInitialCondition : public LocalDynamics
   public:
     explicit LeftDiffusionInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>("Phi")){};
+          phi_(particles_->registerStateVariable<Real>("Phi")),
+          heat_flux_contact_(particles_->registerStateVariable<Real>("HeatFluxContact")),
+          heat_flux_inner_(particles_->registerStateVariable<Real>("HeatFluxInner"))
+	{
+        this->particles_->template addVariableToSort<Real>("HeatFluxContact");
+        this->particles_->template addVariableToWrite<Real>("HeatFluxContact");
+        this->particles_->template addVariableToSort<Real>("HeatFluxInner");
+        this->particles_->template addVariableToWrite<Real>("HeatFluxInner");
+	};
 
     void update(size_t index_i, Real dt)
     {
@@ -108,6 +116,8 @@ class LeftDiffusionInitialCondition : public LocalDynamics
 
   protected:
     Real *phi_;
+    Real *heat_flux_inner_;
+    Real *heat_flux_contact_;
 };
 
 class RightDiffusionInitialCondition : public LocalDynamics
@@ -115,7 +125,15 @@ class RightDiffusionInitialCondition : public LocalDynamics
   public:
     explicit RightDiffusionInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>("Phi")){};
+          phi_(particles_->registerStateVariable<Real>("Phi")),
+          heat_flux_contact_(particles_->registerStateVariable<Real>("HeatFluxContact")),
+          heat_flux_inner_(particles_->registerStateVariable<Real>("HeatFluxInner"))
+	{
+        this->particles_->template addVariableToSort<Real>("HeatFluxContact");
+        this->particles_->template addVariableToWrite<Real>("HeatFluxContact");
+        this->particles_->template addVariableToSort<Real>("HeatFluxInner");
+        this->particles_->template addVariableToWrite<Real>("HeatFluxInner");
+	};
 
     void update(size_t index_i, Real dt)
     {
@@ -124,6 +142,8 @@ class RightDiffusionInitialCondition : public LocalDynamics
 
   protected:
     Real *phi_;
+    Real *heat_flux_inner_;
+    Real *heat_flux_contact_;
 };
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
@@ -139,13 +159,19 @@ StdVec<Vecd> createObservationPoints()
 {
     StdVec<Vecd> observation_points;
 
-	size_t number_of_observation_points = 161;
+	size_t number_of_observation_points = 160;
 		
 		for(int i = 0;i< number_of_observation_points;i++)
 		{
 			observation_points.push_back(Vecd(i*0.5*dp,20*dp));
 		}
     return observation_points;
+};
+
+bool isMultipleOf(double value, double base)
+{
+    double ratio = value / base;
+    return std::fabs(ratio - std::round(ratio)) < 1e-9; // 判断是否接近整数
 };
 
 //----------------------------------------------------------------------
@@ -214,6 +240,10 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
+    ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_inner_sum(right_body, "HeatFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_contact_sum(right_body, "HeatFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_inner_sum(left_body, "HeatFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_contact_sum(left_body, "HeatFluxContact");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -253,12 +283,16 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	write_real_body_states.writeToFile(0);
 	write_temperature.writeToFile(0);
+    write_right_heat_flux_inner_sum.writeToFile(0);
+    write_right_heat_flux_contact_sum.writeToFile(0);
+    write_left_heat_flux_inner_sum.writeToFile(0);
+    write_left_heat_flux_contact_sum.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
-
 	while (physical_time < end_time)
 	{
+        Real start_time = 0.0;
 		Real integration_time = 0.0;
 		/** Integrate time (loop) until the next output time. */
 		while (integration_time < Output_Time)
@@ -274,17 +308,21 @@ int main(int ac, char *av[])
 				dt = SMIN(dt_thermal_right, dt_thermal_left);
                 heat_exchange_complex_right.exec(dt);
                 heat_exchange_complex_left.exec(dt);
-
+                Real time_difference = physical_time - start_time;
 				if (ite % 100== 0)
 				{
 					std::cout << "N=" << ite << " Time: "
-						<< physical_time << "	dt: "
-						<< dt << "\n";
+                                              << physical_time << "	dt: " << dt 
+						<< " time_difference: " << time_difference
+						<< "\n";
 				}
 				ite++;
 				relaxation_time += dt;
 				integration_time += dt;
 				physical_time += dt;
+                                
+                write_temperature.writeToFile();
+                 
 			}
 
 			interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;
@@ -296,7 +334,11 @@ int main(int ac, char *av[])
 			right_complex.updateConfiguration();
 
 			temperature_observer_contact.updateConfiguration();
-			write_temperature.writeToFile();
+            write_right_heat_flux_inner_sum.writeToFile(0);
+            write_right_heat_flux_contact_sum.writeToFile(0);
+            write_left_heat_flux_inner_sum.writeToFile(0);
+            write_left_heat_flux_contact_sum.writeToFile(0);
+			//write_temperature.writeToFile();
 			time_instance = TickCount::now();
 			interval_updating_configuration += TickCount::now() - time_instance;
 		}
