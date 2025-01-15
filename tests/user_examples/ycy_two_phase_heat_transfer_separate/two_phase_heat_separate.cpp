@@ -149,7 +149,7 @@ StdVec<Vecd> createObservationPoints()
 {
     StdVec<Vecd> observation_points;
 
-	size_t number_of_observation_points = 161;
+	size_t number_of_observation_points = 160;
 		
 		for(int i = 0;i< number_of_observation_points;i++)
 		{
@@ -233,10 +233,10 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
-    ReducedQuantityRecording<QuantityMoment<Real,SPHBody>> write_right_heat_flux_inner(right_body, "PhiFluxInner");
-    ReducedQuantityRecording<QuantityMoment<Real,SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_inner(right_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
 
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
@@ -299,7 +299,7 @@ int main(int ac, char *av[])
 			{
 				Real dt_thermal_right = get_time_step_size_right.exec();
 				Real dt_thermal_left = get_time_step_size_left.exec();
-				dt = SMIN(dt_thermal_right, dt_thermal_left);
+				dt = 0.2*SMIN(dt_thermal_right, dt_thermal_left);
                 right_thermal_relax_complex.exec(dt);
                 left_thermal_relax_complex.exec(dt);
 
@@ -313,6 +313,7 @@ int main(int ac, char *av[])
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
+				write_temperature.writeToFile();
 			}
 
 			interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;
@@ -324,7 +325,7 @@ int main(int ac, char *av[])
 			right_complex.updateConfiguration();
 
 			temperature_observer_contact.updateConfiguration();
-			write_temperature.writeToFile();
+			//write_temperature.writeToFile();
 			time_instance = TickCount::now();
 			interval_updating_configuration += TickCount::now() - time_instance;
 		}

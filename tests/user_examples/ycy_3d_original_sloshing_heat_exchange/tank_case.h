@@ -140,7 +140,9 @@ class ThermoAirBodyInitialCondition : public LocalDynamics, public DataDelegateS
   public:
     explicit ThermoAirBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
+          phi_(*particles_->registerSharedVariable<Real>("Phi")), 
+          heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")) {};
     void update(size_t index_i, Real dt)
     {
         phi_[index_i] = initial_temperature_air;
@@ -148,6 +150,8 @@ class ThermoAirBodyInitialCondition : public LocalDynamics, public DataDelegateS
 
   protected:
     StdLargeVec<Real> &phi_;
+    StdLargeVec<Real> &heat_flux_inner_;
+    StdLargeVec<Real> &heat_flux_contact_;
 };
 
 class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegateSimple
@@ -155,7 +159,9 @@ class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegat
   public:
     explicit ThermoWaterBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
-          phi_(*particles_->registerSharedVariable<Real>("Phi")){};
+          phi_(*particles_->registerSharedVariable<Real>("Phi")),
+          heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -164,6 +170,8 @@ class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegat
 
   protected:
     StdLargeVec<Real> &phi_;
+    StdLargeVec<Real> &heat_flux_inner_;
+    StdLargeVec<Real> &heat_flux_contact_;
 };
 
 using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;

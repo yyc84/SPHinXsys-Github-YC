@@ -18,9 +18,9 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(true);
+	system.setRunParticleRelaxation(false);
 	// Tag for computation start with relaxed body fitted particles distribution.
-	system.setReloadParticles(false);
+	system.setReloadParticles(true);
 	/* Tag for computation from restart files. 0: start with initial condition. */
 	system.setRestartStep(0);
 	//handle command line arguments
@@ -33,7 +33,7 @@ int main(int ac, char* av[])
 	@Brief creating body, materials and particles for the cylinder.
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
-	tank.defineBodyLevelSetShape()->writeLevelSet(system);
+	//tank.defineBodyLevelSetShape()->writeLevelSet(system);
 	tank.defineMaterial<Solid>();
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<BaseParticles, Reload>(tank.getName())
@@ -217,6 +217,10 @@ int main(int ac, char* av[])
 		air_rate_of_heat_transfer(in_output, air_block, "HeatFlux");
 	ReducedQuantityRecording<ReduceAverage<QuantitySummation<Real>>>
 		water_rate_of_heat_transfer(in_output, water_block, "HeatFlux");*/
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
 
 	//ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
 	//ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");
@@ -249,6 +253,10 @@ int main(int ac, char* av[])
 	
 	//compute_water_total_mass.writeToFile(0);
 	//compute_air_total_mass.writeToFile(0);
+    write_water_heat_flux_inner.writeToFile(0);
+    write_air_heat_flux_inner.writeToFile(0);
+    write_water_heat_flux_contact.writeToFile(0);
+    write_air_heat_flux_contact.writeToFile(0);
     
 	if (GlobalStaticVariables::physical_time_ != 0)
 	{
@@ -393,6 +401,10 @@ int main(int ac, char* av[])
 		wave_probe_S1.writeToFile();
 		wave_probe_S2.writeToFile();
 		wave_probe_S3.writeToFile();
+        write_water_heat_flux_inner.writeToFile(0);
+        write_air_heat_flux_inner.writeToFile(0);
+        write_water_heat_flux_contact.writeToFile(0);
+        write_air_heat_flux_contact.writeToFile(0);
 		//water_average_temperature.writeToFile();
 		//air_average_temperature.writeToFile();
 		//write_temperature_liquid.writeToFile();
