@@ -123,6 +123,7 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
     StdVec<StdVec<StdLargeVec<Real> *>> contact_gradient_species_;
     StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_contact_dt_;
     StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_contact_;
+    StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_wu_;
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args);
@@ -134,7 +135,7 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
         };
     void getDiffusionChangeRateTwoPhaseContact(
         size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-            const StdVec<StdLargeVec<Real> *> &gradient_species_k, StdVec<StdLargeVec<Real> *> &heat_flux_contact_dt_k);
+            const StdVec<StdLargeVec<Real> *> &gradient_species_k, StdVec<StdLargeVec<Real> *> &heat_flux_contact_dt_k, StdVec<StdLargeVec<Real> *> &heat_flux_wu_k);
     void initialization(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
 };

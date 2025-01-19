@@ -29,7 +29,7 @@ Real U_f = 2.0 * sqrt(gravity_g * 0.5);	/**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5);  	/**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);	/**< Reference sound speed. */
 Real f = 1.5;
-Real a = 0.03;
+Real a = 0.01;
 Real c_p_water = 4.179e3;
 Real c_p_air = 1.012e3;
 Real k_water = 0.620;
@@ -142,7 +142,8 @@ class ThermoAirBodyInitialCondition : public LocalDynamics, public DataDelegateS
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
           phi_(*particles_->registerSharedVariable<Real>("Phi")), 
           heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
-          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")) {};
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")),
+          heat_flux_wu_(*particles_->registerSharedVariable<Real>("PhiFluxWU")) {};
     void update(size_t index_i, Real dt)
     {
         phi_[index_i] = initial_temperature_air;
@@ -152,6 +153,7 @@ class ThermoAirBodyInitialCondition : public LocalDynamics, public DataDelegateS
     StdLargeVec<Real> &phi_;
     StdLargeVec<Real> &heat_flux_inner_;
     StdLargeVec<Real> &heat_flux_contact_;
+    StdLargeVec<Real> &heat_flux_wu_;
 };
 
 class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegateSimple
@@ -161,7 +163,8 @@ class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegat
         : LocalDynamics(sph_body), DataDelegateSimple(sph_body),
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
           heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
-          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")) {};
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")), 
+          heat_flux_wu_(*particles_->registerSharedVariable<Real>("PhiFluxWU")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -172,6 +175,7 @@ class ThermoWaterBodyInitialCondition : public LocalDynamics, public DataDelegat
     StdLargeVec<Real> &phi_;
     StdLargeVec<Real> &heat_flux_inner_;
     StdLargeVec<Real> &heat_flux_contact_;
+    StdLargeVec<Real> &heat_flux_wu_;
 };
 
 using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;

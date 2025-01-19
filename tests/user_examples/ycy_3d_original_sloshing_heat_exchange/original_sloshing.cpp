@@ -221,6 +221,10 @@ int main(int ac, char* av[])
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_wu(water_block, "PhiFluxWu");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_wu(air_block, "PhiFluxWu");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner_rate(water_block, "PhiFluxInnerChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner_rate(air_block, "PhiFluxInnerChangeRate");
 
 	//ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
 	//ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");
@@ -257,7 +261,10 @@ int main(int ac, char* av[])
     write_air_heat_flux_inner.writeToFile(0);
     write_water_heat_flux_contact.writeToFile(0);
     write_air_heat_flux_contact.writeToFile(0);
-    
+    write_air_heat_flux_wu.writeToFile(0);
+    write_water_heat_flux_wu.writeToFile(0);
+    write_air_heat_flux_inner_rate.writeToFile(0);
+    write_water_heat_flux_inner_rate.writeToFile(0);
 	if (GlobalStaticVariables::physical_time_ != 0)
 	{
         GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());
@@ -401,10 +408,14 @@ int main(int ac, char* av[])
 		wave_probe_S1.writeToFile();
 		wave_probe_S2.writeToFile();
 		wave_probe_S3.writeToFile();
-        write_water_heat_flux_inner.writeToFile(0);
-        write_air_heat_flux_inner.writeToFile(0);
-        write_water_heat_flux_contact.writeToFile(0);
-        write_air_heat_flux_contact.writeToFile(0);
+        write_water_heat_flux_inner.writeToFile();
+        write_air_heat_flux_inner.writeToFile();
+        write_water_heat_flux_contact.writeToFile();
+        write_air_heat_flux_contact.writeToFile();
+        write_air_heat_flux_wu.writeToFile();
+        write_water_heat_flux_wu.writeToFile();
+        write_air_heat_flux_inner_rate.writeToFile();
+        write_water_heat_flux_inner_rate.writeToFile();
 		//water_average_temperature.writeToFile();
 		//air_average_temperature.writeToFile();
 		//write_temperature_liquid.writeToFile();
