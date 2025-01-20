@@ -217,12 +217,12 @@ int main(int ac, char* av[])
 		air_rate_of_heat_transfer(in_output, air_block, "HeatFlux");
 	ReducedQuantityRecording<ReduceAverage<QuantitySummation<Real>>>
 		water_rate_of_heat_transfer(in_output, water_block, "HeatFlux");*/
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_wu(water_block, "PhiFluxWu");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_wu(air_block, "PhiFluxWu");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_wu(water_block, "PhiFluxWuContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_wu(air_block, "PhiFluxWuContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner_rate(water_block, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner_rate(air_block, "PhiFluxInnerChangeRate");
 
