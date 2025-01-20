@@ -102,7 +102,8 @@ class LeftDiffusionInitialCondition : public LocalDynamics, public DataDelegateS
         : LocalDynamics(sph_body),DataDelegateSimple(sph_body),
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
 		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
-          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")){};
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")),
+          heat_flux_wu_(*particles_->registerSharedVariable<Real>("PhiFluxWuContact")) {};
     void update(size_t index_i, Real dt)
     {
         phi_[index_i] = initial_temperature_left;
@@ -112,6 +113,7 @@ class LeftDiffusionInitialCondition : public LocalDynamics, public DataDelegateS
     StdLargeVec<Real> &phi_;
 	StdLargeVec<Real> &heat_flux_inner_;
     StdLargeVec<Real> &heat_flux_contact_;
+    StdLargeVec<Real> &heat_flux_wu_;
     
 };
 
@@ -122,7 +124,8 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
         : LocalDynamics(sph_body),DataDelegateSimple(sph_body),
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
 		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
-          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")){};
+          heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")),
+          heat_flux_wu_(*particles_->registerSharedVariable<Real>("PhiFluxWuContact")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -133,6 +136,7 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
     StdLargeVec<Real> &phi_;
 	StdLargeVec<Real> &heat_flux_inner_;
     StdLargeVec<Real> &heat_flux_contact_;
+    StdLargeVec<Real> &heat_flux_wu_;
 };
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
@@ -237,7 +241,10 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
-
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_contact_wu(right_body, "PhiFluxWuContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact_wu(left_body, "PhiFluxWuContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_total(right_body, "PhiChangeRate");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_total(left_body, "PhiChangeRate");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -281,6 +288,10 @@ int main(int ac, char *av[])
 	write_left_heat_flux_inner.writeToFile(0);
     write_right_heat_flux_contact.writeToFile(0);
     write_left_heat_flux_contact.writeToFile(0);
+    write_right_heat_flux_contact_wu.writeToFile(0);
+    write_left_heat_flux_contact_wu.writeToFile(0);
+    write_right_heat_flux_total.writeToFile(0);
+    write_left_heat_flux_total.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -336,6 +347,10 @@ int main(int ac, char *av[])
 		write_left_heat_flux_inner.writeToFile();
 		write_right_heat_flux_contact.writeToFile();
 		write_left_heat_flux_contact.writeToFile();
+        write_right_heat_flux_contact_wu.writeToFile();
+        write_left_heat_flux_contact_wu.writeToFile();
+        write_right_heat_flux_total.writeToFile();
+        write_left_heat_flux_total.writeToFile();
 		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}

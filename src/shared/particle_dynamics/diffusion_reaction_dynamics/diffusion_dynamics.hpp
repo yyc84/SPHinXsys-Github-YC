@@ -561,16 +561,20 @@ DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDi
             contact_gradient_species_[k].push_back(
                 contact_particles_k->template registerSharedVariable<Real>(gradient_species_name));
             contact_particles_k->template addVariableToWrite<Real>(gradient_species_name);
-            heat_flux_contact_[k].push_back(
-                this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxContact"));
+            
             heat_flux_contact_dt_[k].push_back(
                 this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxContactChangeRate"));
+            this->particles_->template addVariableToSort<Real>(diffusion_species_name + "FluxContactChangeRate");
+            this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxContactChangeRate");
+
+            heat_flux_contact_[k].push_back(
+                this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxContact"));
             this->particles_->template addVariableToSort<Real>(diffusion_species_name + "FluxContact");
             this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxContact");
             heat_flux_wu_[k].push_back(
-                this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxWu"));
-            this->particles_->template addVariableToSort<Real>(diffusion_species_name + "FluxWu");
-            this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxWu");
+                this->particles_->template registerSharedVariable<Real>(diffusion_species_name + "FluxWuContact"));
+            this->particles_->template addVariableToSort<Real>(diffusion_species_name + "FluxWuContact");
+            this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxWuContact");
         }
     }
 }
@@ -628,6 +632,7 @@ template <class ContactKernelGradientType, class DiffusionType, class ContactDif
          for (size_t m = 0; m < this->diffusions_.size(); ++m)
          {
              (*heat_flux_contact_dt_[k][m])[index_i] = 0.0;
+             (*heat_flux_wu_[k][m])[index_i] = 0.0;
          }
      }
  }
