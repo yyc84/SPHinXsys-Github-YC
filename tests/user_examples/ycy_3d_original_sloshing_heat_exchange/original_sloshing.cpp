@@ -193,13 +193,13 @@ int main(int ac, char* av[])
 	 /** WaveProbes. */
     BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("ProbeS1"));
     ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
-        wave_probe_S1(probe_s1, "FreeSurfaceHeight_S1");
+        wave_probe_S1(probe_s1, "FreeSurfaceHeight_S1", 1);
 	BodyRegionByCell probe_s2(water_block, makeShared<ProbeS2>("PorbeS2"));
     ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
-        wave_probe_S2(probe_s2, "FreeSurfaceHeight_S2");
+        wave_probe_S2(probe_s2, "FreeSurfaceHeight_S2", 1);
 	BodyRegionByCell probe_s3(water_block, makeShared<ProbeS3>("ProbeS3"));
     ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
-        wave_probe_S3(probe_s3, "FreeSurfaceHeight_S3");
+        wave_probe_S3(probe_s3, "FreeSurfaceHeight_S3", 1);
 
 	BodyStatesRecordingToVtp write_real_body_states(system);
     write_real_body_states.addToWrite<Real>(water_block, "Phi");
@@ -212,11 +212,8 @@ int main(int ac, char* av[])
 	/*ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
 		water_average_temperature(in_output, water_block, "Phi");
 	ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
-		air_average_temperature(in_output, air_block, "Phi");
-	ReducedQuantityRecording<ReduceAverage<QuantitySummation<Real>>>
-		air_rate_of_heat_transfer(in_output, air_block, "HeatFlux");
-	ReducedQuantityRecording<ReduceAverage<QuantitySummation<Real>>>
-		water_rate_of_heat_transfer(in_output, water_block, "HeatFlux");*/
+		air_average_temperature(in_output, air_block, "Phi");*/
+	
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
@@ -226,8 +223,8 @@ int main(int ac, char* av[])
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner_rate(water_block, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner_rate(air_block, "PhiFluxInnerChangeRate");
 
-	//ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_air_total_mass(in_output, air_block, "MassiveMeasure");
-	//ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Real>>> compute_water_total_mass(in_output, water_block, "MassiveMeasure");
+	/*ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_air_total_mass(air_block, "MassiveMeasure");
+    ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_water_total_mass(water_block, "MassiveMeasure");*/
 	
     ReducedQuantityRecording<TotalMechanicalEnergy> write_water_mechanical_energy(water_block, gravity);
 	/**
@@ -252,8 +249,7 @@ int main(int ac, char* av[])
 	write_real_body_states.addToWrite<Vecd>(tank, "NormalDirection"); 
 	//water_average_temperature.writeToFile(0);
 	//air_average_temperature.writeToFile(0);
-	//air_rate_of_heat_transfer.writeToFile(0);
-	//water_rate_of_heat_transfer.writeToFile(0);
+	
 	
 	//compute_water_total_mass.writeToFile(0);
 	//compute_air_total_mass.writeToFile(0);
@@ -265,6 +261,8 @@ int main(int ac, char* av[])
     write_water_heat_flux_wu.writeToFile(0);
     write_air_heat_flux_inner_rate.writeToFile(0);
     write_water_heat_flux_inner_rate.writeToFile(0);
+    write_temperature_liquid.writeToFile(0);
+    write_temperature_gas.writeToFile(0);
 	if (GlobalStaticVariables::physical_time_ != 0)
 	{
         GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());
@@ -279,7 +277,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 10.0;			/**< End time. */
+	Real End_Time = 5.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
@@ -366,13 +364,13 @@ int main(int ac, char* av[])
 			
 			//liquid_temperature_observer_contact.updateConfiguration();
 			//gas_temperature_observer_contact.updateConfiguration();
-			//int num = water_air_complex.getInnerRelation().base_particles_.pos_.size();
-			/*int count_num = 0;
-			for (size_t k = 0; k < water_air_complex.contact_configuration_.size(); ++k)
+            int num = water_air_contact.getSPHBody().getBaseParticles().TotalRealParticles();
+			int count_num = 0;
+			for (size_t k = 0; k < water_air_contact.contact_configuration_.size(); ++k)
 			{
 				for (int i = 0; i != num; ++i)
 				{
-					Neighborhood& neighborhood = water_air_complex.contact_configuration_[k][i];
+					Neighborhood& neighborhood = water_air_contact.contact_configuration_[k][i];
 					if (neighborhood.current_size_ != 0)
 					{
 						count_num += 1;
@@ -382,12 +380,12 @@ int main(int ac, char* av[])
 			if (number_of_iterations % screen_output_interval == 0)
 			{
 				std::string output_folder_ = "./output";
-				std::string filefullpath = output_folder_ + "/" + "number_of_contact_particles" + ".dat";
+				std::string filefullpath = output_folder_ + "/" + "number_of_water_particles_has_contact" + ".dat";
 				std::ofstream out_file_(filefullpath.c_str(), std::ios::app);
 				out_file_ << "\n";
 				out_file_ << "Time " << "Num" << std::endl;
 				out_file_ << GlobalStaticVariables::physical_time_ << "  " << count_num << "  " << std::endl;
-			}*/
+			}
 
 			number_of_iterations++;
 			time_instance = TickCount::now();
@@ -395,9 +393,7 @@ int main(int ac, char* av[])
             water_block.updateCellLinkedList();
 			air_block.updateCellLinkedList();
             water_air_complex.updateConfiguration();
-            //water_tank_contact.updateConfiguration();
             air_water_complex.updateConfiguration();
-            //air_tank_contact.updateConfiguration();
 
 			//write_real_body_states.writeToFile();
 			interval_updating_configuration += TickCount::now() - time_instance;
@@ -408,6 +404,8 @@ int main(int ac, char* av[])
 		wave_probe_S1.writeToFile();
 		wave_probe_S2.writeToFile();
 		wave_probe_S3.writeToFile();
+        //compute_water_total_mass.writeToFile();
+        //compute_air_total_mass.writeToFile();
         write_water_heat_flux_inner.writeToFile();
         write_air_heat_flux_inner.writeToFile();
         write_water_heat_flux_contact.writeToFile();
@@ -418,10 +416,8 @@ int main(int ac, char* av[])
         write_water_heat_flux_inner_rate.writeToFile();
 		//water_average_temperature.writeToFile();
 		//air_average_temperature.writeToFile();
-		//write_temperature_liquid.writeToFile();
-		//write_temperature_gas.writeToFile();
-		//air_rate_of_heat_transfer.writeToFile();
-		//water_rate_of_heat_transfer.writeToFile();
+		write_temperature_liquid.writeToFile();
+		write_temperature_gas.writeToFile();
 		
 		write_real_body_states.writeToFile();
 

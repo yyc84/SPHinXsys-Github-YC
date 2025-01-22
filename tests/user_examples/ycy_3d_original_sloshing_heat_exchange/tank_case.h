@@ -51,7 +51,9 @@ std::string probe_s1_shape = "./input/ProbeS1.STL";
 std::string probe_s2_shape = "./input/ProbeS2.STL";
 std::string probe_s3_shape = "./input/ProbeS3.STL";
 
-/*
+//std::string water_05 = "./input/validation_water.STL";
+//std::string fuel_tank_inner = "./input/validation_tank_inner.STL";
+    /*
 Fuel Tank.
 */
 class Tank : public ComplexShape

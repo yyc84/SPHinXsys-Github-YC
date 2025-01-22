@@ -28,6 +28,10 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS2.STL
         DESTINATION ${BUILD_INPUT_PATH})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS3.STL
         DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/validation_water.STL
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/validation_tank_inner.STL
+        DESTINATION ${BUILD_INPUT_PATH})
 
 add_executable(${PROJECT_NAME})
 aux_source_directory(. DIR_SRCS)
