@@ -237,14 +237,14 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_inner(right_body, "PhiFluxInner");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_contact_wu(right_body, "PhiFluxWuContact");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact_wu(left_body, "PhiFluxWuContact");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_total(right_body, "PhiChangeRate");
-    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_total(left_body, "PhiChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_inner(right_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact_wu(right_body, "PhiFluxWuContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact_wu(left_body, "PhiFluxWuContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_total(right_body, "PhiChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_total(left_body, "PhiChangeRate");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.

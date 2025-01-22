@@ -260,7 +260,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 10.0;			/**< End time. */
+	Real End_Time = 5.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
