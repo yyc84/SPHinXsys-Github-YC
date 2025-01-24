@@ -103,7 +103,7 @@ class LeftDiffusionInitialCondition : public LocalDynamics, public DataDelegateS
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
 		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
           heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")),
-          heat_flux_wu_(*particles_->registerSharedVariable<Real>("PhiFluxWuContact")) {};
+          heat_flux_wu_contact_(*particles_->registerSharedVariable<Real>("PhiFluxWuContact")) {};
     void update(size_t index_i, Real dt)
     {
         phi_[index_i] = initial_temperature_left;
@@ -113,7 +113,7 @@ class LeftDiffusionInitialCondition : public LocalDynamics, public DataDelegateS
     StdLargeVec<Real> &phi_;
 	StdLargeVec<Real> &heat_flux_inner_;
     StdLargeVec<Real> &heat_flux_contact_;
-    StdLargeVec<Real> &heat_flux_wu_;
+    StdLargeVec<Real> &heat_flux_wu_contact_;
     
 };
 
@@ -125,7 +125,7 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
           phi_(*particles_->registerSharedVariable<Real>("Phi")),
 		heat_flux_inner_(*particles_->registerSharedVariable<Real>("PhiFluxInner")),
           heat_flux_contact_(*particles_->registerSharedVariable<Real>("PhiFluxContact")),
-          heat_flux_wu_(*particles_->registerSharedVariable<Real>("PhiFluxWuContact")) {};
+          heat_flux_wu_contact_(*particles_->registerSharedVariable<Real>("PhiFluxWuContact")) {};
 
     void update(size_t index_i, Real dt)
     {
@@ -136,7 +136,7 @@ class RightDiffusionInitialCondition : public LocalDynamics, public DataDelegate
     StdLargeVec<Real> &phi_;
 	StdLargeVec<Real> &heat_flux_inner_;
     StdLargeVec<Real> &heat_flux_contact_;
-    StdLargeVec<Real> &heat_flux_wu_;
+    StdLargeVec<Real> &heat_flux_wu_contact_;
 };
 //----------------------------------------------------------------------
 //	Set thermal relaxation between different bodies
@@ -237,14 +237,21 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
+	ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_change_rate_total(right_body, "PhiChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_change_rate_total(left_body, "PhiChangeRate");
+	ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_change_rate_inner(right_body, "PhiFluxInnerChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_change_rate_inner(left_body, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_inner(right_body, "PhiFluxInner");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_inner(left_body, "PhiFluxInner");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_change_rate_contact(right_body, "PhiFluxContactChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_change_rate_contact(left_body, "PhiFluxContactChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_change_rate_contact_wu(right_body, "PhiFluxWuContactChangeRate");
+    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_change_rate_contact_wu(left_body, "PhiFluxWuContactChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact_wu(right_body, "PhiFluxWuContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact_wu(left_body, "PhiFluxWuContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_total(right_body, "PhiChangeRate");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_total(left_body, "PhiChangeRate");
+    
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -290,8 +297,14 @@ int main(int ac, char *av[])
     write_left_heat_flux_contact.writeToFile(0);
     write_right_heat_flux_contact_wu.writeToFile(0);
     write_left_heat_flux_contact_wu.writeToFile(0);
-    write_right_heat_flux_total.writeToFile(0);
-    write_left_heat_flux_total.writeToFile(0);
+    write_right_heat_flux_change_rate_total.writeToFile(0);
+    write_left_heat_flux_change_rate_total.writeToFile(0);
+    write_right_heat_flux_change_rate_inner.writeToFile(0);
+    write_left_heat_flux_change_rate_inner.writeToFile(0);
+    write_right_heat_flux_change_rate_contact.writeToFile(0);
+    write_left_heat_flux_change_rate_contact.writeToFile(0);
+    write_right_heat_flux_change_rate_contact_wu.writeToFile(0);
+    write_left_heat_flux_change_rate_contact_wu.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -349,8 +362,14 @@ int main(int ac, char *av[])
 		write_left_heat_flux_contact.writeToFile();
         write_right_heat_flux_contact_wu.writeToFile();
         write_left_heat_flux_contact_wu.writeToFile();
-        write_right_heat_flux_total.writeToFile();
-        write_left_heat_flux_total.writeToFile();
+        write_right_heat_flux_change_rate_total.writeToFile();
+        write_left_heat_flux_change_rate_total.writeToFile();
+        write_right_heat_flux_change_rate_inner.writeToFile();
+        write_left_heat_flux_change_rate_inner.writeToFile();
+        write_right_heat_flux_change_rate_contact.writeToFile();
+        write_left_heat_flux_change_rate_contact.writeToFile();
+        write_right_heat_flux_change_rate_contact_wu.writeToFile();
+        write_left_heat_flux_change_rate_contact_wu.writeToFile();
 		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}

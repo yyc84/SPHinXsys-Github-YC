@@ -123,7 +123,8 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
     StdVec<StdVec<StdLargeVec<Real> *>> contact_gradient_species_;
     StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_contact_dt_;
     StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_contact_;
-    StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_wu_;
+    StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_wu_contact_dt_;
+    StdVec<StdVec<StdLargeVec<Real> *>> heat_flux_wu_contact_;
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args);
