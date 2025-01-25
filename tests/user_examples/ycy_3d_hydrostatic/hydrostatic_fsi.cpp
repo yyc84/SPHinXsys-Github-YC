@@ -52,6 +52,42 @@ std::string probe_s3_shape = "./input/ProbeS3.STL";
 /*
 Fuel Tank.
 */
+//Real resolution_ref = 0.05; // particle spacing
+Real BW = resolution_ref * 4;
+Real LL = 1.0; // liquid length
+Real LH = 1.0; // liquid height
+Real LW = 1.0; // liquid width
+Real DH = 2.0;
+// for material properties of the fluid
+//Real U_f = 2.0 * sqrt(gravity_g * LH);
+//Real c_f = 10.0 * U_f;
+//BoundingBox system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(LL + BW, DH + BW, LW + BW));
+
+//	define the water block shape
+//class WaterBlock : public ComplexShape
+//{
+//  public:
+//    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+//    {
+//        Vecd halfsize_water(0.5 * LL, 0.5 * LH, 0.5 * LW);
+//        Transform translation_water(halfsize_water);
+//        add<TransformShape<GeometricShapeBox>>(Transform(translation_water), halfsize_water);
+//    }
+//};
+////	define the static solid wall boundary shape
+//class Tank : public ComplexShape
+//{
+//  public:
+//    explicit Tank(const std::string &shape_name) : ComplexShape(shape_name)
+//    {
+//        Vecd halfsize_outer(0.5 * LL + BW, 0.5 * DH + BW, 0.5 * LW + BW);
+//        Vecd halfsize_inner(0.5 * LL, 0.5 * DH, 0.5 * LW);
+//        Transform translation_wall(halfsize_inner);
+//        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_outer);
+//        subtract<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
+//    }
+//};
+
 class Tank : public ComplexShape
 {
   public:
@@ -156,6 +192,10 @@ int main(int ac, char *av[])
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
         : tank.generateParticles<BaseParticles, Lattice>();
+
+    /*SolidBody tank(sph_system, makeShared<Tank>("Tank"));
+    tank.defineMaterial<Solid>();
+    tank.generateParticles<BaseParticles, Lattice>();*/
     //----------------------------------------------------------------------
     //	Particle and body creation of gate observer.
     //----------------------------------------------------------------------
@@ -232,17 +272,17 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     ComplexRelation water_block_complex(water_inner, water_tank_contact);
     //----------------------------------------------------------------------
-    SimpleDynamics<NormalDirectionFromSubShapeAndOp> tank_inner_normal_direction(tank, "InnerWall");
+    //SimpleDynamics<NormalDirectionFromSubShapeAndOp> tank_inner_normal_direction(tank, "InnerWall");
 
-
+    SimpleDynamics<NormalDirectionFromBodyShape> tank_inner_normal_direction(tank);
     //----------------------------------------------------------------------
     //	Algorithms of fluid dynamics.
     //----------------------------------------------------------------------
-    VariableGravity gravity(Vecd(0.0, -gravity_g, 0.0));
+    VariableGravity gravity(Vec3d(0.0, -gravity_g, 0.0));
     SimpleDynamics<GravityForce> constant_gravity_to_water(water_block, gravity);
     
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> water_pressure_relaxation(water_inner, water_tank_contact);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> water_density_relaxation(water_inner, water_tank_contact);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> water_density_relaxation(water_inner, water_tank_contact);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface> update_water_density(water_inner, water_tank_contact);
     InteractionWithUpdate<fluid_dynamics::ViscousForceWithWall> viscous_force_water(water_inner, water_tank_contact);
     
@@ -256,6 +296,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     /** Output body states for visualization. */
     BodyStatesRecordingToVtp write_real_body_states_to_vtp(sph_system);
+    write_real_body_states_to_vtp.addToWrite<Vec3d>(tank, "NormalDirection");
     RestartIO restart_io(sph_system);
 
      /** WaveProbes. */
@@ -288,7 +329,7 @@ int main(int ac, char *av[])
     wave_probe_S1.writeToFile(0);
     wave_probe_S2.writeToFile(0);
     wave_probe_S3.writeToFile(0);
-    write_real_body_states_to_vtp.addToWrite<Vecd>(tank, "NormalDirection"); 
+    //write_real_body_states_to_vtp.addToWrite<Vecd>(tank, "NormalDirection"); 
     write_water_mechanical_energy.writeToFile(0);
     if (sph_system.RestartStep() != 0)
     {
@@ -303,11 +344,10 @@ int main(int ac, char *av[])
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 3.0; /**< End time. */
+    Real end_time = 5.0; /**< End time. */
     Real output_interval = end_time / 50.0;
     Real D_Time = 0.1;
     Real dt = 0.0;   /**< Default acoustic time step sizes. */
-    Real dt_s = 0.0; /**< Default acoustic time step sizes for solid. */
  
     /** statistics for computing CPU time. */
     TickCount t1 = TickCount::now();
@@ -319,15 +359,15 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop of time stepping starts here.
     //----------------------------------------------------------------------
-    while (GlobalStaticVariables::physical_time_ < end_time)
+    while (GlobalStaticVariables::physical_time_ < output_interval)
     {
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
-        while (integration_time < D_Time)
+        while (integration_time < output_interval)
         {
             Real Dt = get_water_advection_time_step_size.exec();
             update_water_density.exec();
-            constant_gravity_to_water.exec();
+            //constant_gravity_to_water.exec();
             viscous_force_water.exec();
             Real relaxation_time = 0.0;
             interval_computing_time_step += TickCount::now() - time_instance;
@@ -335,12 +375,12 @@ int main(int ac, char *av[])
 
             while (relaxation_time < Dt)
             {
-                dt = SMIN(get_water_time_step_size.exec(), Dt);
+                
                 //fluid_damping.exec(dt);
                 /** Fluid relaxation and force computation. */
                 water_pressure_relaxation.exec(dt);
-                water_pressure_relaxation.exec(dt);
-               
+                water_density_relaxation.exec(dt);
+                dt = SMIN(get_water_time_step_size.exec(), Dt);
                 relaxation_time += dt;
                 integration_time += dt;
                 GlobalStaticVariables::physical_time_ += dt;
@@ -363,6 +403,7 @@ int main(int ac, char *av[])
             water_block.updateCellLinkedList(); // water particle motion is small
             water_block_complex.updateConfiguration();
             interval_updating_configuration += TickCount::now() - time_instance;
+            //write_real_body_states_to_vtp.writeToFile();
         }
         TickCount t2 = TickCount::now();
         wave_probe_S1.writeToFile();
