@@ -12,10 +12,10 @@ using namespace SPH;
 /*@brief Basic geometry parameters and numerical setup.
  */
 
-Real resolution_ref = 0.008; /* Initial particle spacing*/
+//Real resolution_ref = 0.008; /* Initial particle spacing*/
 
 /* Domain bounds of the system*/
-BoundingBox system_domain_bounds(Vec3d(-0.2, -0.05, -0.2), Vec3d(0.2, 1.0, 0.2));
+//BoundingBox system_domain_bounds(Vec3d(-0.2, -0.05, -0.2), Vec3d(0.2, 1.0, 0.2));
 
 /*
 Material properties of the fluid.
@@ -52,7 +52,7 @@ std::string probe_s3_shape = "./input/ProbeS3.STL";
 /*
 Fuel Tank.
 */
-//Real resolution_ref = 0.05; // particle spacing
+Real resolution_ref = 0.025; // particle spacing
 Real BW = resolution_ref * 4;
 Real LL = 1.0; // liquid length
 Real LH = 1.0; // liquid height
@@ -61,52 +61,52 @@ Real DH = 2.0;
 // for material properties of the fluid
 //Real U_f = 2.0 * sqrt(gravity_g * LH);
 //Real c_f = 10.0 * U_f;
-//BoundingBox system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(LL + BW, DH + BW, LW + BW));
+BoundingBox system_domain_bounds(Vecd(-BW, -BW, -BW), Vecd(LL + BW, DH + BW, LW + BW));
 
 //	define the water block shape
-//class WaterBlock : public ComplexShape
-//{
-//  public:
-//    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
-//    {
-//        Vecd halfsize_water(0.5 * LL, 0.5 * LH, 0.5 * LW);
-//        Transform translation_water(halfsize_water);
-//        add<TransformShape<GeometricShapeBox>>(Transform(translation_water), halfsize_water);
-//    }
-//};
-////	define the static solid wall boundary shape
-//class Tank : public ComplexShape
-//{
-//  public:
-//    explicit Tank(const std::string &shape_name) : ComplexShape(shape_name)
-//    {
-//        Vecd halfsize_outer(0.5 * LL + BW, 0.5 * DH + BW, 0.5 * LW + BW);
-//        Vecd halfsize_inner(0.5 * LL, 0.5 * DH, 0.5 * LW);
-//        Transform translation_wall(halfsize_inner);
-//        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_outer);
-//        subtract<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
-//    }
-//};
-
-class Tank : public ComplexShape
-{
-  public:
-    explicit Tank(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        /** Geometry definition. */
-
-        add<TriangleMeshShapeSTL>(fuel_tank_outer, translation, length_scale, "OuterWall");
-        subtract<TriangleMeshShapeSTL>(fuel_tank_inner, translation, length_scale, "InnerWall");
-    }
-};
 class WaterBlock : public ComplexShape
 {
   public:
     explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        add<TriangleMeshShapeSTL>(water_05, translation, length_scale);
+        Vecd halfsize_water(0.5 * LL, 0.5 * LH, 0.5 * LW);
+        Transform translation_water(halfsize_water);
+        add<TransformShape<GeometricShapeBox>>(Transform(translation_water), halfsize_water);
     }
 };
+//	define the static solid wall boundary shape
+class Tank : public ComplexShape
+{
+  public:
+    explicit Tank(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vecd halfsize_outer(0.5 * LL + BW, 0.5 * DH + BW, 0.5 * LW + BW);
+        Vecd halfsize_inner(0.5 * LL, 0.5 * DH, 0.5 * LW);
+        Transform translation_wall(halfsize_inner);
+        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_outer);
+        subtract<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
+    }
+};
+
+//class Tank : public ComplexShape
+//{
+//  public:
+//    explicit Tank(const std::string &shape_name) : ComplexShape(shape_name)
+//    {
+//        /** Geometry definition. */
+//
+//        add<TriangleMeshShapeSTL>(fuel_tank_outer, translation, length_scale, "OuterWall");
+//        subtract<TriangleMeshShapeSTL>(fuel_tank_inner, translation, length_scale, "InnerWall");
+//    }
+//};
+//class WaterBlock : public ComplexShape
+//{
+//  public:
+//    explicit WaterBlock(const std::string &shape_name) : ComplexShape(shape_name)
+//    {
+//        add<TriangleMeshShapeSTL>(water_05, translation, length_scale);
+//    }
+//};
 
 class VariableGravity : public Gravity
 {
@@ -186,16 +186,16 @@ int main(int ac, char *av[])
     water_block.defineMaterial<WeaklyCompressibleFluid>(rho0_f, c_f);
     water_block.generateParticles<BaseParticles, Lattice>();
 
-    SolidBody tank(sph_system, makeShared<Tank>("Tank"));
-    //tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
-    tank.defineMaterial<Solid>();
-    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
-        : tank.generateParticles<BaseParticles, Lattice>();
+    //SolidBody tank(sph_system, makeShared<Tank>("Tank"));
+    ////tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    //tank.defineMaterial<Solid>();
+    //(!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+    //    ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
+    //    : tank.generateParticles<BaseParticles, Lattice>();
 
-    /*SolidBody tank(sph_system, makeShared<Tank>("Tank"));
+    SolidBody tank(sph_system, makeShared<Tank>("Tank"));
     tank.defineMaterial<Solid>();
-    tank.generateParticles<BaseParticles, Lattice>();*/
+    tank.generateParticles<BaseParticles, Lattice>();
     //----------------------------------------------------------------------
     //	Particle and body creation of gate observer.
     //----------------------------------------------------------------------
@@ -368,7 +368,7 @@ int main(int ac, char *av[])
             Real Dt = get_water_advection_time_step_size.exec();
             update_water_density.exec();
             //constant_gravity_to_water.exec();
-            viscous_force_water.exec();
+            //viscous_force_water.exec();
             Real relaxation_time = 0.0;
             interval_computing_time_step += TickCount::now() - time_instance;
             time_instance = TickCount::now();
