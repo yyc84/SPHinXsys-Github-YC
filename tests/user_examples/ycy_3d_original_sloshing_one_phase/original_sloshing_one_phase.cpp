@@ -126,7 +126,7 @@ int main(int ac, char* av[])
 	
     SimpleDynamics<GravityForce> constant_gravity_to_water(water_block, gravity);
 	SimpleDynamics<NormalDirectionFromSubShapeAndOp> inner_normal_direction(tank, "InnerWall");
-	
+    write_real_body_states.addToWrite<Vec3d>(tank, "NormalDirection");
 	/* Fluid dynamics */
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> water_pressure_relaxation(water_inner, water_tank_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallRiemann> water_density_relaxation(water_inner, water_tank_contact);

@@ -42,15 +42,15 @@ Real length_scale = 1.0;
 Vec3d translation(0, 0.0, 0);
 
 std::string fuel_tank_outer = "./input/tank_outer.STL";
-//std::string fuel_tank_inner = "./input/tank_inner.STL";
-//std::string water_05 = "./input/water_05.STL";
+std::string fuel_tank_inner = "./input/tank_inner.STL";
+std::string water_05 = "./input/water_05.STL";
 std::string air_05 = "./input/gas_05.STL";
 std::string probe_s1_shape = "./input/ProbeS1.STL";
 std::string probe_s2_shape = "./input/ProbeS2.STL";
 std::string probe_s3_shape = "./input/ProbeS3.STL";
 
-std::string fuel_tank_inner = "./input/tank_inner_2_hole.STL";
-std::string water_05 = "./input/water_2_hole.STL";
+//std::string fuel_tank_inner = "./input/tank_inner_2_hole.STL";
+//std::string water_05 = "./input/water_2_hole.STL";
 /*
 Fuel Tank.
 */
