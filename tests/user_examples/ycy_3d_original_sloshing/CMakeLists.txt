@@ -40,6 +40,8 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_ring_400.STL
         DESTINATION ${BUILD_INPUT_PATH})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_ring_400.STL
         DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/gas_0.001.STL
+        DESTINATION ${BUILD_INPUT_PATH})
 
 add_executable(${PROJECT_NAME})
 aux_source_directory(. DIR_SRCS)
