@@ -31,36 +31,47 @@ Real c_f = 10.0 * U_ref;                 /**< Reference sound speed. */
 //----------------------------------------------------------------------
 //	Geometric elements used in shape modeling.
 //----------------------------------------------------------------------
-//std::vector<Vecd> createWaterBlockShape()
-//{
-//    std::vector<Vecd> water_block_shape;
-//    water_block_shape.push_back(Vecd(0.0, 0.0));
-//    water_block_shape.push_back(Vecd(0.0, LH));
-//    water_block_shape.push_back(Vecd(LL, LH));
-//    water_block_shape.push_back(Vecd(LL, 0.0));
-//    water_block_shape.push_back(Vecd(0.0, 0.0));
-//    return water_block_shape;
-//}
-
 std::vector<Vecd> createWaterBlockShape()
 {
     std::vector<Vecd> water_block_shape;
     water_block_shape.push_back(Vecd(0.0, 0.0));
-    water_block_shape.push_back(Vecd(0.0, BH));
-    water_block_shape.push_back(Vecd(BL, BH));
-    water_block_shape.push_back(Vecd(BL, BH+BW));
-    water_block_shape.push_back(Vecd(0.0, BH+BW));
     water_block_shape.push_back(Vecd(0.0, LH));
     water_block_shape.push_back(Vecd(LL, LH));
-    water_block_shape.push_back(Vecd(LL, BH+BW));
-    water_block_shape.push_back(Vecd(LL-BL, BH+BW));
-    water_block_shape.push_back(Vecd(LL-BL, BH));
-    water_block_shape.push_back(Vecd(LL, BH));
     water_block_shape.push_back(Vecd(LL, 0.0));
     water_block_shape.push_back(Vecd(0.0, 0.0));
     return water_block_shape;
 }
 
+//std::vector<Vecd> createWaterBlockShape()
+//{
+//    std::vector<Vecd> water_block_shape;
+//    water_block_shape.push_back(Vecd(0.0, 0.0));
+//    water_block_shape.push_back(Vecd(0.0, BH));
+//    water_block_shape.push_back(Vecd(BL, BH));
+//    water_block_shape.push_back(Vecd(BL, BH+BW));
+//    water_block_shape.push_back(Vecd(0.0, BH+BW));
+//    water_block_shape.push_back(Vecd(0.0, LH));
+//    water_block_shape.push_back(Vecd(LL, LH));
+//    water_block_shape.push_back(Vecd(LL, BH+BW));
+//    water_block_shape.push_back(Vecd(LL-BL, BH+BW));
+//    water_block_shape.push_back(Vecd(LL-BL, BH));
+//    water_block_shape.push_back(Vecd(LL, BH));
+//    water_block_shape.push_back(Vecd(LL, 0.0));
+//    water_block_shape.push_back(Vecd(0.0, 0.0));
+//    return water_block_shape;
+//}
+
+std::vector<Vecd> createAirBlockShape()
+{
+    std::vector<Vecd> water_block_shape;
+    
+    water_block_shape.push_back(Vecd(0.0, LH+ 0.6*particle_spacing_ref));
+    water_block_shape.push_back(Vecd(0.0, DH));
+    water_block_shape.push_back(Vecd(LL, DH));
+    water_block_shape.push_back(Vecd(LL, LH+0.6*particle_spacing_ref));
+    water_block_shape.push_back(Vecd(0.0, LH+0.6*particle_spacing_ref));
+    return water_block_shape;
+}
 
 std::vector<Vecd> createOuterWallShape()
 {
@@ -74,37 +85,37 @@ std::vector<Vecd> createOuterWallShape()
     return outer_wall_shape;
 }
 
-//std::vector<Vecd> createInnerWallShape()
-//{
-//    std::vector<Vecd> inner_wall_shape;
-//    inner_wall_shape.push_back(Vecd(0.0, 0.0));
-//    inner_wall_shape.push_back(Vecd(0.0, DH));
-//    inner_wall_shape.push_back(Vecd(LL, DH));
-//    inner_wall_shape.push_back(Vecd(LL, 0.0));
-//    inner_wall_shape.push_back(Vecd(0.0, 0.0));
-//
-//    return inner_wall_shape;
-//}
-
 std::vector<Vecd> createInnerWallShape()
 {
     std::vector<Vecd> inner_wall_shape;
     inner_wall_shape.push_back(Vecd(0.0, 0.0));
-    inner_wall_shape.push_back(Vecd(0.0, BH));
-    inner_wall_shape.push_back(Vecd(BL, BH));
-    inner_wall_shape.push_back(Vecd(BL, BH + BW));
-    inner_wall_shape.push_back(Vecd(0.0, BH + BW));
     inner_wall_shape.push_back(Vecd(0.0, DH));
     inner_wall_shape.push_back(Vecd(LL, DH));
-    inner_wall_shape.push_back(Vecd(LL, BH + BW));
-    inner_wall_shape.push_back(Vecd(LL - BL, BH + BW));
-    inner_wall_shape.push_back(Vecd(LL - BL, BH));
-    inner_wall_shape.push_back(Vecd(LL, BH));
     inner_wall_shape.push_back(Vecd(LL, 0.0));
     inner_wall_shape.push_back(Vecd(0.0, 0.0));
 
     return inner_wall_shape;
 }
+
+//std::vector<Vecd> createInnerWallShape()
+//{
+//    std::vector<Vecd> inner_wall_shape;
+//    inner_wall_shape.push_back(Vecd(0.0, 0.0));
+//    inner_wall_shape.push_back(Vecd(0.0, BH));
+//    inner_wall_shape.push_back(Vecd(BL, BH));
+//    inner_wall_shape.push_back(Vecd(BL, BH + BW));
+//    inner_wall_shape.push_back(Vecd(0.0, BH + BW));
+//    inner_wall_shape.push_back(Vecd(0.0, DH));
+//    inner_wall_shape.push_back(Vecd(LL, DH));
+//    inner_wall_shape.push_back(Vecd(LL, BH + BW));
+//    inner_wall_shape.push_back(Vecd(LL - BL, BH + BW));
+//    inner_wall_shape.push_back(Vecd(LL - BL, BH));
+//    inner_wall_shape.push_back(Vecd(LL, BH));
+//    inner_wall_shape.push_back(Vecd(LL, 0.0));
+//    inner_wall_shape.push_back(Vecd(0.0, 0.0));
+//
+//    return inner_wall_shape;
+//}
 //----------------------------------------------------------------------
 //	cases-dependent geometric shape for water block.
 //----------------------------------------------------------------------
@@ -119,15 +130,25 @@ class WaterBlock : public MultiPolygonShape
 //----------------------------------------------------------------------
 //	cases-dependent geometric shape for air block.
 //----------------------------------------------------------------------
+// class AirBlock : public MultiPolygonShape
+// {
+//   public:
+//     explicit AirBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
+//     {
+//         multi_polygon_.addAPolygon(createInnerWallShape(), ShapeBooleanOps::add);
+//         multi_polygon_.addAPolygon(createWaterBlockShape(), ShapeBooleanOps::sub);
+//     }
+// };
+
 class AirBlock : public MultiPolygonShape
 {
   public:
     explicit AirBlock(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
-        multi_polygon_.addAPolygon(createInnerWallShape(), ShapeBooleanOps::add);
-        multi_polygon_.addAPolygon(createWaterBlockShape(), ShapeBooleanOps::sub);
+        multi_polygon_.addAPolygon(createAirBlockShape(), ShapeBooleanOps::add);
     }
 };
+
 //----------------------------------------------------------------------
 //	Wall boundary shape definition.
 //----------------------------------------------------------------------

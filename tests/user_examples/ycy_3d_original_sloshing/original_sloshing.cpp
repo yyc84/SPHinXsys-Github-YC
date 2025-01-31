@@ -185,6 +185,10 @@ int main(int ac, char* av[])
 	InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall> viscous_acceleration_water(water_inner,  water_air_contact, water_tank_contact);
 	InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall> viscous_acceleration_air(air_inner, air_water_contact, air_tank_contact);
 
+	DampingWithRandomChoice<InteractionSplit<DampingPairwiseWithWall<Vec3d, FixedDampingRate>>>
+        water_damping(0.2, ConstructorArgs(water_inner, "Velocity", mu_water), ConstructorArgs(water_air_contact, "Velocity", mu_water));
+    DampingWithRandomChoice<InteractionSplit<DampingPairwiseWithWall<Vec3d, FixedDampingRate>>>
+        air_damping(0.2, ConstructorArgs(air_inner, "Velocity", mu_air), ConstructorArgs(air_water_contact, "Velocity", mu_air));
 	//SimpleDynamics<ThermoAirBodyInitialCondition> thermo_air_initial_condition(air_block);
 	//SimpleDynamics<ThermoWaterBodyInitialCondition> thermo_water_initial_condition(water_block);
 
@@ -260,7 +264,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 5.0;			/**< End time. */
+	Real End_Time = 10.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
@@ -312,6 +316,11 @@ int main(int ac, char* av[])
 				dt = SMIN(SMIN(dt_f, dt_a), Dt);
 				/* Fluid pressure relaxation */
 				
+				/*if (GlobalStaticVariables::physical_time_ <= 5.0)
+				{
+                    water_damping.exec();
+                    air_damping.exec();
+				}*/
                 water_pressure_relaxation.exec(dt);
                 air_pressure_relaxation.exec(dt);
 

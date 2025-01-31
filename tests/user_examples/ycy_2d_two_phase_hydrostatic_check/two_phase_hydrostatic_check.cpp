@@ -155,7 +155,7 @@ int main(int ac, char *av[])
             {
                 Real dt_f = get_water_time_step_size.exec();
                 Real dt_a = get_air_time_step_size.exec();
-                dt = 0.2*SMIN(SMIN(dt_f, dt_a), Dt);
+                dt = SMIN(SMIN(dt_f, dt_a), Dt);
 
                 water_pressure_relaxation.exec(dt);
                 air_pressure_relaxation.exec(dt);
