@@ -620,6 +620,7 @@ template <class ContactKernelGradientType, class DiffusionType, class ContactDif
  {
     for (size_t m = 0; m < this->diffusions_.size(); ++m)
     {
+        Real A_i = (this->particles_->ParticleSpacing(particle_i)) * (this->particles_->ParticleSpacing(particle_i));
         Real rho_i = this->diffusions_[m]->getDensity();
         Real c_v_i = this->diffusions_[m]->getSpecificHeat();
         Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
@@ -628,7 +629,7 @@ template <class ContactKernelGradientType, class DiffusionType, class ContactDif
             this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
         Real phi_ij = (*this->gradient_species_[m])[particle_i] - (*gradient_species_k[m])[particle_j];
         (*this->diffusion_dt_[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij / rho_i / c_v_i;
-        (*heat_flux_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij;
+        (*heat_flux_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij * A_i;
         (*heat_flux_wu_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij / rho_i / c_v_i;
     }
  }

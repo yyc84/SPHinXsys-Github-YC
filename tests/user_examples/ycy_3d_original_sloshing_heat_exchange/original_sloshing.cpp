@@ -216,8 +216,8 @@ int main(int ac, char* av[])
 	
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_wu(water_block, "PhiFluxWuContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_wu(air_block, "PhiFluxWuContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner_rate(water_block, "PhiFluxInnerChangeRate");

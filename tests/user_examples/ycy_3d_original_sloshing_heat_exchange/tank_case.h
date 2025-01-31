@@ -94,7 +94,7 @@ class VariableGravity : public Gravity
     virtual Vecd InducedAcceleration(const Vecd &position = Vecd::Zero()) override
     {
         time_ = GlobalStaticVariables::physical_time_;
-        if (time_ <= 0.5)
+        if (time_ <= 5.0)
         {
             global_acceleration_ = global_acceleration_;
         }
