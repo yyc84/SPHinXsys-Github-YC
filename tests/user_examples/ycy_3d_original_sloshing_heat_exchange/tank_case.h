@@ -44,15 +44,15 @@ Real initial_temperature_right = 313.15;
 Real initial_temperature_air = 353.15;
 
 std::string fuel_tank_outer = "./input/tank_outer.STL";
-std::string fuel_tank_inner = "./input/tank_inner.STL";
-std::string water_05 = "./input/water_05.STL";
+//std::string fuel_tank_inner = "./input/tank_inner.STL";
+//std::string water_05 = "./input/water_05.STL";
 std::string air_05 = "./input/gas_05.STL";
 std::string probe_s1_shape = "./input/ProbeS1.STL";
 std::string probe_s2_shape = "./input/ProbeS2.STL";
 std::string probe_s3_shape = "./input/ProbeS3.STL";
 
-//std::string water_05 = "./input/validation_water.STL";
-//std::string fuel_tank_inner = "./input/validation_tank_inner.STL";
+std::string water_05 = "./input/water_9_hole_400.STL";
+std::string fuel_tank_inner = "./input/tank_inner_9_hole_400.STL";
     /*
 Fuel Tank.
 */
@@ -94,7 +94,7 @@ class VariableGravity : public Gravity
     virtual Vecd InducedAcceleration(const Vecd &position = Vecd::Zero()) override
     {
         time_ = GlobalStaticVariables::physical_time_;
-        if (time_ <= 5.0)
+        if (time_ <= 1.0)
         {
             global_acceleration_ = global_acceleration_;
         }

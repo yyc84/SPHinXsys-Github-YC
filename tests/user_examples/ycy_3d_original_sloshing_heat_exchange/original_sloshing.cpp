@@ -339,8 +339,13 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                water_heat_exchange_complex.exec(dt);
-                air_heat_exchange_complex.exec(dt);
+                if (GlobalStaticVariables::physical_time_>= 1.0)
+                {
+                    water_heat_exchange_complex.exec(dt);
+                    air_heat_exchange_complex.exec(dt);
+                }
+                //water_heat_exchange_complex.exec(dt);
+                //air_heat_exchange_complex.exec(dt);
 				relaxation_time += dt;
 				integration_time += dt;
                 GlobalStaticVariables::physical_time_ += dt;
