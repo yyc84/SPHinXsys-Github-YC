@@ -224,6 +224,8 @@ int main(int ac, char* av[])
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner_rate(air_block, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<Average<QuantitySummation<Real, SPHBody>>> water_everage_temperature(water_block, "Phi");
     ReducedQuantityRecording<Average<QuantitySummation<Real, SPHBody>>> air_everage_temperature(air_block, "Phi");
+    ReducedQuantityRecording<QuantityMax<Real, SPHBody>> water_max_temperature(water_block, "Phi");
+    ReducedQuantityRecording<QuantityMax<Real, SPHBody>> air_max_temperature(air_block, "Phi");
 
 	/*ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_air_total_mass(air_block, "MassiveMeasure");
     ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_water_total_mass(water_block, "MassiveMeasure");*/
@@ -402,7 +404,7 @@ int main(int ac, char* av[])
             }
 			
             std::string output_folder_ = "./output";
-            std::string filefullpath = output_folder_ + "/" + "number_of_water/air_particles_has_contact" + ".dat";
+            std::string filefullpath = output_folder_ + "/" + "number_of_water-air_particles_has_contact" + ".dat";
             std::ofstream out_file_(filefullpath.c_str(), std::ios::app);
             //out_file_ << "Time "<< "Num" << std::endl;        
 			out_file_ << GlobalStaticVariables::physical_time_ << "  " << count_num_water << "  " << count_num_air << "  " << std::endl;
@@ -432,6 +434,8 @@ int main(int ac, char* av[])
                 write_temperature_gas.writeToFile();
                 water_everage_temperature.writeToFile();
                 air_everage_temperature.writeToFile();
+                water_max_temperature.writeToFile();
+                air_max_temperature.writeToFile();
 			}
 			
 			//write_real_body_states.writeToFile();
