@@ -2,8 +2,8 @@
 * @file 	waterentry_elastic_case.h
 */
 
-#ifndef	TANK_CASE_H
-#define TANK_CASE_H
+#ifndef	TANK_CASE_HEAT_H
+#define TANK_CASE_HEAT_H
 
 #include "sphinxsys.h"
 #define PI (3.14159265358979323846)
@@ -44,15 +44,15 @@ Real initial_temperature_right = 313.15;
 Real initial_temperature_air = 353.15;
 
 std::string fuel_tank_outer = "./input/tank_outer.STL";
-//std::string fuel_tank_inner = "./input/tank_inner.STL";
-//std::string water_05 = "./input/water_05.STL";
+std::string fuel_tank_inner = "./input/tank_inner.STL";
+std::string water_05 = "./input/water_05.STL";
 std::string air_05 = "./input/gas_05.STL";
 std::string probe_s1_shape = "./input/ProbeS1.STL";
 std::string probe_s2_shape = "./input/ProbeS2.STL";
 std::string probe_s3_shape = "./input/ProbeS3.STL";
 
-std::string water_05 = "./input/water_2_hole.STL";
-std::string fuel_tank_inner = "./input/tank_inner_2_hole.STL";
+//std::string water_05 = "./input/water_2_hole.STL";
+//std::string fuel_tank_inner = "./input/tank_inner_2_hole.STL";
     /*
 Fuel Tank.
 */
@@ -94,7 +94,7 @@ class VariableGravity : public Gravity
     virtual Vecd InducedAcceleration(const Vecd &position = Vecd::Zero()) override
     {
         time_ = GlobalStaticVariables::physical_time_;
-        if (time_ <= 5.0)
+        if (time_ <= 0.5)
         {
             global_acceleration_ = global_acceleration_;
         }
@@ -204,4 +204,4 @@ StdVec<Vecd> GasTemperatureObserverParticle()
     return observation_points;
 };
 
-#endif //TANK_CASE_H
+#endif //TANK_CASE_HEAT_H

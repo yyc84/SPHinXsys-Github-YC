@@ -434,6 +434,7 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interact
 {
     for (size_t m = 0; m < this->diffusions_.size(); ++m)
     {
+        Real A_i = (this->particles_->ParticleSpacing(index_i)) * (this->particles_->ParticleSpacing(index_i));
         auto diffusion_m = this->diffusions_[m];
         StdLargeVec<Real> &gradient_species = *this->gradient_species_[m];
         Real rho_i = this->diffusions_[m]->getDensity();
@@ -458,7 +459,7 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interact
 
         }
         (*this->diffusion_dt_[m])[index_i] = d_species / rho_i / c_v_i;
-        (*this->heat_flux_inner_dt_[m])[index_i] = d_species ;
+        (*this->heat_flux_inner_dt_[m])[index_i] = d_species * A_i;
     }
 }
 //=================================================================================================//

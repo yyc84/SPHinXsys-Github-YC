@@ -3,7 +3,7 @@
  * @brief 	This is a cylinder fall into static water.
  */
 #include "sphinxsys.h"
-#include "tank_case.h"
+#include "tank_case_heat.h"
  /*@brief Namespace cite here.
  */
 using namespace SPH;
@@ -214,8 +214,8 @@ int main(int ac, char* av[])
 	ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
 		air_average_temperature(in_output, air_block, "Phi");*/
 	
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_wu(water_block, "PhiFluxWuContact");
@@ -255,18 +255,18 @@ int main(int ac, char* av[])
 	
 	//compute_water_total_mass.writeToFile(0);
 	//compute_air_total_mass.writeToFile(0);
-    write_water_heat_flux_inner.writeToFile(0);
-    write_air_heat_flux_inner.writeToFile(0);
-    write_water_heat_flux_contact.writeToFile(0);
-    write_air_heat_flux_contact.writeToFile(0);
+    //write_water_heat_flux_inner.writeToFile(0);
+   //write_air_heat_flux_inner.writeToFile(0);
+    //write_water_heat_flux_contact.writeToFile(0);
+    //write_air_heat_flux_contact.writeToFile(0);
     write_air_heat_flux_wu.writeToFile(0);
     write_water_heat_flux_wu.writeToFile(0);
     write_air_heat_flux_inner_rate.writeToFile(0);
     write_water_heat_flux_inner_rate.writeToFile(0);
     write_temperature_liquid.writeToFile(0);
     write_temperature_gas.writeToFile(0);
-    water_everage_temperature.writeToFile(0);
-    air_everage_temperature.writeToFile(0);
+    //water_everage_temperature.writeToFile(0);
+    //air_everage_temperature.writeToFile(0);
 	if (GlobalStaticVariables::physical_time_ != 0)
 	{
         GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());
@@ -343,7 +343,7 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                if (GlobalStaticVariables::physical_time_>= 5.0)
+                if (GlobalStaticVariables::physical_time_>= 0.5)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -373,28 +373,39 @@ int main(int ac, char* av[])
 			
 			//liquid_temperature_observer_contact.updateConfiguration();
 			//gas_temperature_observer_contact.updateConfiguration();
-            int num = water_air_contact.getSPHBody().getBaseParticles().TotalRealParticles();
-			int count_num = 0;
+            int num_water = water_air_contact.getSPHBody().getBaseParticles().TotalRealParticles();
+			int count_num_water = 0;
 			for (size_t k = 0; k < water_air_contact.contact_configuration_.size(); ++k)
 			{
-				for (int i = 0; i != num; ++i)
+                for (int i = 0; i != num_water; ++i)
 				{
 					Neighborhood& neighborhood = water_air_contact.contact_configuration_[k][i];
 					if (neighborhood.current_size_ != 0)
 					{
-						count_num += 1;
+                        count_num_water += 1;
 					}
 				}
 			}
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				std::string output_folder_ = "./output";
-				std::string filefullpath = output_folder_ + "/" + "number_of_water_particles_has_contact" + ".dat";
-				std::ofstream out_file_(filefullpath.c_str(), std::ios::app);
-				out_file_ << "\n";
-				out_file_ << "Time " << "Num" << std::endl;
-				out_file_ << GlobalStaticVariables::physical_time_ << "  " << count_num << "  " << std::endl;
-			}
+
+			int num_air = air_water_contact.getSPHBody().getBaseParticles().TotalRealParticles();
+            int count_num_air = 0;
+            for (size_t k = 0; k < air_water_contact.contact_configuration_.size(); ++k)
+            {
+                for (int i = 0; i != num_air; ++i)
+                {
+                    Neighborhood &neighborhood = water_air_contact.contact_configuration_[k][i];
+                    if (neighborhood.current_size_ != 0)
+                    {
+                        count_num_air += 1;
+                    }
+                }
+            }
+			
+            std::string output_folder_ = "./output";
+            std::string filefullpath = output_folder_ + "/" + "number_of_water/air_particles_has_contact" + ".dat";
+            std::ofstream out_file_(filefullpath.c_str(), std::ios::app);
+            //out_file_ << "Time "<< "Num" << std::endl;        
+			out_file_ << GlobalStaticVariables::physical_time_ << "  " << count_num_water << "  " << count_num_air << "  " << std::endl;
 
 			number_of_iterations++;
 			time_instance = TickCount::now();
@@ -404,23 +415,23 @@ int main(int ac, char* av[])
             water_air_complex.updateConfiguration();
             air_water_complex.updateConfiguration();
 
-			if (GlobalStaticVariables::physical_time_ >= 5.0)
+			if (GlobalStaticVariables::physical_time_ >= 0.5)
 			{
-                            wave_probe_S1.writeToFile();
-                            wave_probe_S2.writeToFile();
-                            wave_probe_S3.writeToFile();
-                            write_water_heat_flux_inner.writeToFile();
-                            write_air_heat_flux_inner.writeToFile();
-                            write_water_heat_flux_contact.writeToFile();
-                            write_air_heat_flux_contact.writeToFile();
-                            write_air_heat_flux_wu.writeToFile();
-                            write_water_heat_flux_wu.writeToFile();
-                            write_air_heat_flux_inner_rate.writeToFile();
-                            write_water_heat_flux_inner_rate.writeToFile();
-                            write_temperature_liquid.writeToFile();
-                            write_temperature_gas.writeToFile();
-                            water_everage_temperature.writeToFile();
-                            air_everage_temperature.writeToFile();
+                wave_probe_S1.writeToFile();
+                wave_probe_S2.writeToFile();
+                wave_probe_S3.writeToFile();
+                write_water_heat_flux_inner.writeToFile();
+                write_air_heat_flux_inner.writeToFile();
+                write_water_heat_flux_contact.writeToFile();
+                write_air_heat_flux_contact.writeToFile();
+                write_air_heat_flux_wu.writeToFile();
+                write_water_heat_flux_wu.writeToFile();
+                write_air_heat_flux_inner_rate.writeToFile();
+                write_water_heat_flux_inner_rate.writeToFile();
+                write_temperature_liquid.writeToFile();
+                write_temperature_gas.writeToFile();
+                water_everage_temperature.writeToFile();
+                air_everage_temperature.writeToFile();
 			}
 			
 			//write_real_body_states.writeToFile();
