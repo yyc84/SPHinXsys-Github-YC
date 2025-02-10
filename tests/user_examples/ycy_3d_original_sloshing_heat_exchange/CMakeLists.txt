@@ -22,24 +22,34 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_05.STL
         DESTINATION ${BUILD_INPUT_PATH})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/gas_05.STL
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS1.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS1.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS2.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS2.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS3.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS3.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_ring_400.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/gas_small.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_ring_400.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_small.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_2_hole.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_2hole_small.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_2_hole.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_9hole_small.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_9_hole_400.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_ring_small.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_9_hole_400.STL
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_small.stl
         DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_2hole_small.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_9hole_small.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_ring_small.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_outer_small.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+
+
 
 add_executable(${PROJECT_NAME})
 aux_source_directory(. DIR_SRCS)
