@@ -18,9 +18,9 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(true);
+	system.setRunParticleRelaxation(false);
 	// Tag for computation start with relaxed body fitted particles distribution.
-	system.setReloadParticles(false);
+	system.setReloadParticles(true);
 	/* Tag for computation from restart files. 0: start with initial condition. */
 	system.setRestartStep(1);
 	//handle command line arguments
@@ -33,7 +33,7 @@ int main(int ac, char* av[])
 	@Brief creating body, materials and particles for the cylinder.
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
-	tank.defineBodyLevelSetShape()->writeLevelSet(system);
+	//tank.defineBodyLevelSetShape()->writeLevelSet(system);
 	tank.defineMaterial<Solid>();
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<BaseParticles, Reload>(tank.getName())
@@ -283,8 +283,8 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 21.5;			/**< End time. */
-	Real D_Time = 0.1;	/**< time stamps for output. */
+	Real End_Time = 25.0;			/**< End time. */
+	Real D_Time = 0.15;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
 
@@ -345,7 +345,7 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                if (GlobalStaticVariables::physical_time_>= 1.5)
+                if (GlobalStaticVariables::physical_time_>= 5.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -417,7 +417,7 @@ int main(int ac, char* av[])
             water_air_complex.updateConfiguration();
             air_water_complex.updateConfiguration();
 
-			if (GlobalStaticVariables::physical_time_ >= 1.5)
+			if (GlobalStaticVariables::physical_time_ >= 5.0)
 			{
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
