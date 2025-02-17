@@ -13,7 +13,7 @@ using namespace SPH;
 */
 
 
-Real resolution_ref = 0.008;   /* Initial particle spacing*/
+Real resolution_ref = 0.01;   /* Initial particle spacing*/
 /* Domain bounds of the system*/
 BoundingBox system_domain_bounds(Vec3d(-0.2, -0.05, -0.2), Vec3d(0.2, 1.0, 0.2));
 
@@ -47,7 +47,7 @@ Real gravity_g = 9.81;                  /*Gravity force of fluid*/
 Real U_f = 2.0 * sqrt(gravity_g * 0.5); /**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5); /**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);       /**< Reference sound speed. */
-Real f = 1.7;
+Real f = 1.5;
 Real a = 0.03;
 Real c_p_water = 3.4267e3;
 Real c_p_air = 1.054e3;
@@ -68,11 +68,11 @@ std::string air_05 = "./input/gas_small.stl";
 std::string probe_s1_shape = "./input/ProbeS1.stl";
 std::string probe_s2_shape = "./input/ProbeS2.stl";
 std::string probe_s3_shape = "./input/ProbeS3.stl";
-//std::string fuel_tank_inner = "./input/tank_inner_small.stl";
-//std::string water_05 = "./input/water_small.stl";
+std::string fuel_tank_inner = "./input/tank_inner_small.stl";
+std::string water_05 = "./input/water_small.stl";
 
-std::string fuel_tank_inner = "./input/tank_inner_2hole_small.stl";
-std::string water_05 = "./input/water_2hole_small.stl";
+//std::string fuel_tank_inner = "./input/tank_inner_2hole_small.stl";
+//std::string water_05 = "./input/water_2hole_small.stl";
 
 //std::string fuel_tank_inner = "./input/tank_inner_9hole_small.stl";
 //std::string water_05 = "./input/water_9hole_small.stl";
@@ -119,7 +119,7 @@ class VariableGravity : public Gravity
     virtual Vecd InducedAcceleration(const Vecd &position = Vecd::Zero()) override
     {
         time_ = GlobalStaticVariables::physical_time_;
-        if (time_ <= 5.0)
+        if (time_ <= 4.0)
         {
             global_acceleration_ = global_acceleration_;
         }

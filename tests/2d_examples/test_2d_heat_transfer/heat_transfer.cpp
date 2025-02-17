@@ -260,6 +260,8 @@ int main(int ac, char *av[])
     write_real_body_states.addToWrite<Real>(thermosolid_body, "Phi");
     RegressionTestEnsembleAverage<ObservedQuantityRecording<Real>> write_fluid_phi("Phi", fluid_observer_contact);
     ObservedQuantityRecording<Vecd> write_fluid_velocity("Velocity", fluid_observer_contact);
+    RestartIO restart_io(sph_system);
+    restart_io.addToWrite<Real>(thermofluid_body,"Phi");
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -276,12 +278,23 @@ int main(int ac, char *av[])
     thermofluid_initial_condition.exec();
     Real dt_thermal = get_thermal_time_step.exec();
     //----------------------------------------------------------------------
+    //	Load restart file if necessary.
+    //----------------------------------------------------------------------
+    if (sph_system.RestartStep() != 0)
+    {
+        GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(sph_system.RestartStep());
+        thermofluid_body.updateCellLinkedList();
+        fluid_body_complex.updateConfiguration();
+        fluid_observer_contact.updateConfiguration();
+    }
+    //----------------------------------------------------------------------
     //	Setup for time-stepping control
     //----------------------------------------------------------------------
     Real end_time = 10;
     Real output_interval = end_time / 100.0; /**< time stamps for output,WriteToFile*/
     int number_of_iterations = 0;
     int screen_output_interval = 40;
+    int restart_output_interval = screen_output_interval * 10;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
     //----------------------------------------------------------------------
@@ -326,6 +339,9 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << GlobalStaticVariables::physical_time_
                           << "	Dt = " << Dt << "	Dt / dt = " << inner_ite_dt << "\n";
+
+                if (number_of_iterations % restart_output_interval == 0)
+                    restart_io.writeToFile(number_of_iterations);
             }
             number_of_iterations++;
 

@@ -162,6 +162,22 @@ class RestartIO : public BaseIO
         readFromFile(restart_step);
         return readRestartTime(restart_step);
     };
+
+    template <typename DataType>
+    void addToWrite(SPHBody &sph_body, const std::string &name)
+    {
+        if (isBodyIncluded(bodies_, &sph_body))
+        {
+            sph_body.getBaseParticles().addVariableToRestart<DataType>(name);
+        }
+        else
+        {
+            std::cout << "\n Error: the body:" << sph_body.getName()
+                      << " is not in the restarting list" << std::endl;
+            std::cout << __FILE__ << ':' << __LINE__ << std::endl;
+            exit(1);
+        }
+    };
 };
 
 /**

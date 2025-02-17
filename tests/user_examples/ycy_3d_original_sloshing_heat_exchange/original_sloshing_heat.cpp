@@ -206,6 +206,8 @@ int main(int ac, char* av[])
     write_real_body_states.addToWrite<Real>(air_block, "Phi");
 
     RestartIO restart_io(system);
+    restart_io.addToWrite<Real>(water_block, "Phi");
+    restart_io.addToWrite<Real>(air_block, "Phi");
     ObservedQuantityRecording<Real> write_temperature_liquid("Phi", liquid_temperature_observer_contact);
     ObservedQuantityRecording<Real> write_temperature_gas("Phi", gas_temperature_observer_contact);
 
@@ -282,9 +284,9 @@ int main(int ac, char* av[])
 
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
-	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 25.0;			/**< End time. */
-	Real D_Time = 0.15;	/**< time stamps for output. */
+	int restart_output_interval = screen_output_interval * 50;
+	Real End_Time = 21.0;			/**< End time. */
+	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
 
@@ -345,7 +347,7 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                if (GlobalStaticVariables::physical_time_>= 5.0)
+                if (GlobalStaticVariables::physical_time_>= 1.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -417,7 +419,7 @@ int main(int ac, char* av[])
             water_air_complex.updateConfiguration();
             air_water_complex.updateConfiguration();
 
-			if (GlobalStaticVariables::physical_time_ >= 5.0)
+			if (GlobalStaticVariables::physical_time_ >= 1.0)
 			{
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
