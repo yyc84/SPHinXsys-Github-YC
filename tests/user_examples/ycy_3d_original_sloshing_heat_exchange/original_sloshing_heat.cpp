@@ -271,7 +271,7 @@ int main(int ac, char* av[])
     write_temperature_gas.writeToFile(0);
     //water_everage_temperature.writeToFile(0);
     //air_everage_temperature.writeToFile(0);
-	if (GlobalStaticVariables::physical_time_ != 0)
+    if (system.RestartStep() != 0)
 	{
         GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(system.RestartStep());
 		water_block.updateCellLinkedList();
@@ -284,7 +284,7 @@ int main(int ac, char* av[])
 
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
-	int restart_output_interval = screen_output_interval * 50;
+	int restart_output_interval = screen_output_interval * 10;
 	Real End_Time = 21.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
