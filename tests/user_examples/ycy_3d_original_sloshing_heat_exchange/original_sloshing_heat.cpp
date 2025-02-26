@@ -18,11 +18,11 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(false);
+	system.setRunParticleRelaxation(true);
 	// Tag for computation start with relaxed body fitted particles distribution.
-	system.setReloadParticles(true);
+	system.setReloadParticles(false);
 	/* Tag for computation from restart files. 0: start with initial condition. */
-	system.setRestartStep(1);
+	system.setRestartStep(0);
 	//handle command line arguments
 	system.handleCommandlineOptions(ac, av);
 	/* Output environment. */
@@ -33,7 +33,7 @@ int main(int ac, char* av[])
 	@Brief creating body, materials and particles for the cylinder.
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
-	//tank.defineBodyLevelSetShape()->writeLevelSet(system);
+	tank.defineBodyLevelSetShape()->writeLevelSet(system);
 	tank.defineMaterial<Solid>();
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<BaseParticles, Reload>(tank.getName())
@@ -284,8 +284,8 @@ int main(int ac, char* av[])
 
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
-	int restart_output_interval = screen_output_interval * 10;
-	Real End_Time = 21.0;			/**< End time. */
+	int restart_output_interval = screen_output_interval * 20;
+	Real End_Time = 24.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
@@ -347,7 +347,7 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                if (GlobalStaticVariables::physical_time_>= 1.0)
+                if (GlobalStaticVariables::physical_time_>= 4.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -370,8 +370,8 @@ int main(int ac, char* av[])
 					<< " dt_f = " << dt_water << " dt_a = " << dt_air 
 					<< " dt_f_thermal = " << dt_f_thermal << " dt_a_thermal = " << dt_a_thermal << "\n";
 
-				if (number_of_iterations % restart_output_interval == 0)
-					restart_io.writeToFile(number_of_iterations);
+				/*if (number_of_iterations % restart_output_interval == 0)
+					restart_io.writeToFile(number_of_iterations);*/
 				    
 			}
 			
@@ -419,7 +419,7 @@ int main(int ac, char* av[])
             water_air_complex.updateConfiguration();
             air_water_complex.updateConfiguration();
 
-			if (GlobalStaticVariables::physical_time_ >= 1.0)
+			if (GlobalStaticVariables::physical_time_ >= 4.0)
 			{
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
