@@ -39,6 +39,7 @@ namespace SPH
 class WithUpdate;
 class WithInitialization;
 class OneLevel;
+class InteractionOnly;
 
 template <typename... T>
 class Interaction;
@@ -48,7 +49,8 @@ class Interaction<Inner<Parameters...>> : public LocalDynamics
 {
   public:
     explicit Interaction(Relation<Inner<Parameters...>> &inner_relation);
-    virtual ~Interaction(){};
+    virtual ~Interaction() {};
+    SPHAdaptation *getSPHAdaptation() { return sph_adaptation_; };
 
     class InteractKernel : public NeighborList, public Neighbor<Parameters...>
     {
@@ -69,27 +71,29 @@ class Interaction<Inner<Parameters...>> : public LocalDynamics
     DiscreteVariable<UnsignedInt> *dv_particle_offset_;
 };
 
-template <typename... Parameters>
-class Interaction<Contact<Parameters...>> : public LocalDynamics
+template <class SourceIdentifier, class TargetIdentifier, typename... Parameters>
+class Interaction<Contact<SourceIdentifier, TargetIdentifier, Parameters...>>
+    : public BaseLocalDynamics<SourceIdentifier>
 {
   public:
-    explicit Interaction(Relation<Contact<Parameters...>> &contact_relation);
-    virtual ~Interaction(){};
+    typedef Relation<Contact<SourceIdentifier, TargetIdentifier, Parameters...>> RelationType;
+    
+    explicit Interaction(Relation<Contact<SourceIdentifier, TargetIdentifier, Parameters...>> &contact_relation);
+    virtual ~Interaction() {};
+    SPHAdaptation *getSPHAdaptation() { return sph_adaptation_; };
 
     class InteractKernel : public NeighborList, public Neighbor<Parameters...>
     {
       public:
-        template <class ExecutionPolicy>
-        InteractKernel(const ExecutionPolicy &ex_policy,
-                       Interaction<Contact<Parameters...>> &encloser,
-                       UnsignedInt contact_index);
+        template <class ExecutionPolicy, class EncloserType>
+        InteractKernel(const ExecutionPolicy &ex_policy, EncloserType &encloser, UnsignedInt contact_index);
     };
 
     void registerComputingKernel(Implementation<Base> *implementation, UnsignedInt contact_index);
     void resetComputingKernelUpdated(UnsignedInt contact_index);
 
   protected:
-    Relation<Contact<Parameters...>> &contact_relation_;
+    Relation<Contact<SourceIdentifier, TargetIdentifier, Parameters...>> &contact_relation_;
     SPHAdaptation *sph_adaptation_;
     DiscreteVariable<Vecd> *dv_pos_;
     RealBodyVector contact_bodies_;
@@ -100,12 +104,21 @@ class Interaction<Contact<Parameters...>> : public LocalDynamics
     StdVec<DiscreteVariable<UnsignedInt> *> dv_contact_particle_offset_;
 };
 
+template <>
+class Interaction<Contact<>> : public Interaction<Contact<SPHBody, RealBody>>
+{
+  public:
+    explicit Interaction(Relation<Contact<>> &contact_relation)
+        : Interaction<Contact<SPHBody, RealBody>>(contact_relation) {};
+    virtual ~Interaction() {};
+};
+
 template <typename... Parameters>
 class Interaction<Contact<Wall, Parameters...>> : public Interaction<Contact<Parameters...>>
 {
   public:
     explicit Interaction(Relation<Contact<Parameters...>> &wall_contact_relation);
-    virtual ~Interaction(){};
+    virtual ~Interaction() {};
 
   protected:
     StdVec<DiscreteVariable<Vecd> *> dv_wall_vel_ave_, dv_wall_acc_ave_, dv_wall_n_;
