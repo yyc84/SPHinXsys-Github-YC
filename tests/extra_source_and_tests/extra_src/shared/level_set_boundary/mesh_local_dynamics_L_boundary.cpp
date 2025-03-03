@@ -27,7 +27,7 @@
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#include "mesh_local_dynamics.h"
+#include "mesh_local_dynamics_L_boundary.h"
 
 #include "all_body_relations.h"
 #include "all_particle_dynamics.h"
@@ -96,6 +96,12 @@ void UpdateKernelIntegrals::update(const size_t &package_index)
     mesh_data_.assignByPosition(
         kernel_gradient_, cell_index, [&](const Vecd &position) -> Vecd
         { return computeKernelGradientIntegral(position); });
+    mesh_data_.assignByPosition(
+        kernel_gradient_multiply_Rij_, cell_index, [&](const Vecd &position) -> Real
+        { return computeKernelGradientMultiplyRijIntegral(position); });  
+    mesh_data_.assignByPosition(
+        kernel_gradient_divide_Rij_, cell_index, [&](const Vecd &position) -> Real
+        { return computeKernelGradientDivideRijIntegral(position); }); 
 }
 //=================================================================================================//
 void InitializeDataInACellFromCoarse::update(const Arrayi &cell_index)

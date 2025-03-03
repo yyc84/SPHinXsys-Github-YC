@@ -44,10 +44,10 @@ using MeshWithGridDataPackagesType = MeshWithGridDataPackages<4>;
  * @class BaseMeshLocalDynamics
  * @brief The base class for all mesh local particle dynamics.
  */
-class BaseMeshLocalDynamics
+class BaseMeshLocalDynamicsLBoundary
 {
   public:
-    explicit BaseMeshLocalDynamics(MeshWithGridDataPackages<4> &mesh_data)
+    explicit BaseMeshLocalDynamicsLBoundary(MeshWithGridDataPackages<4> &mesh_data)
         : mesh_data_(mesh_data),
           all_cells_(mesh_data.AllCells()),
           grid_spacing_(mesh_data.GridSpacing()),
@@ -56,8 +56,11 @@ class BaseMeshLocalDynamics
           phi_gradient_(*mesh_data.getMeshVariable<Vecd>("LevelsetGradient")),
           near_interface_id_(*mesh_data.getMeshVariable<int>("NearInterfaceID")),
           kernel_weight_(*mesh_data.getMeshVariable<Real>("KernelWeight")),
-          kernel_gradient_(*mesh_data.getMeshVariable<Vecd>("KernelGradient")){};
-    virtual ~BaseMeshLocalDynamics(){};
+          kernel_gradient_(*mesh_data.getMeshVariable<Vecd>("KernelGradient")),
+          kernel_gradient_multiply_Rij_(*mesh_data.getMeshVariable<Vecd>("KernelGradientMultiplyRij")),
+          kernel_gradient_divide_Rij_(*mesh_data.getMeshVariable<Vecd>("KernelGradientDivideRij"))
+          {};
+    virtual ~BaseMeshLocalDynamicsLBoundary(){};
 
   protected:
     MeshWithGridDataPackages<4> &mesh_data_;
@@ -70,6 +73,8 @@ class BaseMeshLocalDynamics
     MeshVariable<int> &near_interface_id_;
     MeshVariable<Real> &kernel_weight_;
     MeshVariable<Vecd> &kernel_gradient_;
+    MeshVariable<Real> &kernel_gradient_multiply_Rij_;
+    MeshVariable<Real> &kernel_gradient_divide_Rij_;
 
     size_t SortIndexFromCellIndex(const Arrayi &cell_index);
     Arrayi CellIndexFromSortIndex(const size_t &sort_index);
@@ -156,14 +161,14 @@ class UpdateLevelSetGradient : public BaseMeshLocalDynamics
     void update(const size_t &index);
 };
 
-class UpdateKernelIntegrals : public BaseMeshLocalDynamics
+class UpdateKernelIntegralsLBoundary : public BaseMeshLocalDynamicsLBoundary
 {
   public:
-    explicit UpdateKernelIntegrals(MeshWithGridDataPackagesType &mesh_data, Kernel &kernel, Real global_h_ratio)
-        : BaseMeshLocalDynamics(mesh_data),
+    explicit UpdateKernelIntegralsLBoundary(MeshWithGridDataPackagesType &mesh_data, Kernel &kernel, Real global_h_ratio)
+        : BaseMeshLocalDynamicsLBoundary(mesh_data),
           kernel_(kernel),
           global_h_ratio_(global_h_ratio){};
-    virtual ~UpdateKernelIntegrals(){};
+    virtual ~UpdateKernelIntegralsLBoundary(){};
 
     void update(const size_t &package_index);
 
@@ -174,6 +179,8 @@ class UpdateKernelIntegrals : public BaseMeshLocalDynamics
     Real probeSignedDistance(const Vecd &position) { return mesh_data_.probeMesh(phi_, position); };
     Real computeKernelIntegral(const Vecd &position);
     Vecd computeKernelGradientIntegral(const Vecd &position);
+    Real computeKernelGradientMultiplyRijIntegral(const Vecd &position);
+    Real computeKernelGradientDivideRijIntegral(const Vecd &position);
 
     /** a cut cell is a cut by the level set. */
     /** "Multi-scale modeling of compressible multi-fluid flows with conservative interface method."
