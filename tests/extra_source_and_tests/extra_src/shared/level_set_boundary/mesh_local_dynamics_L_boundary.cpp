@@ -38,56 +38,56 @@
 namespace SPH
 {
 //=================================================================================================//
-void InitializeDataInACell::update(const Arrayi &cell_index)
-{
-    Vecd cell_position = mesh_data_.CellPositionFromIndex(cell_index);
-    Real signed_distance = shape_.findSignedDistance(cell_position);
-    Vecd normal_direction = shape_.findNormalDirection(cell_position);
-    Real measure = (signed_distance * normal_direction).cwiseAbs().maxCoeff();
-    if (measure < grid_spacing_)
-    {
-        std::pair<size_t, int> occupied;
-        occupied.first = SortIndexFromCellIndex(cell_index);
-        occupied.second = 1;
+// void InitializeDataInACell::update(const Arrayi &cell_index)
+// {
+//     Vecd cell_position = mesh_data_.CellPositionFromIndex(cell_index);
+//     Real signed_distance = shape_.findSignedDistance(cell_position);
+//     Vecd normal_direction = shape_.findNormalDirection(cell_position);
+//     Real measure = (signed_distance * normal_direction).cwiseAbs().maxCoeff();
+//     if (measure < grid_spacing_)
+//     {
+//         std::pair<size_t, int> occupied;
+//         occupied.first = SortIndexFromCellIndex(cell_index);
+//         occupied.second = 1;
 
-        mesh_data_.assignDataPackageIndex(cell_index, 2);
-        mesh_data_.registerOccupied(occupied);
-    }
-    else
-    {
-        size_t package_index = shape_.checkContain(cell_position) ? 0 : 1;
-        mesh_data_.assignDataPackageIndex(cell_index, package_index);
-    }
-}
+//         mesh_data_.assignDataPackageIndex(cell_index, 2);
+//         mesh_data_.registerOccupied(occupied);
+//     }
+//     else
+//     {
+//         size_t package_index = shape_.checkContain(cell_position) ? 0 : 1;
+//         mesh_data_.assignDataPackageIndex(cell_index, package_index);
+//     }
+// }
 //=================================================================================================//
-void TagACellIsInnerPackage::update(const Arrayi &cell_index)
-{
-    if (isInnerPackage(cell_index))
-    {
-        if (!mesh_data_.isInnerDataPackage(cell_index))
-        {
-            std::pair<size_t, int> occupied;
-            occupied.first = SortIndexFromCellIndex(cell_index);
-            occupied.second = 0;
+// void TagACellIsInnerPackage::update(const Arrayi &cell_index)
+// {
+//     if (isInnerPackage(cell_index))
+//     {
+//         if (!mesh_data_.isInnerDataPackage(cell_index))
+//         {
+//             std::pair<size_t, int> occupied;
+//             occupied.first = SortIndexFromCellIndex(cell_index);
+//             occupied.second = 0;
 
-            mesh_data_.registerOccupied(occupied);
-        }
-    }
-}
+//             mesh_data_.registerOccupied(occupied);
+//         }
+//     }
+// }
 //=================================================================================================//
-void InitializeIndexMesh::update(const size_t &package_index)
-{
-    size_t sort_index = mesh_data_.occupied_data_pkgs_[package_index-2].first;
-    Arrayi cell_index = CellIndexFromSortIndex(sort_index);
-    mesh_data_.assignDataPackageIndex(cell_index, package_index);
-}
+// void InitializeIndexMesh::update(const size_t &package_index)
+// {
+//     size_t sort_index = mesh_data_.occupied_data_pkgs_[package_index-2].first;
+//     Arrayi cell_index = CellIndexFromSortIndex(sort_index);
+//     mesh_data_.assignDataPackageIndex(cell_index, package_index);
+// }
 //=================================================================================================//
-void UpdateLevelSetGradient::update(const size_t &index)
-{
-    mesh_data_.computeGradient(phi_, phi_gradient_, index);
-}
+// void UpdateLevelSetGradient::update(const size_t &index)
+// {
+//     mesh_data_.computeGradient(phi_, phi_gradient_, index);
+// }
 //=================================================================================================//
-void UpdateKernelIntegrals::update(const size_t &package_index)
+void UpdateKernelIntegralsLBoundary::update(const size_t &package_index)
 {
     Arrayi cell_index = mesh_data_.meta_data_cell_[package_index].first;
     mesh_data_.assignByPosition(
@@ -104,28 +104,28 @@ void UpdateKernelIntegrals::update(const size_t &package_index)
         { return computeKernelGradientDivideRijIntegral(position); }); 
 }
 //=================================================================================================//
-void InitializeDataInACellFromCoarse::update(const Arrayi &cell_index)
-{
-    Vecd cell_position = mesh_data_.CellPositionFromIndex(cell_index);
-    MeshVariable<Real> &coarse_phi_ = *coarse_mesh_.getMeshVariable<Real>("Levelset");
-    size_t package_index = coarse_mesh_.probeMesh(coarse_phi_, cell_position) < 0.0 ? 0 : 1;
-    mesh_data_.assignDataPackageIndex(cell_index, package_index);
-    if (coarse_mesh_.isWithinCorePackage(cell_position))
-    {
-        Real signed_distance = shape_.findSignedDistance(cell_position);
-        Vecd normal_direction = shape_.findNormalDirection(cell_position);
-        Real measure = (signed_distance * normal_direction).cwiseAbs().maxCoeff();
-        if (measure < grid_spacing_)
-        {
-            std::pair<size_t, int> occupied;
-            occupied.first = SortIndexFromCellIndex(cell_index);
-            occupied.second = 1;
+// void InitializeDataInACellFromCoarse::update(const Arrayi &cell_index)
+// {
+//     Vecd cell_position = mesh_data_.CellPositionFromIndex(cell_index);
+//     MeshVariable<Real> &coarse_phi_ = *coarse_mesh_.getMeshVariable<Real>("Levelset");
+//     size_t package_index = coarse_mesh_.probeMesh(coarse_phi_, cell_position) < 0.0 ? 0 : 1;
+//     mesh_data_.assignDataPackageIndex(cell_index, package_index);
+//     if (coarse_mesh_.isWithinCorePackage(cell_position))
+//     {
+//         Real signed_distance = shape_.findSignedDistance(cell_position);
+//         Vecd normal_direction = shape_.findNormalDirection(cell_position);
+//         Real measure = (signed_distance * normal_direction).cwiseAbs().maxCoeff();
+//         if (measure < grid_spacing_)
+//         {
+//             std::pair<size_t, int> occupied;
+//             occupied.first = SortIndexFromCellIndex(cell_index);
+//             occupied.second = 1;
 
-            mesh_data_.assignDataPackageIndex(cell_index, 2);
-            mesh_data_.registerOccupied(occupied);
-        }
-    }
-}
+//             mesh_data_.assignDataPackageIndex(cell_index, 2);
+//             mesh_data_.registerOccupied(occupied);
+//         }
+//     }
+// }
 //=================================================================================================//
 } // namespace SPH
 //=================================================================================================//

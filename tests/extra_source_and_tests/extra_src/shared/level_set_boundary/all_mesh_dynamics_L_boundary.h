@@ -33,6 +33,7 @@
 
 #include "mesh_dynamics.h"
 #include "mesh_local_dynamics_L_boundary.h"
+#include "mesh_local_dynamics.h"
 
 namespace SPH
 {
