@@ -117,5 +117,23 @@ private:
     
 };
 
+class NearShapeSurfaceLBoundary : public BodyPartByCell
+{
+  private:
+    UniquePtrKeeper<LevelSetShape> level_set_shape_keeper_;
+
+  public:
+    NearShapeSurface(RealBody &real_body, SharedPtr<Shape> shape_ptr);
+    NearShapeSurface(RealBody &real_body, LevelSetShape &level_set_shape);
+    explicit NearShapeSurface(RealBody &real_body);
+    NearShapeSurface(RealBody &real_body, const std::string &sub_shape_name);
+    virtual ~NearShapeSurface() {};
+    LevelSetShape &getLevelSetShape() { return level_set_shape_; };
+
+  private:
+    LevelSetShape &level_set_shape_;
+    bool checkNearSurface(Vecd cell_position, Real threshold);
+};
+
 } // namespace SPH
 #endif // BODY_PART_BY_CELL_TRACING_H

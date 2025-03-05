@@ -33,7 +33,8 @@
 #include "base_kernel.h"
 #include "base_mesh.h"
 #include "sphinxsys_containers.h"
-
+/*for level-set boundary*/
+#include "../../extra_src/shared/level_set_boundary/level_set_L_boundary.h"
 namespace SPH
 {
 
@@ -42,6 +43,9 @@ class BaseParticles;
 class BodyRegionByCell;
 class MultilevelLevelSet;
 class BaseCellLinkedList;
+
+/*for Level-set boundary*/
+class MultilevelLevelSetLBoundary;
 
 /**
  * @class SPHAdaptation
@@ -82,6 +86,9 @@ class SPHAdaptation
 
     virtual UniquePtr<BaseCellLinkedList> createCellLinkedList(const BoundingBox &domain_bounds, BaseParticles &base_particles);
     virtual UniquePtr<MultilevelLevelSet> createLevelSet(Shape &shape, Real refinement_ratio);
+
+    /*for Level-set Boundary*/
+    virtual UniquePtr<MultilevelLevelSetLBoundary> createLevelSetLBoundary(Shape &shape, Real refinement_ratio);
 
     template <class MeshType, typename... Args>
     MeshType createBackGroundMesh(SPHBody &sph_body, Args &&...args);

@@ -1,4 +1,4 @@
-#include "mesh_local_dynamics_for_L_boundary.h"
+#include "mesh_local_dynamics_L_boundary.h"
 
 #include "mesh_iterators.h"
 
@@ -149,7 +149,7 @@ Real UpdateKernelIntegralsLBoundary::computeKernelGradientMultiplyRijIntegral(co
     Real cutoff_radius = kernel_.CutOffRadius(global_h_ratio_);
     Real threshold = cutoff_radius + data_spacing_;
 
-    Vecd integral = Vecd::Zero();
+    Real integral(0);
     if (fabs(phi) < threshold)
     {
         Arrayi global_index_ = mesh_data_.CellIndexFromPositionOnGlobalMesh(position);
@@ -172,7 +172,7 @@ Real UpdateKernelIntegralsLBoundary::computeKernelGradientMultiplyRijIntegral(co
     }
 
     //return phi > threshold ? 1.0 : integral * data_spacing_ * data_spacing_;
-    return ntegral * data_spacing_ * data_spacing_;
+    return integral * data_spacing_ * data_spacing_;
 }
 //=============================================================================================//
 Real UpdateKernelIntegralsLBoundary::computeKernelGradientDivideRijIntegral(const Vecd &position)
@@ -181,7 +181,7 @@ Real UpdateKernelIntegralsLBoundary::computeKernelGradientDivideRijIntegral(cons
     Real cutoff_radius = kernel_.CutOffRadius(global_h_ratio_);
     Real threshold = cutoff_radius + data_spacing_;
 
-    Vecd integral = Vecd::Zero();
+    Real integral(0);
     if (fabs(phi) < threshold)
     {
         Arrayi global_index_ = mesh_data_.CellIndexFromPositionOnGlobalMesh(position);
@@ -526,7 +526,7 @@ void WriteMeshFieldToPltLBoundary::update(std::ofstream &output_file)
         output_file << " \n";
     }
 }
-}
+
 //=============================================================================================//
 } // namespace SPH
 //=============================================================================================//

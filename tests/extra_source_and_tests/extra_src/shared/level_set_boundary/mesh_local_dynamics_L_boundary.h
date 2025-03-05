@@ -27,8 +27,8 @@
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef MESH_LOCAL_DYNAMICS_H
-#define MESH_LOCAL_DYNAMICS_H
+#ifndef MESH_LOCAL_DYNAMICS_L_BOUNDARY_H
+#define MESH_LOCAL_DYNAMICS_L_BOUNDARY_H
 
 #include "sphinxsys_variable.h"
 #include "mesh_with_data_packages.hpp"
@@ -57,8 +57,8 @@ class BaseMeshLocalDynamicsLBoundary
           near_interface_id_(*mesh_data.getMeshVariable<int>("NearInterfaceID")),
           kernel_weight_(*mesh_data.getMeshVariable<Real>("KernelWeight")),
           kernel_gradient_(*mesh_data.getMeshVariable<Vecd>("KernelGradient")),
-          kernel_gradient_multiply_Rij_(*mesh_data.getMeshVariable<Vecd>("KernelGradientMultiplyRij")),
-          kernel_gradient_divide_Rij_(*mesh_data.getMeshVariable<Vecd>("KernelGradientDivideRij"))
+          kernel_gradient_multiply_Rij_(*mesh_data.getMeshVariable<Real>("KernelGradientMultiplyRij")),
+          kernel_gradient_divide_Rij_(*mesh_data.getMeshVariable<Real>("KernelGradientDivideRij"))
           {};
     virtual ~BaseMeshLocalDynamicsLBoundary(){};
 
@@ -388,4 +388,4 @@ class WriteMeshFieldToPltLBoundary : public BaseMeshLocalDynamicsLBoundary
     void update(std::ofstream &output_file);
 };
 } // namespace SPH
-#endif // MESH_LOCAL_DYNAMICS_H
+#endif // MESH_LOCAL_DYNAMICS_L_BOUNDARY_H

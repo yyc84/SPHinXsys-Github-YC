@@ -1,4 +1,4 @@
-#include "mesh_local_dynamics_for_L_boundary.h"
+#include "mesh_local_dynamics_L_boundary.h"
 
 #include "mesh_iterators.h"
 
@@ -152,7 +152,7 @@ Real UpdateKernelIntegralsLBoundary::computeKernelGradientMultiplyRijIntegral(co
     Real cutoff_radius = kernel_.CutOffRadius(global_h_ratio_);
     Real threshold = cutoff_radius + data_spacing_;
 
-    Vecd integral = Vecd::Zero();
+    Real integral(0);
     if (fabs(phi) < threshold)
     {
         Arrayi global_index_ = mesh_data_.CellIndexFromPositionOnGlobalMesh(position);
@@ -184,7 +184,7 @@ Real UpdateKernelIntegralsLBoundary::computeKernelGradientDivideRijIntegral(cons
     Real cutoff_radius = kernel_.CutOffRadius(global_h_ratio_);
     Real threshold = cutoff_radius + data_spacing_;
 
-    Vecd integral = Vecd::Zero();
+    Real integral(0);
     if (fabs(phi) < threshold)
     {
         Arrayi global_index_ = mesh_data_.CellIndexFromPositionOnGlobalMesh(position);

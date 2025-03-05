@@ -26,8 +26,8 @@
  * @author	Chi Zhang, Yongchuan Yu and Xiangyu Hu
  */
 
-#ifndef LEVEL_SET_H
-#define LEVEL_SET_H
+#ifndef LEVEL_SET_L_BOUNDARY_H
+#define LEVEL_SET_L_BOUNDARY_H
 
 #include "adaptation.h"
 #include "base_geometry.h"
@@ -62,8 +62,8 @@ class MultilevelLevelSetLBoundary : public BaseMeshField
     Vecd probeKernelGradientIntegral(const Vecd &position, Real h_ratio = 1.0);
     Vecd probeKernelGradientIntegral(const Vecd &position);
 
-    Vecd probeKernelGradientMultiplyRij(const Vecd &position, Real h_ratio = 1.0);
-    Vecd probeKernelGradientDivideRij(const Vecd &position, Real h_ratio = 1.0);
+    Real probeKernelGradientMultiplyRij(const Vecd &position, Real h_ratio = 1.0);
+    Real probeKernelGradientDivideRij(const Vecd &position, Real h_ratio = 1.0);
 
     StdVec<MeshWithGridDataPackagesType *> getMeshLevels() { return mesh_data_set_; };
 
@@ -106,4 +106,4 @@ class MultilevelLevelSetLBoundary : public BaseMeshField
     UniquePtr<CorrectTopologyLBoundary> correct_topology_L_boundary;
 };
 } // namespace SPH
-#endif // LEVEL_SET_H
+#endif // LEVEL_SET_L_BOUNDARY_H

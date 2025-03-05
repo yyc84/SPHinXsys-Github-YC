@@ -28,8 +28,8 @@
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef ALL_MESH_DYNAMICS_H
-#define ALL_MESH_DYNAMICS_H
+#ifndef ALL_MESH_DYNAMICS_L_BOUNDARY_H
+#define ALL_MESH_DYNAMICS_L_BOUNDARY_H
 
 #include "mesh_dynamics.h"
 #include "mesh_local_dynamics_L_boundary.h"
@@ -179,4 +179,4 @@ class CorrectTopologyLBoundary : public BaseMeshDynamics
     MeshInnerDynamics<DiffuseLevelSetSign> diffuse_level_set_sign{mesh_data_};
 };
 } // namespace SPH
-#endif // ALL_MESH_DYNAMICS_H
+#endif // ALL_MESH_DYNAMICS_L_BOUNDARY_H
