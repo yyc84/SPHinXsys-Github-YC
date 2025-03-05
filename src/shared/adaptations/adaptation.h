@@ -33,8 +33,7 @@
 #include "base_kernel.h"
 #include "base_mesh.h"
 #include "sphinxsys_containers.h"
-/*for level-set boundary*/
-#include "../../extra_src/shared/level_set_boundary/level_set_L_boundary.h"
+
 namespace SPH
 {
 

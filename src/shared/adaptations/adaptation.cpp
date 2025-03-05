@@ -6,7 +6,8 @@
 #include "level_set.h"
 #include "mesh_with_data_packages.hpp"
 #include "vector_functions.h"
-
+/*for level-set boundary*/
+#include "level_set_boundary/level_set_L_boundary.h"
 namespace SPH
 {
 //=================================================================================================//
@@ -105,7 +106,7 @@ UniquePtr<MultilevelLevelSetLBoundary> SPHAdaptation::createLevelSetLBoundary(Sh
     int total_levels = (int)log10(MinimumDimension(shape.getBounds()) / ReferenceSpacing()) + 2;
     Real coarsest_spacing = ReferenceSpacing() * pow(2.0, total_levels - 1);
     MultilevelLevelSetLBoundary coarser_level_sets(shape.getBounds(), coarsest_spacing / refinement_ratio,
-                                          total_levels - 1, shape, *this);
+                                                   static_cast<size_t>(total_levels - 1), shape, *this);
     // return the finest level set only
     return makeUnique<MultilevelLevelSetLBoundary>(shape.getBounds(), coarser_level_sets.getMeshLevels().back(), shape, *this);
 }
