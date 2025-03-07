@@ -34,7 +34,7 @@
 #include "base_body.h"
 #include "base_body_part.h"
 #include <string>
-
+#include "level_set_shape_L_boundary.h"
 namespace SPH
 {
 /**
@@ -99,9 +99,10 @@ class BaseTracingMethod
 class NearShapeSurfaceTracing : public BodyPartByCell
 {
 private:
-    UniquePtrKeeper<LevelSetShape> level_set_shape_keeper_;
-public:
-    LevelSetShape& level_set_shape_;
+    UniquePtrKeeper<LevelSetShapeLBoundary> level_set_shape_keeper_;
+
+  public:
+    LevelSetShapeLBoundary &level_set_shape_;
     BaseTracingMethod& tracing_cell_method_base_;
 
     NearShapeSurfaceTracing(RealBody& real_body, SharedPtr<Shape> shape_ptr, BaseTracingMethod& tracing_cell_method_base);
@@ -117,21 +118,22 @@ private:
     
 };
 
-class NearShapeSurfaceLBoundary : public BodyPartByCell
+
+class NearShapeSurfaceStationaryBoundary : public BodyPartByCell
 {
   private:
-    UniquePtrKeeper<LevelSetShape> level_set_shape_keeper_;
+    UniquePtrKeeper<LevelSetShapeLBoundary> level_set_shape_keeper_;
 
   public:
-    NearShapeSurface(RealBody &real_body, SharedPtr<Shape> shape_ptr);
-    NearShapeSurface(RealBody &real_body, LevelSetShape &level_set_shape);
-    explicit NearShapeSurface(RealBody &real_body);
-    NearShapeSurface(RealBody &real_body, const std::string &sub_shape_name);
-    virtual ~NearShapeSurface() {};
-    LevelSetShape &getLevelSetShape() { return level_set_shape_; };
+    NearShapeSurfaceStationaryBoundary(RealBody &real_body, SharedPtr<Shape> shape_ptr);
+    NearShapeSurfaceStationaryBoundary(RealBody &real_body, LevelSetShapeLBoundary &level_set_shape);
+    explicit NearShapeSurfaceStationaryBoundary(RealBody &real_body);
+    NearShapeSurfaceStationaryBoundary(RealBody &real_body, const std::string &sub_shape_name);
+    virtual ~NearShapeSurfaceStationaryBoundary(){};
+    LevelSetShapeLBoundary &getLevelSetShape() { return level_set_shape_; };
 
   private:
-    LevelSetShape &level_set_shape_;
+    LevelSetShapeLBoundary &level_set_shape_;
     bool checkNearSurface(Vecd cell_position, Real threshold);
 };
 

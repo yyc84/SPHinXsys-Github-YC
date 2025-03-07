@@ -21,8 +21,8 @@
  *                                                                          *
  * ------------------------------------------------------------------------*/
 /**
- * @file 	static_confinement.h
- * @brief 	Here, we define the static confinement boundary condition classes for fluid dynamics.
+ * @file 	level_set_confinement.h
+ * @brief 	Here, we define the Stationary and moving confinement boundary condition classes for fluid dynamics.
  * @details     This boundary condition is based on Level-set filed.
  * @author	Yongchuan Yu and Xiangyu Hu
  */
@@ -37,139 +37,213 @@
 #include "general_constraint.h"
 #include "riemann_solver.h"
 #include <mutex>
-
+#include "level_set_shape_L_boundary.h"
 namespace SPH
 {
     namespace fluid_dynamics
     {
+    /**
+     * @class StationaryConfinementDensity
+     * @brief Stationary confinement condition for density summation
+     */
+    class StationaryConfinementDensity : public BaseLocalDynamics<BodyPartByCell>
+    {
+      public:
+        StationaryConfinementDensity(NearShapeSurfaceStationaryBoundary &near_surface);
+        virtual ~StationaryConfinementDensity(){};
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Real rho0_, inv_sigma0_;
+        Real *mass_, *rho_sum_;
+        Vecd *pos_;
+        LevelSetShapeLBoundary *level_set_shape_;
+    };
+
+    /**
+     * @class StationaryConfinementIntegration1stHalf
+     * @brief Stationary confinement condition for pressure relaxation
+     */
+    class StationaryConfinementIntegration1stHalf : public BaseLocalDynamics<BodyPartByCell>
+    {
+      public:
+        StationaryConfinementIntegration1stHalf(NearShapeSurfaceStationaryBoundary &near_surface);
+        virtual ~StationaryConfinementIntegration1stHalf(){};
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Fluid &fluid_;
+        Real *rho_, *p_, *mass_;
+        Vecd *pos_, *vel_, *force_;
+        LevelSetShapeLBoundary *level_set_shape_;
+        AcousticRiemannSolver riemann_solver_;
+    };
+
+    /**
+     * @class StationaryConfinementIntegration2ndHalf
+     * @brief Stationary confinement condition for density relaxation
+     */
+    class StationaryConfinementIntegration2ndHalf : public BaseLocalDynamics<BodyPartByCell>
+    {
+      public:
+        StationaryConfinementIntegration2ndHalf(NearShapeSurfaceStationaryBoundary &near_surface);
+        virtual ~StationaryConfinementIntegration2ndHalf(){};
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Fluid &fluid_;
+        Real *rho_, *p_, *drho_dt_;
+        Vecd *pos_, *vel_;
+        LevelSetShapeLBoundary *level_set_shape_;
+        AcousticRiemannSolver riemann_solver_;
+    };
+
+     /**
+     * @class StationaryConfinementBounding
+     * @brief Stationary confinement condition for pressure relaxation
+     * map constrained particles to level-set boundary and
+     * r = r + phi * norm (vector distance to face)
+     */
+    class StationaryConfinementBounding : public BaseLocalDynamics<BodyPartByCell>
+    {
+      public:
+        StationaryConfinementBounding(NearShapeSurfaceStationaryBoundary &near_surface);
+        virtual ~StationaryConfinementBounding(){};
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Vecd *pos_;
+        LevelSetShapeLBoundary *level_set_shape_;
+        Real constrained_distance_;
+    };
 
         /**
-         * @class StaticConfinementTransportVelocity
-         * @brief static confinement condition for transport velocity
+         * @class StationaryConfinementTransportVelocity
+         * @brief Stationary confinement condition for transport velocity
          */
-        class StaticConfinementTransportVelocity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+    /*class StationaryConfinementTransportVelocity : public BaseLocalDynamics<BodyPartByCell>
         {
         public:
-            StaticConfinementTransportVelocity(NearShapeSurface& near_surface, Real coefficient = 0.2);
-            virtual ~StaticConfinementTransportVelocity() {};
+            StationaryConfinementTransportVelocity(NearShapeSurfaceStationaryBoundary &near_surface, Real coefficient = 0.2);
+          virtual ~StationaryConfinementTransportVelocity(){};
             void update(size_t index_i, Real dt = 0.0);
 
         protected:
-            StdLargeVec<Vecd>& pos_;
-            StdLargeVec<int>& surface_indicator_;
+            Fluid &fluid_;
+            Vecd *pos_, *vel_;
+            int *surface_indicator_;
             const Real coefficient_;
             Real smoothing_length_sqr_;
             LevelSetShape* level_set_shape_;
-            StdLargeVec<Vecd> &transport_acc_;
-        };
+            Vecd *transport_acc_;
+        };*/
 
         /**
-         * @class StaticConfinementViscousAcceleration
-         * @brief static confinement condition for viscous acceleration
+         * @class StationaryConfinementViscousAcceleration
+         * @brief Stationary confinement condition for viscous acceleration
          */
-        class StaticConfinementViscousAcceleration : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
-        {
-        public:
-            StaticConfinementViscousAcceleration(NearShapeSurface& near_surface);
-            virtual ~StaticConfinementViscousAcceleration() {};
-            void update(size_t index_i, Real dt = 0.0);
-            //StdLargeVec<Vecd> &getForceFromFluid() { return force_from_fluid_; };
-        protected:
-            StdLargeVec<Vecd>& pos_;
-            StdLargeVec<Real>& rho_, &mass_;
-            StdLargeVec<Vecd>& vel_, &force_prior_;
-            Real mu_;
-            LevelSetShape* level_set_shape_;
-            StdLargeVec<Vecd> force_from_fluid_;
-            StdLargeVec<Real> kernel_gradient_rij_;
+        //class StationaryConfinementViscousAcceleration : public BaseLocalDynamics<BodyPartByCell>
+        //{
+        //public:
+        //    StationaryConfinementViscousAcceleration(NearShapeSurfaceStationaryBoundary &near_surface);
+        //  virtual ~StationaryConfinementViscousAcceleration(){};
+        //    void update(size_t index_i, Real dt = 0.0);
+        //    //StdLargeVec<Vecd> &getForceFromFluid() { return force_from_fluid_; };
+        //protected:
+        //    Vecd *pos_;
+        //    Real *rho_, *mass_;
+        //    Vecd *vel_, *force_prior_;
+        //    Real mu_;
+        //    LevelSetShape* level_set_shape_;
+        //    Vecd *force_from_fluid_;
+        //    Real *kernel_gradient_rij_;
 
- 
-        };
+        //};
 
         /**
-         * @class StaticConfinementViscousAcceleration
-         * @brief static confinement condition for viscous acceleration
+         * @class StationaryConfinementViscousAcceleration
+         * @brief Stationary confinement condition for viscous acceleration
          */
-        class StaticConfinementViscousAccelerationForce : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
-        {
-        public:
-            StaticConfinementViscousAccelerationForce(NearShapeSurface& near_surface)
-                : BaseLocalDynamics<BodyPartByCell>(near_surface), FluidDataSimple(sph_body_),
-			pos_(particles_->pos_), mass_(particles_->mass_), force_prior_(particles_->force_prior_), rho_(particles_->rho_),
-			mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()), vel_(particles_->vel_),
-			level_set_shape_(&near_surface.level_set_shape_)
-		{}
-            virtual ~StaticConfinementViscousAccelerationForce() {};
-            void interaction(size_t index_i, Real dt = 0.0)
-            {
-                Vecd force = Vecd::Zero();
-			    Vecd vel_derivative = Vecd::Zero();
-			    Vecd vel_level_set_cell_j = Vecd::Zero();
-			    Real rho_i = rho_[index_i];
-			    /*Here we give the Level-set boundary velocity as zero, but later we need a vector to set the velocity of each level-set cell*/
-			    Real phi_r_ij = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
-			    vel_derivative = 2.0 * (vel_[index_i] - vel_level_set_cell_j);
-			    Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
-			    force = 2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
-			    force_from_fluid_[index_i] += force;
-            }
-            StdLargeVec<Vecd> &getForceFromFluid() { return force_prior_; };
-        protected:
-            StdLargeVec<Vecd>& pos_;
-            StdLargeVec<Real>& rho_, &mass_;
-            StdLargeVec<Vecd>& vel_, &force_prior_;
-            Real mu_;
-            LevelSetShape* level_set_shape_;
-            StdLargeVec<Vecd> force_from_fluid_;
+  //      class StationaryConfinementViscousAccelerationForce : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+  //      {
+  //      public:
+  //          StationaryConfinementViscousAccelerationForce(NearShapeSurfaceStationaryBoundary &near_surface)
+  //              : BaseLocalDynamics<BodyPartByCell>(near_surface), FluidDataSimple(sph_body_),
+		//	pos_(particles_->pos_), mass_(particles_->mass_), force_prior_(particles_->force_prior_), rho_(particles_->rho_),
+		//	mu_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()).ReferenceViscosity()), vel_(particles_->vel_),
+		//	level_set_shape_(&near_surface.level_set_shape_)
+		//{}
+  //              virtual ~StationaryConfinementViscousAccelerationForce(){};
+  //          void interaction(size_t index_i, Real dt = 0.0)
+  //          {
+  //              Vecd force = Vecd::Zero();
+		//	    Vecd vel_derivative = Vecd::Zero();
+		//	    Vecd vel_level_set_cell_j = Vecd::Zero();
+		//	    Real rho_i = rho_[index_i];
+		//	    /*Here we give the Level-set boundary velocity as zero, but later we need a vector to set the velocity of each level-set cell*/
+		//	    Real phi_r_ij = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
+		//	    vel_derivative = 2.0 * (vel_[index_i] - vel_level_set_cell_j);
+		//	    Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
+		//	    force = 2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
+		//	    force_from_fluid_[index_i] += force;
+  //          }
+  //          StdLargeVec<Vecd> &getForceFromFluid() { return force_prior_; };
+  //      protected:
+  //          StdLargeVec<Vecd>& pos_;
+  //          StdLargeVec<Real>& rho_, &mass_;
+  //          StdLargeVec<Vecd>& vel_, &force_prior_;
+  //          Real mu_;
+  //          LevelSetShape* level_set_shape_;
+  //          StdLargeVec<Vecd> force_from_fluid_;
  
-        };
+  //      };
 
 
-        class BaseForceFromFluidStaticConfinement : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
-        {
-        public: 
-            explicit BaseForceFromFluidStaticConfinement(NearShapeSurface& near_surface);
-            virtual ~BaseForceFromFluidStaticConfinement() {};
-            StdLargeVec<Vecd> &getForceFromFluid() { return force_from_fluid_; };
+        //class BaseForceFromFluidStationaryConfinement : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+        //{
+        //public: 
+        //    explicit BaseForceFromFluidStationaryConfinement(NearShapeSurface &near_surface);
+        //  virtual ~BaseForceFromFluidStationaryConfinement(){};
+        //    StdLargeVec<Vecd> &getForceFromFluid() { return force_from_fluid_; };
 
-        protected:
-            StdLargeVec<Vecd> force_from_fluid_;
-            LevelSetShape* level_set_shape_;
-            //StdLargeVec<Real> &Vol_;
-        };
+        //protected:
+        //    StdLargeVec<Vecd> force_from_fluid_;
+        //    LevelSetShape* level_set_shape_;
+        //    //StdLargeVec<Real> &Vol_;
+        //};
 
-        class ViscousForceFromFluidStaticConfinement : public BaseForceFromFluidStaticConfinement
-        {
-        public:
-            explicit ViscousForceFromFluidStaticConfinement(NearShapeSurface& near_surface);
-            virtual ~ViscousForceFromFluidStaticConfinement() {};
-            inline void interaction(size_t index_i, Real dt = 0.0)
-            {
-			    Vecd acceleration = Vecd::Zero();
-			    Vecd vel_derivative = Vecd::Zero();
-			    Vecd vel_level_set_cell_j = Vecd::Zero();
-			    Real rho_i = rho_[index_i];
-			    /*Here we give the Level-set boundary velocity as zero, but later we need a vector to set the velocity of each level-set cell*/
-			    vel_derivative = 2.0 * (vel_[index_i] - vel_level_set_cell_j);
-			    Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
-			    force_from_fluid_[index_i]= -2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
-                //force_from_fluid_[index_i]= -2.0 * mu_ * kernel_gradient_divide_Rij * vel_derivative ;
-            }
-        protected:
-            StdLargeVec<Vecd>& pos_;
-            StdLargeVec<Real>& rho_, &mass_;
-            StdLargeVec<Vecd>& vel_;
-            Real mu_;
-        };
+       // class ViscousForceFromFluidStationaryConfinement : public BaseForceFromFluidStationaryConfinement
+       // {
+       // public:
+       //     explicit ViscousForceFromFluidStationaryConfinement(NearShapeSurface &near_surface);
+       //   virtual ~ViscousForceFromFluidStationaryConfinement(){};
+       //     inline void interaction(size_t index_i, Real dt = 0.0)
+       //     {
+			    //Vecd acceleration = Vecd::Zero();
+			    //Vecd vel_derivative = Vecd::Zero();
+			    //Vecd vel_level_set_cell_j = Vecd::Zero();
+			    //Real rho_i = rho_[index_i];
+			    ///*Here we give the Level-set boundary velocity as zero, but later we need a vector to set the velocity of each level-set cell*/
+			    //vel_derivative = 2.0 * (vel_[index_i] - vel_level_set_cell_j);
+			    //Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
+			    //force_from_fluid_[index_i]= -2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
+       //         //force_from_fluid_[index_i]= -2.0 * mu_ * kernel_gradient_divide_Rij * vel_derivative ;
+       //     }
+       // protected:
+       //     StdLargeVec<Vecd>& pos_;
+       //     StdLargeVec<Real>& rho_, &mass_;
+       //     StdLargeVec<Vecd>& vel_;
+       //     Real mu_;
+       // };
         /**
-        * @class StaticConfinementIntegration1stHalf
-        * @brief static confinement condition for pressure relaxation
+        * @class StationaryConfinementIntegration1stHalf
+        * @brief Stationary confinement condition for pressure relaxation
         */
-        class StaticConfinementExtendIntegration1stHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+        /*class StationaryConfinementExtendIntegration1stHalf : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
-            StaticConfinementExtendIntegration1stHalf(NearShapeSurface& near_surface, Real penalty_strength = 2.0);
-            virtual ~StaticConfinementExtendIntegration1stHalf() {};
+            StationaryConfinementExtendIntegration1stHalf(NearShapeSurface &near_surface, Real penalty_strength = 2.0);
+          virtual ~StationaryConfinementExtendIntegration1stHalf(){};
             void update(size_t index_i, Real dt = 0.0);
 
         protected:
@@ -179,17 +253,17 @@ namespace SPH
             StdLargeVec<Vecd>&pos_, &vel_, &force_;
             LevelSetShape* level_set_shape_;
             AcousticRiemannSolver riemann_solver_;
-        };
+        };*/
 
         /**
         * @class StaticConfinementIntegration1stHalf
         * @brief static confinement condition for pressure relaxation
         */
-        class StaticConfinementIntegration1stHalfPenaltyVelocity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+        /*class StationaryConfinementIntegration1stHalfPenaltyVelocity : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
-            StaticConfinementIntegration1stHalfPenaltyVelocity(NearShapeSurface& near_surface, Real  sound_speed, Real penalty_strength = 2.0);
-            virtual ~StaticConfinementIntegration1stHalfPenaltyVelocity() {};
+            StationaryConfinementIntegration1stHalfPenaltyVelocity(NearShapeSurface &near_surface, Real sound_speed, Real penalty_strength = 2.0);
+          virtual ~StationaryConfinementIntegration1stHalfPenaltyVelocity(){};
             void update(size_t index_i, Real dt = 0.0);
 
         protected:
@@ -199,17 +273,17 @@ namespace SPH
             StdLargeVec<Vecd>& pos_, & vel_, &force_;
             LevelSetShape* level_set_shape_;
             AcousticRiemannSolver riemann_solver_;
-        };
+        };*/
 
          /**
-        * @class StaticConfinementFreeSurfaceIndication
-        * @brief static confinement condition for free surface particle indicate
+        * @class StationaryConfinementFreeSurfaceIndication
+        * @brief Stationary confinement condition for free surface particle indicate
         */
-        class StaticConfinementFreeSurfaceIndication : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
+        /*class StationaryConfinementFreeSurfaceIndication : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         {
         public:
-            StaticConfinementFreeSurfaceIndication(NearShapeSurface& near_surface);
-            virtual ~StaticConfinementFreeSurfaceIndication() {};
+            StationaryConfinementFreeSurfaceIndication(NearShapeSurface &near_surface);
+          virtual ~StationaryConfinementFreeSurfaceIndication(){};
             void interaction(size_t index_i, Real dt = 0.0);
 
         protected:
@@ -217,79 +291,64 @@ namespace SPH
             StdLargeVec<Real>& pos_div_;
             StdLargeVec<int> &surface_indicator_;
             LevelSetShape* level_set_shape_;
-        };
+        };*/
 
-        /**
-        * @class StaticConfinementIntegration1stHalf
-        * @brief static confinement condition for pressure relaxation
-        */
-        class StaticConfinementBounding : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
-        {
-        public:
-            StaticConfinementBounding(NearShapeSurface& near_surface);
-            virtual ~StaticConfinementBounding() {};
-            void update(size_t index_i, Real dt = 0.0);
-
-        protected:
-            StdLargeVec<Vecd>& pos_;
-            LevelSetShape* level_set_shape_;
-            Real constrained_distance_;
-        };
+       
 
         /**
         * @class StaticConfinement
         * @brief Static confined boundary condition for complex structures with bounding.
         */
-         class StaticConfinementWithBounding
+        class StationaryConfinement
          {
          public:
 
-             SimpleDynamics<StaticConfinementDensity> density_summation_;
-             SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
-             SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
-             SimpleDynamics<StaticConfinementBounding> surface_bounding_;
+           SimpleDynamics<StationaryConfinementDensity> density_summation_;
+           SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+           SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+           SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
 
 
-             StaticConfinementWithBounding(NearShapeSurface& near_surface);
-             virtual ~StaticConfinementWithBounding() {};
+         StationaryConfinement(NearShapeSurfaceStationaryBoundary &near_surface);
+           virtual ~StationaryConfinement(){};
          };
 
 
         /**
-        * @class StaticConfinement
-        * @brief Static confined boundary condition for complex structures with penalty force for light phase.
+        * @class StationaryConfinement
+        * @brief Stationary confined boundary condition for complex structures with penalty force for light phase.
         */
-        class StaticConfinementWithPenalty
+        /* class StationaryConfinementWithPenalty
         {
         public:
 
-            SimpleDynamics<StaticConfinementDensity> density_summation_;
-            SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
-            SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
-            SimpleDynamics<StaticConfinementTransportVelocity> transport_velocity_;
-            SimpleDynamics<StaticConfinementViscousAcceleration, SequencedPolicy> viscous_acceleration_;
-            SimpleDynamics<StaticConfinementExtendIntegration1stHalf> extend_intergration_1st_half_;
-            SimpleDynamics<StaticConfinementIntegration1stHalfPenaltyVelocity> extend_intergration_1st_half_Velocity;
-            SimpleDynamics<StaticConfinementBounding> surface_bounding_;
+            SimpleDynamics<StationaryConfinementDensity> density_summation_;
+          SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+            SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+          SimpleDynamics<StationaryConfinementTransportVelocity> transport_velocity_;
+            SimpleDynamics<StationaryConfinementViscousAcceleration, SequencedPolicy> viscous_acceleration_;
+          SimpleDynamics<StationaryConfinementExtendIntegration1stHalf> extend_intergration_1st_half_;
+            SimpleDynamics<StationaryConfinementIntegration1stHalfPenaltyVelocity> extend_intergration_1st_half_Velocity;
+          SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
 
-            StaticConfinementWithPenalty(NearShapeSurface& near_surface, Real sound_speed, Real penalty_strength);
-            virtual ~StaticConfinementWithPenalty() {};
+            StationaryConfinementWithPenalty(NearShapeSurface &near_surface, Real sound_speed, Real penalty_strength);
+          virtual ~StationaryConfinementWithPenalty(){};
         };
 
-        class StaticConfinementGeneral
+        class StationaryConfinementGeneral
         {
         public:
-            SimpleDynamics<StaticConfinementDensity, SequencedPolicy> density_summation_;
-            SimpleDynamics<StaticConfinementIntegration1stHalf> pressure_relaxation_;
-            SimpleDynamics<StaticConfinementIntegration2ndHalf> density_relaxation_;
-            SimpleDynamics<StaticConfinementTransportVelocity, SequencedPolicy> transport_velocity_;
-            SimpleDynamics<StaticConfinementViscousAcceleration, SequencedPolicy> viscous_acceleration_;
-            InteractionDynamics<StaticConfinementFreeSurfaceIndication> free_surface_indication_;
-            SimpleDynamics<StaticConfinementBounding> surface_bounding_;
+            SimpleDynamics<StationaryConfinementDensity, SequencedPolicy> density_summation_;
+          SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+            SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+          SimpleDynamics<StationaryConfinementTransportVelocity, SequencedPolicy> transport_velocity_;
+            SimpleDynamics<StationaryConfinementViscousAcceleration, SequencedPolicy> viscous_acceleration_;
+          InteractionDynamics<StationaryConfinementFreeSurfaceIndication> free_surface_indication_;
+            SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
 
-            StaticConfinementGeneral(NearShapeSurface &near_surface);
-            virtual ~StaticConfinementGeneral(){};
-        };
+            StationaryConfinementGeneral(NearShapeSurface &near_surface);
+            virtual ~StationaryConfinementGeneral(){};
+        };*/
 
     }
 }
