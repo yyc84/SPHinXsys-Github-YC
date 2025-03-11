@@ -10,7 +10,7 @@
  */
 #include "sphinxsys.h"
 #include "level_set_confinement.h"
-#include "io_observation_for_debuging.h"
+//#include "io_observation_for_debuging.h"
 /**
  * @brief Namespace cite here.
  */
@@ -18,8 +18,8 @@ using namespace SPH;
 /**
  * @brief Basic geometry parameters and numerical setup.
  */
-Real DL = 1.0e-3;                /**< Tank length. */
-Real DH = 1.0e-3;                /**< Tank height. */
+Real DL = 6.0;                   /**< Tank length. */
+Real DH = 1.0;                   /**< Tank height. */
 Real resolution_ref = DH / 20.0; /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4;    /**< Extending width for BCs. */
 /** Domain bounds of the system. */
@@ -27,11 +27,12 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
 /**
  * @brief Material properties of the fluid.
  */
-Real rho0_f = 1000.0;                  /**< Reference density of fluid. */
-Real gravity_g = 1.0e-4;               /**< Gravity force of fluid. */
-Real mu_f = 1.0e-6;                    /**< Viscosity. */
-Real U_f = gravity_g * DH * DH / mu_f; /**< Characteristic velocity. */
-Real c_f = 10.0 * U_f;                 /**< Reference sound speed. */
+Real rho0_f = 1.0;                     /**< Reference density of fluid. */
+Real gravity_g = 12.0 * mu_f * U_f / rho0_f / DH / DH;            /**< Gravity force of fluid. */
+Real mu_f = 1.0e-1;                    /**< Viscosity. */
+Real U_f = 1.0;                                                   /**< Characteristic velocity. */
+Real U_max = 1.5 * U_f;                // make sure the maximum anticipated speed
+Real c_f = 10.0 * U_max;                                          /**< Reference sound speed. */
 /**
  * @brief 	Fluid body definition.
  */
@@ -111,20 +112,19 @@ public :
 /**
  * @brief 	Main program starts here.
  */
-int main()
+int main(int ac, char *av[])
 {
     /**
      * @brief Build up -- a SPHSystem --
      */
-    SPHSystem system(system_domain_bounds, resolution_ref);
-    /** Set the starting time. */
-    GlobalStaticVariables::physical_time_ = 0.0;
+    SPHSystem sph_system(system_domain_bounds, resolution_ref);
+    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     /**
      * @brief Material property, particles and body creation of fluid.
      */
     FluidBody water_block(system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineParticlesAndMaterial<BaseParticles, WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
-    water_block.generateParticles<ParticleGeneratorLattice>();
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    water_block.generateParticles<BaseParticles, Lattice>();
     /** topology */
     InnerRelation water_block_inner(water_block);
     /**
@@ -133,56 +133,57 @@ int main()
     /**
      * @brief 	Methods used for time stepping.
      */
-    /** Initialize particle acceleration. */
-    SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(gravity_g, 0.0)));
+    Gravity gravity(Vecd(gravity_g, 0.0));
+    SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
     /** Periodic BCs in x direction. */
-    PeriodicConditionUsingCellLinkedList periodic_condition(water_block, water_block.getBodyShapeBounds(), xAxis);
+    PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
+    PeriodicConditionUsingCellLinkedList periodic_condition(water_block, periodic_along_x);
     /**
      * @brief 	Algorithms of fluid dynamics.
      */
     /** Evaluation of density by summation approach. */
     InteractionWithUpdate<fluid_dynamics::DensitySummationInner> update_density_by_summation(water_block_inner);
     /** Time step size without considering sound wave speed. */
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
+    ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
     /** Time step size with considering sound wave speed. */
-    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
     /** Pressure relaxation algorithm without Riemann solver for viscous flows. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
     /** Pressure relaxation algorithm by using position verlet time stepping. */
     Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
     /** Computing viscous acceleration. */
-    InteractionDynamics<fluid_dynamics::ViscousAccelerationInner> viscous_acceleration(water_block_inner);
+    InteractionDynamics<fluid_dynamics::ViscousForceInner> viscous_force(water_block_inner);
     /** Impose transport velocity. */
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<AllParticles>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<TruncatedLinear, AllParticles>> transport_velocity_correction(water_block_inner);
+    
+    ParticleSorting particle_sorting(water_block);
     /**
      * @brief Output.
      */
-    IOEnvironment io_environment(system);
-    /** Output the body states. */
-    //BodyStatesRecordingToPlt body_states_recording(io_environment, system.real_bodies_);
-    BodyStatesRecordingToVtp body_states_recording_vtp(io_environment, system.real_bodies_);
+    BodyStatesRecordingToVtp body_states_recording(sph_system);
+    body_states_recording.addToWrite<Real>(water_block, "Density");
 
-    NearShapeSurface near_surface_up(water_block, makeShared<InverseShape<WallUp>>("WallUp"));
-    near_surface_up.level_set_shape_.writeLevelSet(io_environment);
-    fluid_dynamics::StaticConfinementGeneral confinement_condition_up(near_surface_up);
+    NearShapeSurfaceStationaryBoundary near_surface_up(water_block, makeShared<InverseShape<WallUp>>("WallUp"));
+    near_surface_up.getLevelSetShape().writeLevelSet(sph_system);
+    fluid_dynamics::StationaryConfinement confinement_condition_up(near_surface_up);
 
-    NearShapeSurface near_surface_down(water_block, makeShared<InverseShape<WallDown>>("WallDown"));
-    near_surface_down.level_set_shape_.writeLevelSet(io_environment);
-    fluid_dynamics::StaticConfinementGeneral confinement_condition_down(near_surface_down);
+    NearShapeSurfaceStationaryBoundary near_surface_down(water_block, makeShared<InverseShape<WallDown>>("WallDown"));
+    near_surface_down.getLevelSetShape().writeLevelSet(sph_system);
+    fluid_dynamics::StationaryConfinement confinement_condition_down(near_surface_down);
 
     update_density_by_summation.post_processes_.push_back(&confinement_condition_up.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition_up.pressure_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition_up.density_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition_up.surface_bounding_);
     transport_velocity_correction.post_processes_.push_back(&confinement_condition_up.transport_velocity_);
-    viscous_acceleration.post_processes_.push_back(&confinement_condition_up.viscous_acceleration_);
+    viscous_force.post_processes_.push_back(&confinement_condition_up.viscous_force_);
 
     update_density_by_summation.post_processes_.push_back(&confinement_condition_down.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition_down.pressure_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition_down.density_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition_down.surface_bounding_);
     transport_velocity_correction.post_processes_.push_back(&confinement_condition_down.transport_velocity_);
-    viscous_acceleration.post_processes_.push_back(&confinement_condition_down.viscous_acceleration_);
+    viscous_force.post_processes_.push_back(&confinement_condition_down.viscous_acceleration_);
     /**
      * @brief Setup geometry and initial conditions.
      */

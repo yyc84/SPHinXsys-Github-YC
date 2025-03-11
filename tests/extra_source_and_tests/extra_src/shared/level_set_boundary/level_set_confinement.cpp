@@ -77,42 +77,20 @@ namespace SPH
         }
     }
 	//=================================================================================================//
-   /* StationaryConfinementTransportVelocity::StationaryConfinementTransportVelocity(NearShapeSurfaceStationaryBoundary &near_surface, Real coefficient)
+    template<typename KernelCorrectionType>
+    StationaryConfinementTransportVelocity<KernelCorrectionType>
+		::StationaryConfinementTransportVelocity(NearShapeSurfaceStationaryBoundary &near_surface)
 		: BaseLocalDynamics<BodyPartByCell>(near_surface), 
 		 fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
-          pos_(particles_->getVariableDataByName<Vecd>("Position")), surface_indicator_(particles_->indicator_),
-		coefficient_(coefficient), smoothing_length_sqr_(pow(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
-          level_set_shape_(&near_surface.getLevelSetShape()), transport_acc_(*particles_->getVariableByName<Vecd>("TransportAcceleration"))
-	{}*/
+          pos_(particles_->getVariableDataByName<Vecd>("Position")), 
+          level_set_shape_(&near_surface.getLevelSetShape()), zero_gradient_residue_(particles_)
+	{}
 	//=================================================================================================//
- //       void StationaryConfinementTransportVelocity::update(size_t index_i, Real dt)
-	//{
-	//	//Vecd acceleration_trans = Vecd::Zero();
- //       /*below for debuging*/
- //       //Vecd pos_tem = pos_[index_i];
-	//	Real inv_h_ratio = 1.0;
-	//	// acceleration for transport velocity
-	//	transport_acc_[index_i] -= 2.0 * level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
-	//	/** correcting particle position */
- //       //if (surface_indicator_[index_i] == 1 || surface_indicator_[index_i]==0)
- //           
- //       /* if (surface_indicator_[index_i] == 0)
- //       {
- //           pos_[index_i] += coefficient_ *  smoothing_length_sqr_ * acceleration_trans;
- //       }*/
- //           
-	//		//std::string output_folder = "./output";
-	//		//std::string filefullpath = output_folder + "/" + "transportVelocity_wall_levelset_" + std::to_string(dt) + ".dat";
-	//		//std::ofstream out_file(filefullpath.c_str(), std::ios::app);
-	//		//out_file << pos_[index_i][0] << " " << pos_[index_i][1] << " "<< index_i << " "  << transport_acc_[index_i][0] << " " << transport_acc_[index_i][1]<<" "  << transport_acc_[index_i].norm() << std::endl;
-	//		///** correcting particle position */
-
-	//	/*std::string output_folder = "./output";
-	//	std::string filefullpath = output_folder + "/" + "transportVelocity_wall_levelset_" + std::to_string(dt) + ".dat";
-	//	std::ofstream out_file(filefullpath.c_str(), std::ios::app);
-	//	out_file <<this->particles_->pos_[index_i][0]<<" "<<this->particles_->pos_[index_i][1]<<" " <<index_i<< "  "<<  acceleration_trans.norm()<<std::endl;
-	//	out_file << " \n";*/
-	//}
+    template <typename KernelCorrectionType>
+    void StationaryConfinementTransportVelocity<KernelCorrectionType>::update(size_t index_i, Real dt)
+	{
+        zero_gradient_residue_[index_i] -= 2.0 * level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
+	}
 	//=================================================================================================//
 	//StaticConfinementViscousAcceleration::StaticConfinementViscousAcceleration(NearShapeSurface& near_surface)
 	//	: BaseLocalDynamics<BodyPartByCell>(near_surface), FluidDataSimple(sph_body_),
@@ -259,7 +237,8 @@ namespace SPH
 	//=================================================================================================//
     StationaryConfinement::StationaryConfinement(NearShapeSurfaceStationaryBoundary &near_surface)
 		: density_summation_(near_surface), pressure_relaxation_(near_surface),
-		density_relaxation_(near_surface), surface_bounding_(near_surface)
+          density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface),
+          transport_velocity_(near_surface)
 	{}
 	//=================================================================================================//
    /* StaticConfinementWithPenalty::StaticConfinementWithPenalty(NearShapeSurface &near_surface, Real sound_speed, Real penalty_strength)

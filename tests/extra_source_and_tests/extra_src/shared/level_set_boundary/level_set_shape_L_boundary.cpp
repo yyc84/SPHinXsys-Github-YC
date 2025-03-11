@@ -81,4 +81,14 @@ Vecd LevelSetShapeLBoundary::computeKernelGradientIntegral(const Vecd &probe_poi
     return level_set_L_boundary_.probeKernelGradientIntegral(probe_point, h_ratio);
 }
 //=================================================================================================//
+Real LevelSetShapeLBoundary::computeKernelGradientMultiplyRijIntegral(const Vecd &probe_point, Real h_ratio)
+{
+    return level_set_L_boundary_.probeKernelGradientMultiplyRij(probe_point, h_ratio);
+}
+//=================================================================================================//
+Real LevelSetShapeLBoundary::computeKernelGradientDivideRijIntegral(const Vecd &probe_point, Real h_ratio)
+{
+    return level_set_L_boundary_.probeKernelGradientDivideRij(probe_point, h_ratio);
+}
+//=================================================================================================//
 } // namespace SPH
