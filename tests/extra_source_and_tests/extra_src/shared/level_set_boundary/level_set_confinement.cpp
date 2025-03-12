@@ -83,13 +83,28 @@ namespace SPH
 		: BaseLocalDynamics<BodyPartByCell>(near_surface), 
 		 fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
           pos_(particles_->getVariableDataByName<Vecd>("Position")), 
-          level_set_shape_(&near_surface.getLevelSetShape()), zero_gradient_residue_(particles_)
+          level_set_shape_(&near_surface.getLevelSetShape()), kernel_correction_(this->particles_),
+		zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("ZeroGradientResidue"))
 	{}
 	//=================================================================================================//
     template <typename KernelCorrectionType>
     void StationaryConfinementTransportVelocity<KernelCorrectionType>::update(size_t index_i, Real dt)
 	{
-        zero_gradient_residue_[index_i] -= 2.0 * level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
+        zero_gradient_residue_[index_i] -= 2.0 * this->kernel_correction_(index_i) *level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
+	}
+	//=================================================================================================//
+    StationaryConfinementTransportVelocitySimple
+		::StationaryConfinementTransportVelocitySimple(NearShapeSurfaceStationaryBoundary &near_surface)
+		: BaseLocalDynamics<BodyPartByCell>(near_surface), 
+		 fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
+          pos_(particles_->getVariableDataByName<Vecd>("Position")), 
+          level_set_shape_(&near_surface.getLevelSetShape()),
+		zero_gradient_residue_(particles_->getVariableDataByName<Vecd>("ZeroGradientResidue"))
+	{}
+	//=================================================================================================//
+    void StationaryConfinementTransportVelocitySimple::update(size_t index_i, Real dt)
+	{
+        zero_gradient_residue_[index_i] -= 2.0 *level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
 	}
 	//=================================================================================================//
 	//StaticConfinementViscousAcceleration::StaticConfinementViscousAcceleration(NearShapeSurface& near_surface)
@@ -236,6 +251,12 @@ namespace SPH
 	}*/
 	//=================================================================================================//
     StationaryConfinement::StationaryConfinement(NearShapeSurfaceStationaryBoundary &near_surface)
+		: density_summation_(near_surface), pressure_relaxation_(near_surface),
+          density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface),
+          transport_velocity_(near_surface)
+	{}
+	//=================================================================================================//
+    StationaryConfinementSimple::StationaryConfinementSimple(NearShapeSurfaceStationaryBoundary &near_surface)
 		: density_summation_(near_surface), pressure_relaxation_(near_surface),
           density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface),
           transport_velocity_(near_surface)

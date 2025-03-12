@@ -166,6 +166,25 @@ namespace SPH
 
         //};
 
+     class StationaryConfinementTransportVelocitySimple : public BaseLocalDynamics<BodyPartByCell>
+    {
+      public:
+        StationaryConfinementTransportVelocitySimple(NearShapeSurfaceStationaryBoundary &near_surface);
+        virtual ~StationaryConfinementTransportVelocitySimple(){};
+        void update(size_t index_i, Real dt = 0.0);
+
+      protected:
+        Fluid &fluid_;
+        Vecd *pos_;
+        // int *surface_indicator_;
+        // const Real coefficient_;
+        // Real smoothing_length_sqr_;
+
+        LevelSetShapeLBoundary *level_set_shape_;
+        Vecd *zero_gradient_residue_;
+        //KernelCorrectionType kernel_correction_;
+    };
+
         /**
          * @class StationaryConfinementViscousAcceleration
          * @brief Stationary confinement condition for viscous acceleration
@@ -196,7 +215,7 @@ namespace SPH
 			    //Real phi_r_ij = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
 			    vel_derivative = 2.0 * (vel_[index_i] - vel_level_set_cell_j);
 			    Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
-			    force = 2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
+                            force = 2.0 * mu_(index_i, index_i) * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
                 viscous_force_[index_i] += force;
             }
             //Vecd& getForceFromFluid() { return viscous_force_; };
@@ -212,6 +231,46 @@ namespace SPH
         };
 
         using StationaryConfinementFixedViscousForce = StationaryConfinementViscousForce<FixedViscosity>;
+
+        class StationaryConfinementViscousForceSimple : public BaseLocalDynamics<BodyPartByCell>
+        {
+          public:
+            StationaryConfinementViscousForceSimple(NearShapeSurfaceStationaryBoundary &near_surface )
+                : BaseLocalDynamics<BodyPartByCell>(near_surface),
+                  pos_(particles_->getVariableDataByName<Vecd>("Position")),
+                  mass_(particles_->getVariableDataByName<Real>("Mass")),
+                  viscous_force_(particles_->getVariableDataByName<Vecd>("ViscousForce")),
+                  rho_(particles_->getVariableDataByName<Real>("Density")),
+                  mu_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial()).ReferenceViscosity()),
+                  vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
+                  fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
+                  level_set_shape_(&near_surface.getLevelSetShape())
+            {
+            }
+            virtual ~StationaryConfinementViscousForceSimple(){};
+            void update(size_t index_i, Real dt = 0.0)
+            {
+                Vecd force = Vecd::Zero();
+                Vecd vel_derivative = Vecd::Zero();
+                Vecd vel_level_set_cell_j = Vecd::Zero();
+                Real rho_i = rho_[index_i];
+                /*Here we give the Level-set boundary velocity as zero, but later we need a vector to set the velocity of each level-set cell*/
+                // Real phi_r_ij = abs(level_set_shape_->findSignedDistance(pos_[index_i]));
+                vel_derivative = 2.0 * (vel_[index_i] - vel_level_set_cell_j);
+                Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
+                force = 2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative / rho_i;
+                viscous_force_[index_i] += force;
+            }
+            // Vecd& getForceFromFluid() { return viscous_force_; };
+          protected:
+            Fluid &fluid_;
+            Vecd *pos_, *vel_, *viscous_force_;
+            Real *rho_, *mass_;
+
+            Real mu_;
+            LevelSetShapeLBoundary *level_set_shape_;
+            // Vecd *force_from_fluid_;
+        };
 
         //class BaseForceFromFluidStationaryConfinement : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
         //{
@@ -328,6 +387,19 @@ namespace SPH
            virtual ~StationaryConfinement(){};
          };
 
+        class StationaryConfinementSimple
+         {
+           public:
+             SimpleDynamics<StationaryConfinementDensity> density_summation_;
+             SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+             SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+             SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
+             SimpleDynamics<StationaryConfinementViscousForceSimple> viscous_force_;
+             SimpleDynamics<StationaryConfinementTransportVelocitySimple> transport_velocity_;
+
+             StationaryConfinementSimple(NearShapeSurfaceStationaryBoundary &near_surface);
+             virtual ~StationaryConfinementSimple(){};
+         };
 
         /**
         * @class StationaryConfinement
