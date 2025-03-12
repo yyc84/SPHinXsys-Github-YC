@@ -138,9 +138,12 @@ int main(int ac, char *av[])
     /**
      * @brief 	Algorithms of fluid dynamics.
      */
-    /** Evaluation of density by summation approach. */
+   
+
+    Gravity gravity(Vecd(gravity_g, 0.0));
+    SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
+     /** Evaluation of density by summation approach. */
     InteractionWithUpdate<fluid_dynamics::DensitySummationInner> update_density_by_summation(water_block_inner);
-    
     /** Pressure relaxation algorithm without Riemann solver for viscous flows. */
     Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
     /** Pressure relaxation algorithm by using position verlet time stepping. */
@@ -149,6 +152,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
     /** Impose transport velocity. */
     InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<TruncatedLinear, AllParticles>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixInner> kernel_correction_inner(water_block_inner);
     /**
      * @brief Output.
      */
@@ -163,11 +167,11 @@ int main(int ac, char *av[])
 
     NearShapeSurfaceStationaryBoundary near_surface_up(water_block, makeShared<InverseShape<WallUp>>("WallUp"));
     near_surface_up.getLevelSetShape().writeLevelSet(system);
-    fluid_dynamics::StationaryConfinementSimple confinement_condition_up(near_surface_up);
+    fluid_dynamics::StationaryConfinement confinement_condition_up(near_surface_up);
 
     NearShapeSurfaceStationaryBoundary near_surface_down(water_block, makeShared<InverseShape<WallDown>>("WallDown"));
     near_surface_down.getLevelSetShape().writeLevelSet(system);
-    fluid_dynamics::StationaryConfinementSimple confinement_condition_down(near_surface_down);
+    fluid_dynamics::StationaryConfinement confinement_condition_down(near_surface_down);
 
     update_density_by_summation.post_processes_.push_back(&confinement_condition_up.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition_up.pressure_relaxation_);
@@ -188,6 +192,7 @@ int main(int ac, char *av[])
     system.initializeSystemCellLinkedLists();
     periodic_condition.update_cell_linked_list_.exec();
     system.initializeSystemConfigurations();
+    constant_gravity.exec();
     /** Output the start states of bodies. */
     body_states_recording.writeToFile(0);
     
@@ -224,6 +229,7 @@ int main(int ac, char *av[])
             time_instance = TickCount::now();
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
+            kernel_correction_inner.exec();
             viscous_acceleration.exec();
             transport_velocity_correction.exec();
             interval_computing_time_step += TickCount::now() - time_instance;
