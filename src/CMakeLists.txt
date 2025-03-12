@@ -46,7 +46,7 @@ if(SPHINXSYS_2D)
         file(GLOB_RECURSE SPHINXSYS_EXTRA_SHARED_HEADERS CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/tests/extra_source_and_tests/extra_src/shared/*.h ${CMAKE_SOURCE_DIR}/tests/extra_source_and_tests/extra_src/shared/*.hpp)
         file(GLOB_RECURSE SPHINXSYS_EXTRA_SHARED_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/tests/extra_source_and_tests/extra_src/shared/*.cpp)
         file(GLOB_RECURSE SPHINXSYS_EXTRA_2D_HEADERS CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/tests/extra_source_and_tests/extra_src/for_2D_build/*.h ${CMAKE_SOURCE_DIR}/tests/extra_source_and_tests/extra_src/for_2D_build/*.hpp)
-        file(GLOB_RECURSE SPHINXSYS_EXTRA_2D_SOURCES CONFIGURE_DEPENDS tests/extra_source_and_tests/extra_src/for_2D_build/*.cpp)
+        file(GLOB_RECURSE SPHINXSYS_EXTRA_2D_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/tests/extra_source_and_tests/extra_src/for_2D_build/*.cpp)
 	
 	target_sources(sphinxsys_2d PUBLIC ${SPHINXSYS_EXTRA_SHARED_HEADERS} ${SPHINXSYS_EXTRA_2D_HEADERS})
     	target_sources(sphinxsys_2d PRIVATE ${SPHINXSYS_EXTRA_SHARED_SOURCES} ${SPHINXSYS_EXTRA_2D_SOURCES})
@@ -126,4 +126,8 @@ if(SPHINXSYS_3D)
     target_include_directories(sphinxsys_3d PUBLIC $<INSTALL_INTERFACE:include/sphinxsys_3d>)
 
     target_link_libraries(sphinxsys_3d PUBLIC sphinxsys_core)
+
+	
+	message(STATUS "SPHINXSYS_EXTRA_2D_SOURCES: ${SPHINXSYS_EXTRA_2D_SOURCES}")
+	message(STATUS "SPHINXSYS_EXTRA_3D_SOURCES: ${SPHINXSYS_EXTRA_3D_SOURCES}")	
 endif()
