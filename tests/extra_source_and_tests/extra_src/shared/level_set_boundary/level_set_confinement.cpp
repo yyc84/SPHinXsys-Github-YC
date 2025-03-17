@@ -252,11 +252,11 @@ namespace SPH
 	//=================================================================================================//
     StationaryConfinement::StationaryConfinement(NearShapeSurfaceStationaryBoundary &near_surface)
 		: density_summation_(near_surface), pressure_relaxation_(near_surface),
-          density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface),
-          transport_velocity_(near_surface)
+          density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface)
+		,transport_velocity_(near_surface)
 	{}
 	//=================================================================================================//
-    StationaryConfinementSimple::StationaryConfinementSimple(NearShapeSurfaceStationaryBoundary &near_surface)
+    StationaryConfinementSimpleMethod::StationaryConfinementSimpleMethod(NearShapeSurfaceStationaryBoundary &near_surface)
 		: density_summation_(near_surface), pressure_relaxation_(near_surface),
           density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface),
           transport_velocity_(near_surface)

@@ -387,7 +387,51 @@ namespace SPH
            virtual ~StationaryConfinement(){};
          };
 
+        class StationaryConfinementWithOutTransportVelocit
+         {
+           public:
+             SimpleDynamics<StationaryConfinementDensity> density_summation_;
+             SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+             SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+             SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
+             SimpleDynamics<StationaryConfinementFixedViscousForce> viscous_force_;
+
+             StationaryConfinementWithOutTransportVelocit(NearShapeSurfaceStationaryBoundary &near_surface):
+                 density_summation_(near_surface), pressure_relaxation_(near_surface),
+                 density_relaxation_(near_surface), viscous_force_(near_surface), surface_bounding_(near_surface){}
+             virtual ~StationaryConfinementWithOutTransportVelocit(){};
+         };
+
+        class StationaryConfinementWithOutViscousForce
+         {
+           public:
+             SimpleDynamics<StationaryConfinementDensity> density_summation_;
+             SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+             SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+             SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
+             SimpleDynamics<StationaryConfinementTransportVelocitySimple> transport_velocity_;
+
+             StationaryConfinementWithOutViscousForce(NearShapeSurfaceStationaryBoundary &near_surface) : 
+                 density_summation_(near_surface), pressure_relaxation_(near_surface),
+                density_relaxation_(near_surface), transport_velocity_(near_surface), surface_bounding_(near_surface) {}
+             virtual ~StationaryConfinementWithOutViscousForce(){};
+         };
+
         class StationaryConfinementSimple
+         {
+           public:
+             SimpleDynamics<StationaryConfinementDensity> density_summation_;
+             SimpleDynamics<StationaryConfinementIntegration1stHalf> pressure_relaxation_;
+             SimpleDynamics<StationaryConfinementIntegration2ndHalf> density_relaxation_;
+             SimpleDynamics<StationaryConfinementBounding> surface_bounding_;
+
+             StationaryConfinementSimple(NearShapeSurfaceStationaryBoundary &near_surface) : 
+                 density_summation_(near_surface), pressure_relaxation_(near_surface),
+                  density_relaxation_(near_surface),  surface_bounding_(near_surface) {}
+             virtual ~StationaryConfinementSimple(){};
+         };
+
+        class StationaryConfinementSimpleMethod
          {
            public:
              SimpleDynamics<StationaryConfinementDensity> density_summation_;
@@ -397,8 +441,8 @@ namespace SPH
              SimpleDynamics<StationaryConfinementViscousForceSimple> viscous_force_;
              SimpleDynamics<StationaryConfinementTransportVelocitySimple> transport_velocity_;
 
-             StationaryConfinementSimple(NearShapeSurfaceStationaryBoundary &near_surface);
-             virtual ~StationaryConfinementSimple(){};
+             StationaryConfinementSimpleMethod(NearShapeSurfaceStationaryBoundary &near_surface);
+             virtual ~StationaryConfinementSimpleMethod(){};
          };
 
         /**

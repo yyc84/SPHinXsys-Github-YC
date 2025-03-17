@@ -132,27 +132,22 @@ int main(int ac, char *av[])
     /**
      * @brief 	Methods used for time stepping.
      */
-    /** Periodic BCs in x direction. */
-    PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
-    PeriodicConditionUsingCellLinkedList periodic_condition(water_block, periodic_along_x);
+    
     /**
      * @brief 	Algorithms of fluid dynamics.
      */
-   
-
     Gravity gravity(Vecd(gravity_g, 0.0));
     SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
-     /** Evaluation of density by summation approach. */
-    InteractionWithUpdate<fluid_dynamics::DensitySummationInner> update_density_by_summation(water_block_inner);
-    /** Pressure relaxation algorithm without Riemann solver for viscous flows. */
-    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
-    /** Pressure relaxation algorithm by using position verlet time stepping. */
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
-    /** Computing viscous acceleration. */
-    InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
-    /** Impose transport velocity. */
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<TruncatedLinear, AllParticles>> transport_velocity_correction(water_block_inner);
     InteractionWithUpdate<LinearGradientCorrectionMatrixInner> kernel_correction_inner(water_block_inner);
+
+    InteractionWithUpdate<fluid_dynamics::DensitySummationInner> update_density_by_summation(water_block_inner);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfInnerRiemann> pressure_relaxation(water_block_inner);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionInnerRiemann> pressure_relaxation(water_block_inner);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfInnerRiemann> density_relaxation(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_acceleration(water_block_inner);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<TruncatedLinear, AllParticles>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, AllParticles>> transport_velocity_correction(water_block_inner);
+
     /**
      * @brief Output.
      */
@@ -161,6 +156,11 @@ int main(int ac, char *av[])
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
     IOEnvironment io_environment(system);
+
+    /** Periodic BCs in x direction. */
+    PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
+    PeriodicConditionUsingCellLinkedList periodic_condition(water_block, periodic_along_x);
+
     /** Output the body states. */
     BodyStatesRecordingToVtp body_states_recording(system);
     body_states_recording.addToWrite<Real>(water_block, "Density");
@@ -206,8 +206,8 @@ int main(int ac, char *av[])
     Real &physical_time = *system.getSystemVariableDataByName<Real>("PhysicalTime");
     size_t number_of_iterations = system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 30.0;   /**< End time. */
-    Real Output_Time = 0.1; /**< Time stamps for output of body states. */
+    Real end_time = 50.0;   /**< End time. */
+    Real Output_Time = 1.0; /**< Time stamps for output of body states. */
     Real dt = 0.0;          /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
     TickCount t1 = TickCount::now();
@@ -229,7 +229,7 @@ int main(int ac, char *av[])
             time_instance = TickCount::now();
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
-            kernel_correction_inner.exec();
+            //kernel_correction_inner.exec();
             viscous_acceleration.exec();
             transport_velocity_correction.exec();
             interval_computing_time_step += TickCount::now() - time_instance;

@@ -9,7 +9,7 @@
  * @brief 	SPHinXsys Library.
  */
 #include "sphinxsys.h"
-#include "io_observation_for_debuging.h"
+//#include "io_observation_for_debuging.h"
 /**
  * @brief Namespace cite here.
  */
@@ -84,19 +84,19 @@ int main(int ac, char *av[])
      * @brief Build up -- a SPHSystem --
      */
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
-    sph_system.handleCommandlineOptions(ac, av);
+    sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     /**
      * @brief Material property, particles and body creation of fluid.
      */
     FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
-    water_block.defineParticlesAndMaterial<BaseParticles, WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
-    water_block.generateParticles<ParticleGeneratorLattice>();
+    water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_f);
+    water_block.generateParticles<BaseParticles, Lattice>();
     /**
      * @brief 	Particle and body creation of wall boundary.
      */
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
-    wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
-    wall_boundary.generateParticles<ParticleGeneratorLattice>();
+    wall_boundary.defineMaterial<Solid>();
+    wall_boundary.generateParticles<BaseParticles, Lattice>();
     /** topology */
     InnerRelation water_block_inner(water_block);
     ContactRelation water_wall_contact(water_block, {&wall_boundary});
@@ -112,34 +112,38 @@ int main(int ac, char *av[])
      * @brief 	Methods used for time stepping.
      */
     /** Define external force. */
+    Gravity gravity(Vecd(gravity_g, 0.0));
+    SimpleDynamics<GravityForce<Gravity>> constant_gravity(water_block, gravity);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-    /** Initialize particle acceleration. */
-    SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, makeShared<Gravity>(Vecd(gravity_g, 0.0)));
-    /** Periodic BCs in x direction. */
-    PeriodicConditionUsingCellLinkedList periodic_condition(water_block, water_block.getBodyShapeBounds(), xAxis);
+    //InteractionWithUpdate<LinearGradientCorrectionMatrixComplex> kernel_correction_complex(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<LinearGradientCorrectionMatrixInner> kernel_correction_complex(water_block_inner);
+
     /**
      * @brief 	Algorithms of fluid dynamics.
      */
-    /** Evaluation of density by summation approach. */
-    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_wall_contact);
-    /** Time step size without considering sound wave speed. */
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
-    /** Time step size with considering sound wave speed. */
-    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
-    /** Pressure relaxation algorithm without Riemann solver for viscous flows. */
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
-    /** Pressure relaxation algorithm by using position verlet time stepping. */
+    Dynamics1Level<fluid_dynamics::Integration1stHalfCorrectionWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
+    //Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(water_block_inner, water_wall_contact);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWallNoRiemann> density_relaxation(water_block_inner, water_wall_contact);
-    /** Computing viscous acceleration. */
-    InteractionDynamics<fluid_dynamics::ViscousAccelerationWithWall> viscous_acceleration(water_block_inner, water_wall_contact);
-    /** Impose transport velocity. */
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>> transport_velocity_correction(water_block_inner, water_wall_contact);
-    /**
-     * @brief Output.
-     */
-    IOEnvironment io_environment(sph_system);
-    /** Output the body states. */
-    BodyStatesRecordingToVtp body_states_recording(io_environment, sph_system.real_bodies_);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<fluid_dynamics::ViscousForceWithWallCorrection> viscous_force(water_block_inner, water_wall_contact);
+    /*InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionCorrectedComplex<AllParticles>>
+        transport_velocity_correction(water_block_inner, water_wall_contact);*/
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>>
+        transport_velocity_correction(water_block_inner, water_wall_contact);
+
+
+    
+    /** Time step size without considering sound wave speed. */
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    /** Time step size with considering sound wave speed. */
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
+    //ReduceDynamics<fluid_dynamics::AdvectionViscousTimeStep> get_fluid_advection_time_step_size(water_block, U_f);
+    
+    PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
+    PeriodicConditionUsingCellLinkedList periodic_condition(water_block, periodic_along_x);
+
+    BodyStatesRecordingToVtp body_states_recording(sph_system);
+    body_states_recording.addToWrite<Real>(water_block, "Density");
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -147,20 +151,20 @@ int main(int ac, char *av[])
     periodic_condition.update_cell_linked_list_.exec();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
-    /** Output the start states of bodies. */
-    body_states_recording.writeToFile(0);
-    ReducedQuantityRecordingForDebuging<Vecd, ReduceSum<Vecd>> write_single_variable_vector(io_environment, water_block, Vecd::Zero(), "KernelGradientParticle");
-    ReducedQuantityRecordingForDebuging<Real, ReduceSum<Real>> write_single_variable_real(io_environment, water_block, 0.0, "KernelValueParticle");
-    GlobalQuantityRecordingForDebuging<Real>wrtie_variable_by_position_real_kernel_value(io_environment, water_block, 0.0, "KernelValueParticle");
-    GlobalQuantityRecordingForDebuging<Vecd>wrtie_variable_by_position_vecd(io_environment, water_block, Vecd::Zero(), "KernelGradientParticle");
-    /**
-     * @brief 	Basic parameters.
-     */
-    size_t number_of_iterations = sph_system.RestartStep();
+    constant_gravity.exec();
+
+    //ReducedQuantityRecordingForDebuging<Vecd, ReduceSum<Vecd>> write_single_variable_vector(io_environment, water_block, Vecd::Zero(), "KernelGradientParticle");
+    //ReducedQuantityRecordingForDebuging<Real, ReduceSum<Real>> write_single_variable_real(io_environment, water_block, 0.0, "KernelValueParticle");
+    //GlobalQuantityRecordingForDebuging<Real>wrtie_variable_by_position_real_kernel_value(io_environment, water_block, 0.0, "KernelValueParticle");
+    //GlobalQuantityRecordingForDebuging<Vecd>wrtie_variable_by_position_vecd(io_environment, water_block, Vecd::Zero(), "KernelGradientParticle");
+
+    Real &physical_time = *sph_system.getSystemVariableDataByName<Real>("PhysicalTime");
+    size_t number_of_iterations = 0;
     int screen_output_interval = 100;
-    Real end_time = 20.0;   /**< End time. */
-    Real Output_Time = 0.1; /**< Time stamps for output of body states. */
-    Real dt = 0.0;          /**< Default acoustic time step sizes. */
+    Real end_time = 100.0;  /**< End time. */
+    Real Output_Time = 1.0; /**< Time stamps for output of body states. */
+    Real dt = 0.0;          /**< Default acoustic time step sizes. */  
+
     /** statistics for computing CPU time. */
     TickCount t1 = TickCount::now();
     TimeInterval interval;
@@ -168,10 +172,12 @@ int main(int ac, char *av[])
     TimeInterval interval_computing_pressure_relaxation;
     TimeInterval interval_updating_configuration;
     TickCount time_instance;
+
+    body_states_recording.writeToFile(0);
     /**
      * @brief 	Main loop starts here.
      */
-    while (GlobalStaticVariables::physical_time_ < end_time)
+    while (physical_time < end_time)
     {
         Real integration_time = 0.0;
         /** Integrate time (loop) until the next output time. */
@@ -179,10 +185,10 @@ int main(int ac, char *av[])
         {
             /** Acceleration due to viscous force and gravity. */
             time_instance = TickCount::now();
-            initialize_a_fluid_step.exec();
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
-            // viscous_acceleration.exec();
+            kernel_correction_complex.exec();
+            viscous_force.exec();
             transport_velocity_correction.exec();
             interval_computing_time_step += TickCount::now() - time_instance;
             /** Dynamics including pressure relaxation. */
@@ -192,17 +198,16 @@ int main(int ac, char *av[])
             {
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
                 pressure_relaxation.exec(dt);
-                viscous_acceleration.exec(dt);
                 density_relaxation.exec(dt);
                 relaxation_time += dt;
                 integration_time += dt;
-                GlobalStaticVariables::physical_time_ += dt;
+                physical_time += dt;
             }
             interval_computing_pressure_relaxation += TickCount::now() - time_instance;
             if (number_of_iterations % screen_output_interval == 0)
             {
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-                          << GlobalStaticVariables::physical_time_
+                          << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
             }
             number_of_iterations++;
@@ -210,17 +215,17 @@ int main(int ac, char *av[])
             time_instance = TickCount::now();
             /** Water block configuration and periodic condition. */
             periodic_condition.bounding_.exec();
-            water_block.updateCellLinkedListWithParticleSort(100);
+            water_block.updateCellLinkedList();
             periodic_condition.update_cell_linked_list_.exec();
             water_block_complex.updateConfiguration();
             interval_updating_configuration += TickCount::now() - time_instance;
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
-        write_single_variable_real.writeToFile();
+        /*write_single_variable_real.writeToFile();
         write_single_variable_vector.writeToFile();
         wrtie_variable_by_position_real_kernel_value.writeToFile();
-        wrtie_variable_by_position_vecd.writeToFile();
+        wrtie_variable_by_position_vecd.writeToFile();*/
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
     }

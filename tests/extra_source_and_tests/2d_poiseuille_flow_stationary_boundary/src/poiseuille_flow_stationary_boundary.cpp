@@ -84,11 +84,17 @@ public :
     explicit WallUp(const std::string &shape_name): MultiPolygonShape(shape_name)
     {
         std::vector<Vecd> upper_wall_shape;
-        upper_wall_shape.push_back(Vecd(-BW, DH + 0.5 * resolution_ref));
+        /*upper_wall_shape.push_back(Vecd(-BW, DH + 0.5 * resolution_ref));
         upper_wall_shape.push_back(Vecd(-BW, DH + 1.0 * BW));
         upper_wall_shape.push_back(Vecd(DL + BW, DH + 1.0 * BW));
         upper_wall_shape.push_back(Vecd(DL + BW, DH + 0.5 * resolution_ref));
-        upper_wall_shape.push_back(Vecd(-BW, DH + 0.5 * resolution_ref));
+        upper_wall_shape.push_back(Vecd(-BW, DH + 0.5 * resolution_ref));*/
+
+        upper_wall_shape.push_back(Vecd(-BW, DH ));
+        upper_wall_shape.push_back(Vecd(-BW, DH + 1.0 * BW));
+        upper_wall_shape.push_back(Vecd(DL + BW, DH + 1.0 * BW));
+        upper_wall_shape.push_back(Vecd(DL + BW, DH ));
+        upper_wall_shape.push_back(Vecd(-BW, DH ));
          
         multi_polygon_.addAPolygon(upper_wall_shape, ShapeBooleanOps::add);
     }
@@ -100,11 +106,17 @@ public :
     explicit WallDown(const std::string &shape_name): MultiPolygonShape(shape_name)
     {
         std::vector<Vecd> down_wall_shape;
-        down_wall_shape.push_back(Vecd(-BW, - 1.0 * BW));
+        /*down_wall_shape.push_back(Vecd(-BW, - 1.0 * BW));
         down_wall_shape.push_back(Vecd(-BW, 0.0 - 0.5 * resolution_ref));
         down_wall_shape.push_back(Vecd(DL + BW, 0.0 - 0.5 * resolution_ref));
         down_wall_shape.push_back(Vecd(DL + BW, - 1.0 * BW));
-        down_wall_shape.push_back(Vecd(-BW, - 1.0 * BW));
+        down_wall_shape.push_back(Vecd(-BW, - 1.0 * BW));*/
+
+        down_wall_shape.push_back(Vecd(-BW, -1.0 * BW));
+        down_wall_shape.push_back(Vecd(-BW, 0.0));
+        down_wall_shape.push_back(Vecd(DL + BW, 0.0 ));
+        down_wall_shape.push_back(Vecd(DL + BW, -1.0 * BW));
+        down_wall_shape.push_back(Vecd(-BW, -1.0 * BW));
 
         multi_polygon_.addAPolygon(down_wall_shape, ShapeBooleanOps::add);
     }
@@ -148,7 +160,8 @@ int main(int ac, char *av[])
     /** Computing viscous acceleration. */
     InteractionWithUpdate<fluid_dynamics::ViscousForceInner> viscous_force(water_block_inner);
     /** Impose transport velocity. */
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<TruncatedLinear, AllParticles>> transport_velocity_correction(water_block_inner);
+    //InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<TruncatedLinear, AllParticles>> transport_velocity_correction(water_block_inner);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionInner<NoLimiter, AllParticles>> transport_velocity_correction(water_block_inner);
     
     InteractionWithUpdate<LinearGradientCorrectionMatrixInner> kernel_correction_inner(water_block_inner);
     /** Time step size without considering sound wave speed. */
@@ -176,14 +189,14 @@ int main(int ac, char *av[])
     update_density_by_summation.post_processes_.push_back(&confinement_condition_up.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition_up.pressure_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition_up.density_relaxation_);
-    //density_relaxation.post_processes_.push_back(&confinement_condition_up.surface_bounding_);
+    density_relaxation.post_processes_.push_back(&confinement_condition_up.surface_bounding_);
     transport_velocity_correction.post_processes_.push_back(&confinement_condition_up.transport_velocity_);
     viscous_force.post_processes_.push_back(&confinement_condition_up.viscous_force_);
 
     update_density_by_summation.post_processes_.push_back(&confinement_condition_down.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition_down.pressure_relaxation_);
     density_relaxation.post_processes_.push_back(&confinement_condition_down.density_relaxation_);
-    //density_relaxation.post_processes_.push_back(&confinement_condition_down.surface_bounding_);
+    density_relaxation.post_processes_.push_back(&confinement_condition_down.surface_bounding_);
     transport_velocity_correction.post_processes_.push_back(&confinement_condition_down.transport_velocity_);
     viscous_force.post_processes_.push_back(&confinement_condition_down.viscous_force_);
     /**
