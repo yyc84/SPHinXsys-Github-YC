@@ -178,7 +178,7 @@ int main(int ac, char *av[])
             time_instance = TickCount::now();
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
-            kernel_correction_complex.exec();
+            //kernel_correction_complex.exec();
             viscous_force.exec();
             transport_velocity_correction.exec();
             interval_computing_time_step += TickCount::now() - time_instance;

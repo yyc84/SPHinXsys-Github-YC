@@ -8,13 +8,20 @@ namespace fluid_dynamics
 void DensitySummation<Inner<>>::interaction(size_t index_i, Real dt)
 {
     Real sigma = W0_;
+    /*for debuging*/
+    kernel_weight_ij_[index_i] = 0.0;
+    kernel_weight_wall_ij_[index_i] = 0.0;
+    Real kernel_weight_without_Vi(0.0);
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
         sigma += inner_neighborhood.W_ij_[n];
-
+        /*for debuging*/
+        kernel_weight_without_Vi += inner_neighborhood.W_ij_[n];
+    }
     rho_sum_[index_i] = sigma * rho0_ * inv_sigma0_;
     /*for debuging*/
-    kernel_weight_ij_[index_i] += sigma;
+    kernel_weight_ij_[index_i] += kernel_weight_without_Vi * mass_[index_i] / rho_[index_i];
 }
 //=================================================================================================//
 void DensitySummation<Inner<>>::update(size_t index_i, Real dt)
@@ -60,7 +67,7 @@ DensitySummation<Contact<Base>>::DensitySummation(BaseContactRelation &contact_r
 Real DensitySummation<Contact<Base>>::ContactSummation(size_t index_i)
 {
     Real sigma(0.0);
-    Real kernel_weight_wall(0.0);
+    Real kernel_weight_wall_without_Vi(0.0);
     for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
     {
         Real *contact_mass_k = this->contact_mass_[k];
@@ -69,12 +76,13 @@ Real DensitySummation<Contact<Base>>::ContactSummation(size_t index_i)
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
             sigma += contact_neighborhood.W_ij_[n] * contact_inv_rho0_k * contact_mass_k[contact_neighborhood.j_[n]];
-            kernel_weight_wall += contact_neighborhood.W_ij_[n];
+            kernel_weight_wall_without_Vi += contact_neighborhood.W_ij_[n];
         }
 
     }
-    kernel_weight_wall_ij_[index_i] += kernel_weight_wall;
-    kernel_weight_ij_[index_i] += kernel_weight_wall;
+    /*for debuging*/
+    kernel_weight_wall_ij_[index_i] += kernel_weight_wall_without_Vi * mass_[index_i] / rho_[index_i];
+    kernel_weight_ij_[index_i] += kernel_weight_wall_without_Vi * mass_[index_i] / rho_[index_i];
     return sigma;
 };
 //=================================================================================================//
