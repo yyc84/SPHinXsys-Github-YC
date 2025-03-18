@@ -59,6 +59,9 @@ namespace SPH
         Real *mass_, *rho_sum_;
         Vecd *pos_;
         LevelSetShapeLBoundary *level_set_shape_;
+
+        /*below for debuging*/
+        Real *kernel_weight_ij_, *kernel_weight_wall_ij_;
     };
 
     /**
@@ -78,6 +81,9 @@ namespace SPH
         Vecd *pos_, *vel_, *force_;
         LevelSetShapeLBoundary *level_set_shape_;
         AcousticRiemannSolver riemann_solver_;
+
+        /*below for debuging*/ 
+        Vecd *kernel_gradient_ij_, *kernel_gradient_wall_ij_;
     };
 
     /**

@@ -17,7 +17,18 @@ DensitySummation<Base, DataDelegationType>::DensitySummation(BaseRelationType &b
       Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure")),
       rho0_(this->sph_body_.getBaseMaterial().ReferenceDensity()),
       inv_sigma0_(1.0 / this->sph_body_.getSPHAdaptation().LatticeNumberDensity()),
-      W0_(this->sph_body_.getSPHAdaptation().getKernel()->W0(ZeroVecd)) {}
+      W0_(this->sph_body_.getSPHAdaptation().getKernel()->W0(ZeroVecd)) 
+    /*for debuging*/
+    ,
+      kernel_weight_ij_(this->particles_->template registerStateVariable<Real>("KernelWeight")),
+      kernel_weight_wall_ij_(this->particles_->template registerStateVariable<Real>("KernelWeightWall"))
+{
+    /*below for debuging*/
+    particles_->addEvolvingVariable<Real>("KernelWeight");
+    particles_->addVariableToWrite<Real>("KernelWeight");
+    particles_->addEvolvingVariable<Real>("KernelWeightWall");
+    particles_->addVariableToWrite<Real>("KernelWeightWall");
+}
 //=================================================================================================//
 template <typename... SummationType>
 template <typename... Args>

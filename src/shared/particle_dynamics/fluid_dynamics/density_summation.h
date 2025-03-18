@@ -53,6 +53,8 @@ class DensitySummation<Base, DataDelegationType>
   protected:
     Real *rho_, *mass_, *rho_sum_, *Vol_;
     Real rho0_, inv_sigma0_, W0_;
+    /*below for debuging*/
+    Real *kernel_weight_ij_, *kernel_weight_wall_ij_;
 };
 
 template <>

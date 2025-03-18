@@ -13,13 +13,21 @@ namespace SPH
             mass_(particles_->getVariableDataByName<Real>("Mass")),
             rho_sum_(particles_->getVariableDataByName<Real>("DensitySummation")),
             pos_(particles_->getVariableDataByName<Vecd>("Position")),
-            level_set_shape_(&near_surface.getLevelSetShape()) {}
+            level_set_shape_(&near_surface.getLevelSetShape()) 
+			/*below for debuging*/
+			,
+            kernel_weight_ij_(particles_->getVariableDataByName<Real>("KernelWeight")),
+            kernel_weight_wall_ij_(particles_->getVariableDataByName<Real>("KernelWeightWall"))
+		{}
     //=================================================================================================//
     void StationaryConfinementDensity::update(size_t index_i, Real dt)
     {
         Real inv_Vol_0_i = rho0_ / mass_[index_i];
         rho_sum_[index_i] +=
             level_set_shape_->computeKernelIntegral(pos_[index_i]) * inv_Vol_0_i * rho0_ * inv_sigma0_;
+        /*for debuging*/
+        kernel_weight_ij_[index_i] += level_set_shape_->computeKernelIntegral(pos_[index_i]);
+        kernel_weight_wall_ij_[index_i] += level_set_shape_->computeKernelIntegral(pos_[index_i]);
     }
     //=================================================================================================//
     StationaryConfinementIntegration1stHalf::StationaryConfinementIntegration1stHalf(NearShapeSurfaceStationaryBoundary &near_surface)
@@ -32,12 +40,20 @@ namespace SPH
             vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
             force_(particles_->getVariableDataByName<Vecd>("Force")),
             level_set_shape_(&near_surface.getLevelSetShape()),
-            riemann_solver_(fluid_, fluid_) {}
+            riemann_solver_(fluid_, fluid_) 
+		/*for debuging*/
+		,
+          kernel_gradient_ij_(particles_->getVariableDataByName<Vecd>("KernelGradient")),
+          kernel_gradient_wall_ij_(particles_->getVariableDataByName<Vecd>("KernelGradientWall"))
+	{}
     //=================================================================================================//
     void StationaryConfinementIntegration1stHalf::update(size_t index_i, Real dt)
     {
         Vecd kernel_gradient = level_set_shape_->computeKernelGradientIntegral(pos_[index_i]);
         force_[index_i] -= 2.0 * mass_[index_i] * p_[index_i] * kernel_gradient / rho_[index_i];
+        /*for debuging*/ 
+		kernel_gradient_ij_[index_i] += kernel_gradient;
+        kernel_gradient_wall_ij_[index_i] += kernel_gradient;
     }
     //=================================================================================================//
     StationaryConfinementIntegration2ndHalf::StationaryConfinementIntegration2ndHalf(NearShapeSurfaceStationaryBoundary &near_surface)

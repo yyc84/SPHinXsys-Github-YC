@@ -78,6 +78,9 @@ class BaseIntegration : public LocalDynamics, public DataDelegationType
     Fluid &fluid_;
     Real *Vol_, *rho_, *mass_, *p_, *drho_dt_;
     Vecd *pos_, *vel_, *force_, *force_prior_;
+
+    /*below for debuging*/
+    Vecd *kernel_gradient_ij_, *kernel_gradient_wall_ij_;
 };
 
 template <typename... InteractionTypes>

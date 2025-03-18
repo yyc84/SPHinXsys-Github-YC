@@ -20,7 +20,12 @@ BaseIntegration<DataDelegationType>::BaseIntegration(BaseRelationType &base_rela
       pos_(this->particles_->template getVariableDataByName<Vecd>("Position")),
       vel_(this->particles_->template registerStateVariable<Vecd>("Velocity")),
       force_(this->particles_->template registerStateVariable<Vecd>("Force")),
-      force_prior_(this->particles_->template registerStateVariable<Vecd>("ForcePrior")) {}
+      force_prior_(this->particles_->template registerStateVariable<Vecd>("ForcePrior")) 
+    /*below for debuging*/
+      ,
+      kernel_gradient_ij_(this->particles_->template registerStateVariable<Vecd>("KernelGradient")),
+      kernel_gradient_wall_ij_(this->particles_->template registerStateVariable<Vecd>("KernelGradientWall"))
+{}
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>
 Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::
@@ -44,6 +49,12 @@ Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::
     //		add output particle data
     //----------------------------------------------------------------------
     particles_->addVariableToWrite<Vecd>("Velocity");
+
+    /*below for debuging*/
+    particles_->addEvolvingVariable<Vecd>("KernelGradient");
+    particles_->addVariableToWrite<Vecd>("KernelGradient");
+    particles_->addEvolvingVariable<Vecd>("KernelGradientWall");
+    particles_->addVariableToWrite<Vecd>("KernelGradientWall");
 }
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>
@@ -52,6 +63,10 @@ void Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::initi
     rho_[index_i] += drho_dt_[index_i] * dt * 0.5;
     p_[index_i] = fluid_.getPressure(rho_[index_i]);
     pos_[index_i] += vel_[index_i] * dt * 0.5;
+
+    /*below for debuging*/
+    kernel_gradient_ij_[index_i] = Vecd::Zero();
+    kernel_gradient_wall_ij_[index_i] = Vecd::Zero();
 }
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>
@@ -65,6 +80,8 @@ void Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::inter
 {
     Vecd force = Vecd::Zero();
     Real rho_dissipation(0);
+    /*for debuging*/
+    Vecd kernel_gradient_ij = Vecd::Zero();
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
     {
@@ -74,7 +91,9 @@ void Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::inter
 
         force -= (p_[index_i] * correction_(index_j, index_i) + p_[index_j] * correction_(index_i)) * dW_ijV_j * e_ij;
         rho_dissipation += riemann_solver_.DissipativeUJump(p_[index_i] - p_[index_j]) * dW_ijV_j;
+        kernel_gradient_ij += dW_ijV_j * e_ij;
     }
+    kernel_gradient_ij_[index_i] += kernel_gradient_ij;
     force_[index_i] += force * Vol_[index_i];
     drho_dt_[index_i] = rho_dissipation * rho_[index_i];
 }
@@ -83,13 +102,15 @@ template <class RiemannSolverType, class KernelCorrectionType>
 Integration1stHalf<Contact<Wall>, RiemannSolverType, KernelCorrectionType>::
     Integration1stHalf(BaseContactRelation &wall_contact_relation)
     : BaseIntegrationWithWall(wall_contact_relation),
-      correction_(particles_), riemann_solver_(fluid_, fluid_) {}
+      correction_(particles_), riemann_solver_(fluid_, fluid_){}
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType>
 void Integration1stHalf<Contact<Wall>, RiemannSolverType, KernelCorrectionType>::interaction(size_t index_i, Real dt)
 {
     Vecd force = Vecd::Zero();
     Real rho_dissipation(0);
+    /*below for debuging*/
+    Vecd kernel_gradient_wall_ij = Vecd::Zero();
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
     {
         Vecd *wall_acc_ave_k = wall_acc_ave_[k];
@@ -106,8 +127,12 @@ void Integration1stHalf<Contact<Wall>, RiemannSolverType, KernelCorrectionType>:
             Real p_j_in_wall = p_[index_i] + rho_[index_i] * r_ij * SMAX(Real(0), face_wall_external_acceleration);
             force -= (p_[index_i] + p_j_in_wall) * correction_(index_i) * dW_ijV_j * e_ij;
             rho_dissipation += riemann_solver_.DissipativeUJump(p_[index_i] - p_j_in_wall) * dW_ijV_j;
+            /*for debuging*/
+            kernel_gradient_wall_ij += dW_ijV_j * e_ij;
         }
     }
+    kernel_gradient_wall_ij_[index_i] += kernel_gradient_wall_ij;
+    kernel_gradient_ij_[index_i] += kernel_gradient_wall_ij;
     force_[index_i] += force * Vol_[index_i];
     drho_dt_[index_i] += rho_dissipation * rho_[index_i];
 }
