@@ -177,6 +177,7 @@ int main(int ac, char *av[])
      */
     BodyStatesRecordingToVtp body_states_recording(sph_system);
     body_states_recording.addToWrite<Real>(water_block, "Density");
+    ReducedQuantityRecording<TotalKineticEnergy> write_water_kinetic_energy(water_block);
 
     NearShapeSurfaceStationaryBoundary near_surface_up(water_block, makeShared<InverseShape<WallUp>>("WallUp"));
     near_surface_up.getLevelSetShape().writeLevelSet(sph_system);
@@ -269,6 +270,7 @@ int main(int ac, char *av[])
                 std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
                           << physical_time
                           << "	Dt = " << Dt << "	dt = " << dt << "\n";
+                write_water_kinetic_energy.writeToFile(number_of_iterations);
             }
             number_of_iterations++;
             /** Update cell linked list and configuration. */
