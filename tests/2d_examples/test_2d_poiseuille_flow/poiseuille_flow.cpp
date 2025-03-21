@@ -123,6 +123,11 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_fluid_time_step_size(water_block);
     PeriodicAlongAxis periodic_along_x(water_block.getSPHBodyBounds(), xAxis);
     PeriodicConditionUsingCellLinkedList periodic_condition(water_block, periodic_along_x);
+
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force_on_wall(water_block, "ViscousForceOnWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force(water_block, "ViscousForce");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient_on_wall(water_block, "KernelGradientWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient(water_block, "KernelGradient");
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
     //----------------------------------------------------------------------
@@ -218,6 +223,10 @@ int main(int ac, char *av[])
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
+        write_total_viscous_force_on_wall.writeToFile(number_of_iterations);
+        write_total_viscous_force.writeToFile(number_of_iterations);
+        write_total_kernel_gradient_on_wall.writeToFile(number_of_iterations);
+        write_total_kernel_gradient.writeToFile(number_of_iterations);
         TickCount t3 = TickCount::now();
         interval += t3 - t2;
     }

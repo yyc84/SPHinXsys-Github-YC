@@ -142,6 +142,14 @@ int main(int ac, char *av[])
     RegressionTestDynamicTimeWarping<ReducedQuantityRecording<QuantitySummation<Vecd>>> write_total_viscous_force_from_fluid(cylinder, "ViscousForceFromFluid");
     ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_pressure_force_from_fluid(cylinder, "PressureForceFromFluid");
     ObservedQuantityRecording<Vecd> write_fluid_velocity("Velocity", fluid_observer_contact);
+
+    /*for debuging*/
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force_on_wall(water_block, "ViscousForceOnWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force(water_block, "ViscousForce");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient_on_wall(water_block, "KernelGradientWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient(water_block, "KernelGradient");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_force(water_block, "Force");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_force_inner(water_block, "ViscousForceInner");
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -236,6 +244,12 @@ int main(int ac, char *av[])
         pressure_force_on_cylinder.exec();
         write_total_viscous_force_from_fluid.writeToFile(number_of_iterations);
         write_total_pressure_force_from_fluid.writeToFile(number_of_iterations);
+        write_total_viscous_force_on_wall.writeToFile(number_of_iterations);
+        write_total_force.writeToFile(number_of_iterations);
+        write_total_viscous_force.writeToFile(number_of_iterations);
+        write_total_kernel_gradient_on_wall.writeToFile(number_of_iterations);
+        write_total_kernel_gradient.writeToFile(number_of_iterations);
+        write_total_force_inner.writeToFile(number_of_iterations);
         fluid_observer_contact.updateConfiguration();
         write_fluid_velocity.writeToFile(number_of_iterations);
 

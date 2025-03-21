@@ -93,6 +93,9 @@ class ViscousForce<Inner<>, ViscosityType, KernelCorrectionType>
   protected:
     ViscosityType mu_;
     KernelCorrectionType kernel_correction_;
+
+    /*for debuging*/
+    Vecd *viscous_force_inner_;
 };
 using ViscousForceInner = ViscousForce<Inner<>, FixedViscosity, NoKernelCorrection>;
 
@@ -124,6 +127,9 @@ class ViscousForce<Contact<Wall>, ViscosityType, KernelCorrectionType>
   protected:
     ViscosityType mu_;
     KernelCorrectionType kernel_correction_;
+
+    /*for debuging*/
+    Vecd *viscous_force_On_wall_;
 };
 
 template <typename ViscosityType, class KernelCorrectionType>

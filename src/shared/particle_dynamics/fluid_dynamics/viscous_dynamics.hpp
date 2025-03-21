@@ -23,7 +23,7 @@ template <typename ViscosityType, class KernelCorrectionType>
 ViscousForce<Inner<>, ViscosityType, KernelCorrectionType>::
     ViscousForce(BaseInnerRelation &inner_relation)
     : ViscousForce<DataDelegateInner>(inner_relation),
-      mu_(particles_), kernel_correction_(particles_)
+      mu_(particles_), kernel_correction_(particles_), viscous_force_inner_(this->particles_->template registerStateVariable<Vecd>("ViscousForceInner"))
 {
     static_assert(std::is_base_of<ParticleAverage, ViscosityType>::value,
                   "ParticleAverage is not the base of ViscosityType!");
@@ -46,7 +46,7 @@ void ViscousForce<Inner<>, ViscosityType, KernelCorrectionType>::interaction(siz
                  mu_(index_i, index_j) * vel_derivative *
                  inner_neighborhood.dW_ij_[n] * Vol_[index_j];
     }
-
+    viscous_force_inner_[index_i] = force * Vol_[index_i];
     viscous_force_[index_i] = force * Vol_[index_i];
 }
 //=================================================================================================//
@@ -84,7 +84,11 @@ template <typename ViscosityType, class KernelCorrectionType>
 ViscousForce<Contact<Wall>, ViscosityType, KernelCorrectionType>::
     ViscousForce(BaseContactRelation &wall_contact_relation)
     : BaseViscousForceWithWall(wall_contact_relation),
-      mu_(particles_), kernel_correction_(particles_) {}
+      mu_(particles_), kernel_correction_(particles_)
+      /*for debuging*/
+      ,
+      viscous_force_On_wall_(this->particles_->template registerStateVariable<Vecd>("ViscousForceOnWall"))
+{}
 //=================================================================================================//
 template <typename ViscosityType, class KernelCorrectionType>
 void ViscousForce<Contact<Wall>, ViscosityType, KernelCorrectionType>::
@@ -110,6 +114,7 @@ void ViscousForce<Contact<Wall>, ViscosityType, KernelCorrectionType>::
     }
 
     viscous_force_[index_i] += force * Vol_[index_i];
+    viscous_force_On_wall_[index_i] = force * Vol_[index_i];
 }
 //=================================================================================================//
 template <typename ViscosityType, class KernelCorrectionType>

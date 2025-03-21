@@ -69,7 +69,7 @@ int main(int ac, char *av[])
 
     NearShapeSurfaceStationaryBoundary near_surface_cylinder(water_block, makeShared<InverseShape<Cylinder>>("Cylinder"));
     near_surface_cylinder.getLevelSetShape().writeLevelSet(sph_system);
-    fluid_dynamics::StationaryConfinement confinement_condition_cylinder(near_surface_cylinder);
+    fluid_dynamics::StationaryConfinementSimpleMethod confinement_condition_cylinder(near_surface_cylinder);
 
     update_density_by_summation.post_processes_.push_back(&confinement_condition_cylinder.density_summation_);
     pressure_relaxation.post_processes_.push_back(&confinement_condition_cylinder.pressure_relaxation_);
@@ -77,15 +77,6 @@ int main(int ac, char *av[])
     density_relaxation.post_processes_.push_back(&confinement_condition_cylinder.surface_bounding_);
     transport_velocity_correction.post_processes_.push_back(&confinement_condition_cylinder.transport_velocity_);
     viscous_force.post_processes_.push_back(&confinement_condition_cylinder.viscous_force_);
-    
-    //----------------------------------------------------------------------
-    //	Algorithms of FSI.
-    //----------------------------------------------------------------------
-    /** Compute the force exerted on solid body due to fluid pressure and viscosity. */
-    InteractionDynamics<fluid_dynamics::ViscousForceFromFluidStaticConfinement> viscous_force_on_cylinder(near_surface);
-    //InteractionDynamics<solid_dynamics::PressureForceAccelerationFromFluid> pressure_force_on_cylinder(cylinder_contact);
-    InteractionWithUpdate<solid_dynamics::ViscousForceFromFluid> viscous_force_on_cylinder(near_surface_cylinder);
-    //InteractionWithUpdate<solid_dynamics::PressureForceFromFluid<decltype(density_relaxation)>> pressure_force_on_cylinder(near_surface_cylinder);
     
     //----------------------------------------------------------------------
     //	Define the configuration related particles dynamics.
@@ -97,19 +88,15 @@ int main(int ac, char *av[])
     //	Define the methods for I/O operations and observations of the simulation.
     //----------------------------------------------------------------------
     BodyStatesRecordingToVtp write_real_body_states(sph_system);
-    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force_from_fluid(cylinder, "ViscousForceFromFluid");
-    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_pressure_force_from_fluid(cylinder, "PressureForceFromFluid");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force_from_fluid(water_block, "ViscousForceFromFluid");
+    //ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_pressure_force_from_fluid(cylinder, "PressureForceFromFluid");
     ObservedQuantityRecording<Vecd> write_fluid_velocity("Velocity", fluid_observer_contact);
- 
-    ReducedQuantityRecording<solid_dynamics::TotalForceFromFluid>
-        write_total_viscous_force_on_inserted_body(io_environment, viscous_force_on_cylinder, "TotalViscousForceOnSolid");
-    /*ReducedQuantityRecording<ReduceDynamics<solid_dynamics::TotalForceFromFluid>>
-        write_total_force_on_inserted_body(io_environment, pressure_force_on_cylinder, "TotalPressureForceOnSolid");*/
-    ObservedQuantityRecording<Vecd>
-        write_fluid_velocity("Velocity", io_environment, fluid_observer_contact);
-    ReducedQuantityRecordingForDebuging<Vecd, ReduceSum<Vecd>> write_single_variable_viscous_wall(io_environment, water_block, Vecd::Zero(), "ViscousForceFromWall");
-    GlobalQuantityRecordingForDebuging<Vecd>wrtie_variable_by_position_viscous_wall(io_environment, water_block, Vecd::Zero(), "ViscousForceFromWall");
-
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force_on_wall(water_block, "ViscousForceOnWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force(water_block, "ViscousForce");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient_on_wall(water_block, "KernelGradientWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient(water_block, "KernelGradient");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_force(water_block, "Force");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_force_inner(water_block, "ViscousForceInner");
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -201,19 +188,13 @@ int main(int ac, char *av[])
         /** write run-time observation into file */
         compute_vorticity.exec();
         write_real_body_states.writeToFile();
-        write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
-        //write_total_force_on_inserted_body.writeToFile(number_of_iterations);
-        //wrtie_variable_by_position_real.writeToFile(number_of_iterations);
-        wrtie_variable_by_position_vecd.writeToFile(number_of_iterations);
-        write_single_variable_vector.writeToFile(number_of_iterations);
-
-        write_single_variable_kernel_value.writeToFile(number_of_iterations);
-        wrtie_variable_by_position_kernel_value.writeToFile(number_of_iterations);
-
-        write_single_variable_viscous_wall.writeToFile(number_of_iterations);
-        wrtie_variable_by_position_viscous_wall.writeToFile(number_of_iterations);
-        //write_single_variable_Gradient_Rij.writeToFile(number_of_iterations);
-        //wrtie_variable_by_position_Gradient_Rij.writeToFile(number_of_iterations);
+        write_total_viscous_force_from_fluid.writeToFile(number_of_iterations);
+        write_total_viscous_force_on_wall.writeToFile(number_of_iterations);
+        write_total_viscous_force.writeToFile(number_of_iterations);
+        write_total_kernel_gradient_on_wall.writeToFile(number_of_iterations);
+        write_total_kernel_gradient.writeToFile(number_of_iterations);
+        write_total_force.writeToFile(number_of_iterations);
+        write_total_force_inner.writeToFile(number_of_iterations);
         fluid_observer_contact.updateConfiguration();
         write_fluid_velocity.writeToFile(number_of_iterations);
 

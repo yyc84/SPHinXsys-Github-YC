@@ -200,6 +200,11 @@ int main(int ac, char *av[])
     density_relaxation.post_processes_.push_back(&confinement_condition_down.surface_bounding_);
     transport_velocity_correction.post_processes_.push_back(&confinement_condition_down.transport_velocity_);
     viscous_force.post_processes_.push_back(&confinement_condition_down.viscous_force_);
+
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force_on_wall(water_block, "ViscousForceOnWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_viscous_force(water_block, "ViscousForce");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient_on_wall(water_block, "KernelGradientWall");
+    ReducedQuantityRecording<QuantitySummation<Vecd>> write_total_kernel_gradient(water_block, "KernelGradient");
     /**
      * @brief Setup geometry and initial conditions.
      */
@@ -288,7 +293,10 @@ int main(int ac, char *av[])
         }
         TickCount t2 = TickCount::now();
         body_states_recording.writeToFile();
-        
+        write_total_viscous_force_on_wall.writeToFile(number_of_iterations);
+        write_total_viscous_force.writeToFile(number_of_iterations);
+        write_total_kernel_gradient_on_wall.writeToFile(number_of_iterations);
+        write_total_kernel_gradient.writeToFile(number_of_iterations);
         /*write_single_variable_real.writeToFile();
         wrtie_variable_by_position_real.writeToFile();
         write_single_variable_vector.writeToFile();

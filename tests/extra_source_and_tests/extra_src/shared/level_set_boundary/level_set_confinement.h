@@ -207,7 +207,8 @@ namespace SPH
                 rho_(particles_->getVariableDataByName<Real>("Density")),
                 mu_(particles_),
                 vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
-                fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
+                fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())), viscous_force_on_solid_(particles_->template registerStateVariable<Vecd>("ViscousForceOnWall")),
+                viscous_force_from_fluid_(particles_->template registerStateVariable<Vecd>("ViscousForceFromFluid")),
                 level_set_shape_(&near_surface.getLevelSetShape())
 		{}
             virtual ~StationaryConfinementViscousForce(){};
@@ -223,6 +224,8 @@ namespace SPH
 			    Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
                             force = 2.0 * mu_(index_i, index_i) * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative /rho_i;
                 viscous_force_[index_i] += force;
+                viscous_force_on_solid_[index_i] = force;
+                viscous_force_from_fluid_[index_i] = -force;
             }
             //Vecd& getForceFromFluid() { return viscous_force_; };
         protected:
@@ -233,7 +236,8 @@ namespace SPH
             ViscosityType mu_;
             LevelSetShapeLBoundary* level_set_shape_;
             //Vecd *force_from_fluid_;
- 
+            Vecd *viscous_force_on_solid_;
+            Vecd *viscous_force_from_fluid_;
         };
 
         using StationaryConfinementFixedViscousForce = StationaryConfinementViscousForce<FixedViscosity>;
@@ -249,7 +253,8 @@ namespace SPH
                   rho_(particles_->getVariableDataByName<Real>("Density")),
                   mu_(DynamicCast<Viscosity>(this, particles_->getBaseMaterial()).ReferenceViscosity()),
                   vel_(particles_->getVariableDataByName<Vecd>("Velocity")),
-                  fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())),
+                  fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial())), viscous_force_on_solid_(particles_->template registerStateVariable<Vecd>("ViscousForceOnWall")),
+                  viscous_force_from_fluid_(particles_->template registerStateVariable<Vecd>("ViscousForceFromFluid")),
                   level_set_shape_(&near_surface.getLevelSetShape())
             {
             }
@@ -266,6 +271,8 @@ namespace SPH
                 Real kernel_gradient_divide_Rij = level_set_shape_->computeKernelGradientDivideRijIntegral(pos_[index_i]);
                 force = 2.0 * mu_ * mass_[index_i] * kernel_gradient_divide_Rij * vel_derivative / rho_i;
                 viscous_force_[index_i] += force;
+                viscous_force_on_solid_[index_i] = force;
+                viscous_force_from_fluid_[index_i] = -force;
             }
             // Vecd& getForceFromFluid() { return viscous_force_; };
           protected:
@@ -275,7 +282,8 @@ namespace SPH
 
             Real mu_;
             LevelSetShapeLBoundary *level_set_shape_;
-            // Vecd *force_from_fluid_;
+            Vecd *viscous_force_on_solid_;
+            Vecd *viscous_force_from_fluid_;
         };
 
         //class BaseForceFromFluidStationaryConfinement : public BaseLocalDynamics<BodyPartByCell>, public FluidDataSimple
