@@ -246,7 +246,7 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_change_rate_contact(right_body, "PhiFluxContactChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_change_rate_contact(left_body, "PhiFluxContactChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_change_rate_contact_wu(right_body, "PhiFluxWuContactChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_left_heat_flux_change_rate_contact_wu(left_body, "PhiFluxWuContactChangeRate");
     ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_right_heat_flux_contact_wu(right_body, "PhiFluxWuContact");

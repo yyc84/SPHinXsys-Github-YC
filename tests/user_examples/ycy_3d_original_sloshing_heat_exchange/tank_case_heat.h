@@ -47,8 +47,8 @@ Real gravity_g = 9.81;                  /*Gravity force of fluid*/
 Real U_f = 2.0 * sqrt(gravity_g * 0.5); /**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5); /**< dispersion velocity in shallow water. */
 Real c_f = 10.0 * SMAX(U_g, U_f);       /**< Reference sound speed. */
-Real f = 2.0;
-Real a = 0.03;
+Real f = 1.3;
+Real a = 0.02;
 Real c_p_water = 3.4267e3;
 Real c_p_air = 1.054e3;
 Real k_water = 0.1846;
@@ -71,11 +71,11 @@ std::string probe_s3_shape = "./input/ProbeS3.stl";
 //std::string fuel_tank_inner = "./input/tank_inner_small.stl";
 //std::string water_05 = "./input/water_small.stl";
 
-std::string fuel_tank_inner = "./input/tank_inner_2hole_small.stl";
-std::string water_05 = "./input/water_2hole_small.stl";
+//std::string fuel_tank_inner = "./input/tank_inner_2hole_small.stl";
+//std::string water_05 = "./input/water_2hole_small.stl";
 
-//std::string fuel_tank_inner = "./input/tank_inner_9hole_small.stl";
-//std::string water_05 = "./input/water_9hole_small.stl";
+std::string fuel_tank_inner = "./input/tank_inner_9hole_small.stl";
+std::string water_05 = "./input/water_9hole_small.stl";
 
 //std::string fuel_tank_inner = "./input/tank_inner_ring_small.stl";
 //std::string water_05 = "./input/water_ring_small.stl";
@@ -119,15 +119,15 @@ class VariableGravity : public Gravity
     virtual Vecd InducedAcceleration(const Vecd &position = Vecd::Zero()) override
     {
         time_ = GlobalStaticVariables::physical_time_;
-        if (time_ <= 4.0)
+        if (time_ <= 2.0)
         {
             global_acceleration_ = global_acceleration_;
         }
         else
         {
-            global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * time_);
+            global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time_-2));
         }
-
+        //global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * time_);
         return global_acceleration_;
     }
 };

@@ -18,9 +18,9 @@ int main(int ac, char* av[])
 	/* Build up -- a SPHSystem -- */
 	SPHSystem system(system_domain_bounds, resolution_ref);
 	// Tag for run particle relaxation for the initial body fitted distribution.
-	system.setRunParticleRelaxation(true);
+	system.setRunParticleRelaxation(false);
 	// Tag for computation start with relaxed body fitted particles distribution.
-	system.setReloadParticles(false);
+	system.setReloadParticles(true);
 	/* Tag for computation from restart files. 0: start with initial condition. */
 	system.setRestartStep(0);
 	//handle command line arguments
@@ -33,7 +33,7 @@ int main(int ac, char* av[])
 	@Brief creating body, materials and particles for the cylinder.
 	*/
 	SolidBody tank(system, makeShared<Tank>("Tank"));
-	tank.defineBodyLevelSetShape()->writeLevelSet(system);
+	//tank.defineBodyLevelSetShape()->writeLevelSet(system);
 	tank.defineMaterial<Solid>();
 	(!system.RunParticleRelaxation() && system.ReloadParticles())
 		? tank.generateParticles<BaseParticles, Reload>(tank.getName())
@@ -228,7 +228,7 @@ int main(int ac, char* av[])
     ReducedQuantityRecording<Average<QuantitySummation<Real, SPHBody>>> air_everage_temperature(air_block, "Phi");
     ReducedQuantityRecording<QuantityMax<Real, SPHBody>> water_max_temperature(water_block, "Phi");
     ReducedQuantityRecording<QuantityMax<Real, SPHBody>> air_max_temperature(air_block, "Phi");
-
+    ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact_change_rate(water_block, "PhiChangeRate");
 	/*ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_air_total_mass(air_block, "MassiveMeasure");
     ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_water_total_mass(water_block, "MassiveMeasure");*/
 	
@@ -249,9 +249,9 @@ int main(int ac, char* av[])
     constant_gravity_to_air.exec();
 	water_diffusion_initial_condition.exec();
 	air_diffusion_initial_condition.exec();
-	wave_probe_S1.writeToFile(0);
-	wave_probe_S2.writeToFile(0);
-	wave_probe_S3.writeToFile(0);
+	//wave_probe_S1.writeToFile(0);
+	//wave_probe_S2.writeToFile(0);
+	//wave_probe_S3.writeToFile(0);
 	write_real_body_states.addToWrite<Vecd>(tank, "NormalDirection"); 
 	//water_average_temperature.writeToFile(0);
 	//air_average_temperature.writeToFile(0);
@@ -285,7 +285,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 20;
-	Real End_Time = 24.0;			/**< End time. */
+	Real End_Time = 22.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
@@ -347,7 +347,7 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                if (GlobalStaticVariables::physical_time_>= 4.0)
+                if (GlobalStaticVariables::physical_time_>= 2.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -419,7 +419,7 @@ int main(int ac, char* av[])
             water_air_complex.updateConfiguration();
             air_water_complex.updateConfiguration();
 
-			if (GlobalStaticVariables::physical_time_ >= 4.0)
+			if (GlobalStaticVariables::physical_time_ >= 2.0)
 			{
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
@@ -438,6 +438,8 @@ int main(int ac, char* av[])
                 air_everage_temperature.writeToFile();
                 water_max_temperature.writeToFile();
                 air_max_temperature.writeToFile();
+                write_water_mechanical_energy.writeToFile();
+                write_water_heat_flux_contact_change_rate.writeToFile();
 			}
 			
 			//write_real_body_states.writeToFile();

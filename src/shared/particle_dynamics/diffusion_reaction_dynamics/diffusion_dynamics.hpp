@@ -605,17 +605,18 @@ void DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Cont
              Real r_ij_ = contact_neighborhood.r_ij_[n];
              Real dW_ijV_j = contact_neighborhood.dW_ij_[n] * contact_Vol_k[index_j];
              Vecd &e_ij = contact_neighborhood.e_ij_[n];
-
+             Real cross_section = 2.0 * contact_Vol_k[index_j] * abs(contact_neighborhood.dW_ij_[n]) * this->Vol_[index_i];
+           
              const Vecd &grad_ijV_j = this->contact_kernel_gradients_[k](index_i, index_j, dW_ijV_j, e_ij);
              Real area_ij = 2.0 * grad_ijV_j.dot(e_ij) / r_ij_;
-             getDiffusionChangeRateTwoPhaseContact(index_i, index_j, e_ij, area_ij, gradient_species_k, heat_flux_contact_dt_k, heat_flux_wu_contact_dt_k);
+             getDiffusionChangeRateTwoPhaseContact(index_i, index_j, e_ij, area_ij, cross_section, gradient_species_k, heat_flux_contact_dt_k, heat_flux_wu_contact_dt_k);
          }
      }
  }
 //=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
  void DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
-     getDiffusionChangeRateTwoPhaseContact(size_t particle_i, size_t particle_j, Vecd& e_ij, Real surface_area_ij,
+     getDiffusionChangeRateTwoPhaseContact(size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
     const StdVec<StdLargeVec<Real> *> &gradient_species_k, StdVec<StdLargeVec<Real> *> &heat_flux_contact_dt_k,
     StdVec<StdLargeVec<Real> *> &heat_flux_wu_contact_dt_k)
  {
@@ -630,8 +631,8 @@ template <class ContactKernelGradientType, class DiffusionType, class ContactDif
             this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
         Real phi_ij = (*this->gradient_species_[m])[particle_i] - (*gradient_species_k[m])[particle_j];
         (*this->diffusion_dt_[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij / rho_i / c_v_i;
-        (*heat_flux_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij * A_i;
-        (*heat_flux_wu_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij / rho_i / c_v_i;
+        (*heat_flux_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij * cross_section;
+        (*heat_flux_wu_contact_dt_k[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij * A_i;
     }
  }
  //=================================================================================================//

@@ -135,7 +135,7 @@ class DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Con
             return 2 * thermal_conductivity_i * thermal_conductivity_j / (thermal_conductivity_i + thermal_conductivity_j);
         };
     void getDiffusionChangeRateTwoPhaseContact(
-        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
+        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
             const StdVec<StdLargeVec<Real> *> &gradient_species_k, StdVec<StdLargeVec<Real> *> &heat_flux_contact_dt_k, StdVec<StdLargeVec<Real> *> &heat_flux_wu_k);
     void initialization(size_t index_i, Real dt = 0.0);
     void update(size_t index_i, Real dt = 0.0);
