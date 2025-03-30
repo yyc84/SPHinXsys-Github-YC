@@ -605,7 +605,7 @@ void DiffusionRelaxation<Contact<ContactKernelGradientType>, DiffusionType, Cont
              Real r_ij_ = contact_neighborhood.r_ij_[n];
              Real dW_ijV_j = contact_neighborhood.dW_ij_[n] * contact_Vol_k[index_j];
              Vecd &e_ij = contact_neighborhood.e_ij_[n];
-             Real cross_section = 2.0 * contact_Vol_k[index_j] * abs(contact_neighborhood.dW_ij_[n]) * this->Vol_[index_i];
+             Real cross_section = contact_Vol_k[index_j] * abs(contact_neighborhood.dW_ij_[n]) * this->Vol_[index_i];
            
              const Vecd &grad_ijV_j = this->contact_kernel_gradients_[k](index_i, index_j, dW_ijV_j, e_ij);
              Real area_ij = 2.0 * grad_ijV_j.dot(e_ij) / r_ij_;
