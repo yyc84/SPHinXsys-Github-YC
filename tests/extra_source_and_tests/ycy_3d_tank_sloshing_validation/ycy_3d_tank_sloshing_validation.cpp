@@ -39,7 +39,7 @@ StdVec<Vecd> wetting_observer_location ={cylinder_center - Vecd(0.0, 0.0, cylind
 //Real rho0_a = 1.226; /**< Reference density of air. */
 //Real mu_a = 20.88e-6;
 
-Real resolution_ref = 0.0035; /* Initial particle spacing*/
+Real resolution_ref = 0.005; /* Initial particle spacing*/
 /* Domain bounds of the system*/
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 0.5, 0.3));
 /*
@@ -56,17 +56,22 @@ Real a = 0.0075;
 Real mu_water = 653.9e-6;
 Real mu_air = 20.88e-6;
 Real length_scale = 1.0;
-Vec3d translation(0, 0.175, 0);
+Vec3d translation(0, 0, 0);
 
-std::string fuel_tank_outer = "./input/validation_tank_outer_slim.stl";
-std::string fuel_tank_inner = "./input/validation_tank_inner.stl";
-std::string water_05 = "./input/validation_water.stl";
-std::string air_05 = "./input/validation_air.stl";
+//std::string fuel_tank_outer = "./input/validation_tank_outer_slim.stl";
+//std::string fuel_tank_inner = "./input/validation_tank_inner.stl";
+//std::string water_05 = "./input/validation_water.stl";
+//std::string air_05 = "./input/validation_air.stl";
 std::string probe_s1_shape = "./input/ProbeS1.stl";
 std::string probe_s2_shape = "./input/ProbeS2.stl";
 std::string probe_s3_shape = "./input/ProbeS3.stl";
 
-//----------------------------------------------------------------------
+std::string fuel_tank_outer = "./input/square_tank_outer.stl";
+std::string fuel_tank_inner = "./input/square_tank_inner.stl";
+std::string water_05 = "./input/square_tank_water.stl";
+std::string air_05 = "./input/square_tank_gas.stl";
+
+    //----------------------------------------------------------------------
 //	Wetting parameters
 //----------------------------------------------------------------------
 std::string diffusion_species_name = "Phi";
@@ -212,31 +217,31 @@ int main(int ac, char *av[])
     SPHSystem system(system_domain_bounds, resolution_ref);
     //BoundingBox system_domain_bounds(Vec3d(-BW, -BW, -BW), Vec3d(DL + BW, DW + BW, DH + BW));
     //SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    system.setRunParticleRelaxation(false);
-    system.setReloadParticles(true);
+    system.setRunParticleRelaxation(true);
+    system.setReloadParticles(false);
     system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_water);
-    //water_block.defineBodyLevelSetShape()->writeLevelSet(system);
+    water_block.defineBodyLevelSetShape()->writeLevelSet(system);
     //water_block.generateParticles<BaseParticles, Lattice>();
-    (!system.RunParticleRelaxation() && system.ReloadParticles())
+    /*(!system.RunParticleRelaxation() && system.ReloadParticles())
         ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
-        : water_block.generateParticles<BaseParticles, Lattice>();
+        : water_block.generateParticles<BaseParticles, Lattice>();*/
 
     FluidBody air_block(system, makeShared<AirBlock>("AirBody"));
     air_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_a, c_f), mu_air);
-    //air_block.generateParticles<BaseParticles, Lattice>();
+    air_block.generateParticles<BaseParticles, Lattice>();
     //air_block.defineBodyLevelSetShape()->writeLevelSet(system);
-    (!system.RunParticleRelaxation() && system.ReloadParticles())
+    /*(!system.RunParticleRelaxation() && system.ReloadParticles())
         ? air_block.generateParticles<BaseParticles, Reload>(water_block.getName())
-        : air_block.generateParticles<BaseParticles, Lattice>();
+        : air_block.generateParticles<BaseParticles, Lattice>();*/
 
     SolidBody tank(system, makeShared<Tank>("Tank"));
     tank.defineMaterial<Solid>();
-    //tank.defineBodyLevelSetShape()->writeLevelSet(system);
+    tank.defineBodyLevelSetShape()->writeLevelSet(system);
    // tank.generateParticles<BaseParticles, Lattice>();
     (!system.RunParticleRelaxation() && system.ReloadParticles())
         ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
@@ -284,32 +289,32 @@ int main(int ac, char *av[])
         //----------------------------------------------------------------------
         using namespace relax_dynamics;
         SimpleDynamics<RandomizeParticlePosition> random_tank_particles(tank);
-        SimpleDynamics<RandomizeParticlePosition> random_water_particles(water_block);
-        SimpleDynamics<RandomizeParticlePosition> random_air_particles(air_block);
+        //SimpleDynamics<RandomizeParticlePosition> random_water_particles(water_block);
+        //SimpleDynamics<RandomizeParticlePosition> random_air_particles(air_block);
         /** Write the body state to Vtp file. */
         BodyStatesRecordingToVtp write_tank_to_vtp(tank);
-        BodyStatesRecordingToVtp write_water_to_vtp(water_block);
-        BodyStatesRecordingToVtp write_air_to_vtp(air_block);
+        //BodyStatesRecordingToVtp write_water_to_vtp(water_block);
+        //BodyStatesRecordingToVtp write_air_to_vtp(air_block);
         /** Write the particle reload files. */
         ReloadParticleIO write_tank_particle_reload_files(tank);
-        ReloadParticleIO write_water_particle_reload_files(water_block);
-        ReloadParticleIO write_air_particle_reload_files(air_block);
+        //ReloadParticleIO write_water_particle_reload_files(water_block);
+        //ReloadParticleIO write_air_particle_reload_files(air_block);
         /** A  Physics relaxation step. */
         RelaxationStepInner tank_relaxation_step_inner(tank_inner);
-        RelaxationStepInner water_relaxation_step_inner(water_block_inner);
-        RelaxationStepInner air_relaxation_step_inner(air_block_inner);
+        //RelaxationStepInner water_relaxation_step_inner(water_block_inner);
+        //RelaxationStepInner air_relaxation_step_inner(air_block_inner);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
         //----------------------------------------------------------------------
         random_tank_particles.exec(0.25);
-        random_water_particles.exec(0.25);
-        random_air_particles.exec(0.25);
+        //random_water_particles.exec(0.25);
+        //random_air_particles.exec(0.25);
         tank_relaxation_step_inner.SurfaceBounding().exec();
-        water_relaxation_step_inner.SurfaceBounding().exec();
-        air_relaxation_step_inner.SurfaceBounding().exec();
+        //water_relaxation_step_inner.SurfaceBounding().exec();
+        //air_relaxation_step_inner.SurfaceBounding().exec();
         write_tank_to_vtp.writeToFile(0);
-        write_water_to_vtp.writeToFile(0);
-        write_air_to_vtp.writeToFile(0);
+        //write_water_to_vtp.writeToFile(0);
+        //write_air_to_vtp.writeToFile(0);
         //----------------------------------------------------------------------
         //	Relax particles of the insert body.
         //----------------------------------------------------------------------
@@ -317,22 +322,22 @@ int main(int ac, char *av[])
         while (ite_p < 1000)
         {
             tank_relaxation_step_inner.exec();
-            water_relaxation_step_inner.exec();
-            air_relaxation_step_inner.exec();
+            //water_relaxation_step_inner.exec();
+            //air_relaxation_step_inner.exec();
             ite_p += 1;
             if (ite_p % 200 == 0)
             {
                 std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
                 write_tank_to_vtp.writeToFile(ite_p);
-                write_water_to_vtp.writeToFile(ite_p);
-                write_air_to_vtp.writeToFile(ite_p);
+                //write_water_to_vtp.writeToFile(ite_p);
+                //write_air_to_vtp.writeToFile(ite_p);
             }
         }
         std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
         /** Output results. */
         write_tank_particle_reload_files.writeToFile(0);
-        write_water_particle_reload_files.writeToFile(0);
-        write_air_particle_reload_files.writeToFile(0);
+        //write_water_particle_reload_files.writeToFile(0);
+        //write_air_particle_reload_files.writeToFile(0);
         return 0;
     }
     //----------------------------------------------------------------------
