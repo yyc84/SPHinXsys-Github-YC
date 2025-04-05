@@ -11,7 +11,7 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real cylinder_radius = 0.15;                             /**< Cylinder radius. */
+Real cylinder_radius = 0.3;                             /**< Cylinder radius. */
 Real DL = 8.0 * cylinder_radius;                          /**< Water tank length. */
 Real DH = 7.0 * cylinder_radius;                          /**< Water tank height. */
 Real DW = 8.0 * cylinder_radius;                          /**< Water tank width. */
@@ -21,10 +21,9 @@ Real LW = DW;                                             /**< Water column leng
 Real particle_spacing_ref = 2.0 * cylinder_radius / 20.0; /**< Initial reference particle spacing. */
 Real BW = particle_spacing_ref * 4;                       /**< Thickness of tank wall. */
 Vec3d cylinder_center(0.5 * DL, 0.5 * DW, DH - 2.0*cylinder_radius); /**< Location of the cylinder center. */
-//Vecd tethering_point(0.5 * DL, 0.5 * DW, DH);             /**< The tethering point. */
+Vecd tethering_point(0.5 * DL, 0.5 * DW, DH);             /**< The tethering point. */
 StdVec<Vecd> observer_location = {cylinder_center};       /**< Displacement observation point. */
-StdVec<Vecd> wetting_observer_location =
-    {cylinder_center - Vecd(0.0, 0.0, cylinder_radius)}; /**< wetting observation point. */
+StdVec<Vecd> wetting_observer_location ={cylinder_center - Vecd(0.0, 0.0, cylinder_radius)}; /**< wetting observation point. */
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
@@ -39,13 +38,38 @@ Real mu_f = 653.9e-6;                    /**< Water dynamics viscosity. */
 Real rho0_a = 1.226; /**< Reference density of air. */
 Real mu_a = 20.88e-6;
 
-Real Ix = 2.0 * BallMass / 5.0 * (cylinder_radius * cylinder_radius);
-Real Iy = 2.0 * BallMass / 5.0 * (cylinder_radius * cylinder_radius);
-Real Iz = 2.0 * BallMass / 5.0 * (cylinder_radius * cylinder_radius);
-Real bcmx = DL / 2;
-Real bcmy = DW / 2;
-Real bcmz = cylinder_center[2];
-Vecd G(bcmx, bcmy, bcmz);
+//Real Ix = 2.0 * BallMass / 5.0 * (cylinder_radius * cylinder_radius);
+//Real Iy = 2.0 * BallMass / 5.0 * (cylinder_radius * cylinder_radius);
+//Real Iz = 2.0 * BallMass / 5.0 * (cylinder_radius * cylinder_radius);
+//Real bcmx = DL / 2;
+//Real bcmy = DW / 2;
+//Real bcmz = cylinder_center[2];
+//Vecd G(bcmx, bcmy, bcmz);
+
+/*
+Material properties of the fluid.
+*/
+//Real rho0_f = 1000.0;                     /*Fluid density*/
+//Real rho0_a = 1.226;                      /*Air density*/
+//Real gravity_g = 9.81;                    /*Gravity force of fluid*/
+//Real U_f = 2.0 * sqrt(gravity_g * 0.174); /**< Characteristic velocity. */
+//Real U_g = 2.0 * sqrt(gravity_g * 0.174); /**< dispersion velocity in shallow water. */
+//Real c_f = 10.0 * SMAX(U_g, U_f);         /**< Reference sound speed. */
+//Real f = 1.63;
+//Real a = 0.0075;
+//Real mu_water = 653.9e-6;
+//Real mu_air = 20.88e-6;
+//Real length_scale = 1.0;
+//Vec3d translation(0, 0.175, 0);
+//
+//std::string fuel_tank_outer = "./input/validation_tank_outer_slim.stl";
+//std::string fuel_tank_inner = "./input/validation_tank_inner.stl";
+//std::string water_05 = "./input/validation_water.stl";
+//std::string air_05 = "./input/validation_air.stl";
+//std::string probe_s1_shape = "./input/ProbeS1.stl";
+//std::string probe_s2_shape = "./input/ProbeS2.stl";
+//std::string probe_s3_shape = "./input/ProbeS3.stl";
+
 //----------------------------------------------------------------------
 //	Wetting parameters
 //----------------------------------------------------------------------
@@ -324,6 +348,7 @@ int main(int ac, char *av[])
     SimpleDynamics<GravityForce<Gravity>> constant_gravity_to_air(air_block, gravity);
     InteractionDynamics<fluid_dynamics::BoundingFromWall> air_near_wall_bounding(air_wall_contact);
     //InteractionWithUpdate<WettingCoupledSpatialTemporalFreeSurfaceIndicationComplex> free_stream_surface_indicator(water_block_inner, water_wall_contact);
+    InteractionWithUpdate<SpatialTemporalFreeSurfaceIndicationComplex> free_stream_surface_indicator(water_block_inner, water_wall_contact);
 
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration1stHalfWithWallRiemann>
         water_pressure_relaxation(water_block_inner, water_air_contact, water_wall_contact);
@@ -341,7 +366,7 @@ int main(int ac, char *av[])
 
     InteractionWithUpdate<fluid_dynamics::MultiPhaseTransportVelocityCorrectionComplex<AllParticles>>
         air_transport_correction(air_block_inner, air_water_contact, air_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::MultiPhaseTransportVelocityCorrectionComplex<AllParticles>>
+    InteractionWithUpdate<fluid_dynamics::MultiPhaseTransportVelocityCorrectionComplex<BulkParticles>>
         water_transport_correction(water_block_inner, water_air_contact, water_wall_contact);
 
     InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall>
@@ -471,6 +496,7 @@ int main(int ac, char *av[])
             Real Dt_a = get_air_advection_time_step_size.exec();
             Real Dt = SMIN(Dt_f, Dt_a);
 
+            free_stream_surface_indicator.exec();
             update_water_density_by_summation.exec();
             update_air_density_by_summation.exec();
             water_viscous_acceleration.exec();

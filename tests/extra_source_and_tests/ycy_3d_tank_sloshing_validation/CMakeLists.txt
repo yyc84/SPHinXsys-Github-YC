@@ -9,6 +9,20 @@ SET(BUILD_RELOAD_PATH "${EXECUTABLE_OUTPUT_PATH}/reload")
 file(MAKE_DIRECTORY ${BUILD_INPUT_PATH})
 execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${BUILD_INPUT_PATH})
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/validation_tank_outer_slim.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/validation_tank_inner.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/validation_water.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/validation_air.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS1.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS2.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS3.stl
+        DESTINATION ${BUILD_INPUT_PATH})
 
 add_executable(${PROJECT_NAME})
 aux_source_directory(. DIR_SRCS)
