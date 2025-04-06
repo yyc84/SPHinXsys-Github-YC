@@ -12,7 +12,7 @@ using namespace SPH;   // Namespace cite here.
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real particle_spacing_ref = 0.005; /**< Reference particle spacing. */
+Real particle_spacing_ref = 0.0035; /**< Reference particle spacing. */
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 0.5, 0.3));
 Real Tank_L = 0.2;                          /**< Water tank length. */
 Real Tank_H = 0.35;                          /**< Water tank height. */
@@ -24,21 +24,30 @@ Real Gas_L = 0.2;                            /**< Water column length. */
 Real Gas_H = 0.175;                          /**< Water column height. */
 Real Gas_W = 0.2;
 Real BW = particle_spacing_ref * 4;                       /**< Thickness of tank wall. */
-
+Real Inner_circle_radius = 0.194 / 2;   /**< Inner circle radius. */
+Real Outer_circle_radius = Inner_circle_radius + 4 * particle_spacing_ref; /**< Outer circle radius. */
+Real Cylinder_height = 0.348;                                                /**< Cylinder height. */
+Real Water_height = 0.174;                                                 /**< Water height. */
+Real Gas_height = Cylinder_height - Water_height;                            /**< Air height. */
+Real Cylinder_height_outer = Cylinder_height + 2 * 4 * particle_spacing_ref;     /**< Cylinder height. */
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
 Real rho0_f = 1000.0;                       /**< Fluid density. */
 Real gravity_g = 9.81;                   /**< Gravity. */
-Real U_max = 2.0 * sqrt(gravity_g * Liquid_L); /**< Characteristic velocity. */
+Real U_f = 2.0 * sqrt(gravity_g * Water_height); /**< Characteristic velocity. */
+Real U_g = 2.0 * sqrt(gravity_g * Gas_height);   /**< dispersion velocity in shallow water. */
+Real U_max = SMAX(U_f, U_g);               /**< Characteristic velocity. */
 Real c_f = 10.0 * U_max;                 /**< Reference sound speed. */
 Real mu_f = 653.9e-6;                    /**< Water dynamics viscosity. */
 Real rho0_a = 1.226; /**< Reference density of air. */
 Real mu_a = 20.88e-6;
 
+int resolution(20); /**< Resolution of the cylinder. */
 
 Real f = 1.63;
-Real a = 0.01;
+Real a = 0.0075;
+
 
 //----------------------------------------------------------------------
 //	Definition for water body
@@ -48,37 +57,55 @@ class FluidShape : public ComplexShape
   public:
     explicit FluidShape(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        Vecd halfsize_water(0.5 * Liquid_L, 0.5 * Liquid_H, 0.5 * Liquid_W);
+       /* Vecd halfsize_water(0.5 * Liquid_L, 0.5 * Liquid_H, 0.5 * Liquid_W);
         Transform translation_water(Vecd(0.0, -0.5 * Liquid_H, 0.0));
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_water), halfsize_water);
+        add<TransformShape<GeometricShapeBox>>(Transform(translation_water), halfsize_water);*/
+       Vecd translation_water(Vecd(0.0, -0.5 * Water_height, 0.0));
+       add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), Inner_circle_radius, Water_height * 0.5, resolution, translation_water);
     }
 };
 
 //----------------------------------------------------------------------
 //	Definition for wall body
 //----------------------------------------------------------------------
-class TankShape : public ComplexShape
-{
-  public:
-    explicit TankShape(const std::string &shape_name) : ComplexShape(shape_name)
-    {
-        Vecd halfsize_outer(0.5 * Tank_L + BW, 0.5 * Tank_H + BW, 0.5 * Tank_W + BW);
-        Vecd halfsize_inner(0.5 * Tank_L, 0.5 * Tank_H, 0.5 * Tank_W);
-        Transform translation_wall(Vecd(0.0, 0.0, 0.0));
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_outer);
-        subtract<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
-    }
-};
+//class TankShape : public ComplexShape
+//{
+//  public:
+//    explicit TankShape(const std::string &shape_name) : ComplexShape(shape_name)
+//    {
+//        Vecd halfsize_outer(0.5 * Tank_L + BW, 0.5 * Tank_H + BW, 0.5 * Tank_W + BW);
+//        Vecd halfsize_inner(0.5 * Tank_L, 0.5 * Tank_H, 0.5 * Tank_W);
+//        Transform translation_wall(Vecd(0.0, 0.0, 0.0));
+//        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_outer);
+//        subtract<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
+//    }
+//};
 
 class AirShape : public ComplexShape
 {
   public:
     explicit AirShape(const std::string &shape_name) : ComplexShape(shape_name)
     {
-        Vecd halfsize_inner(0.5 * Gas_L, 0.5 * Gas_H, 0.5 * Gas_W);
+        /*Vecd halfsize_inner(0.5 * Gas_L, 0.5 * Gas_H, 0.5 * Gas_W);
         Transform translation_wall(Vecd(0.0, 0.5 * Gas_H, 0.0));
-        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);
+        add<TransformShape<GeometricShapeBox>>(Transform(translation_wall), halfsize_inner);*/
 
+        Vecd translation_column(0.0, 0.0, 0.0);
+        Vecd translation_water(Vecd(0.0, -0.5 * Water_height, 0.0));
+        
+        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), Inner_circle_radius, Cylinder_height * 0.5, resolution, translation_column);
+        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), Inner_circle_radius, Water_height * 0.5, resolution, translation_water);
+    }
+};
+
+class TankShape : public ComplexShape
+{
+  public:
+    explicit TankShape(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vecd translation_column(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), Outer_circle_radius, Cylinder_height_outer * 0.5, resolution, translation_column);
+        subtract<TriangleMeshShapeCylinder>(SimTK::UnitVec3(0, 1.0, 0), Inner_circle_radius, Cylinder_height * 0.5, resolution, translation_column);
     }
 };
 
@@ -130,24 +157,14 @@ int main(int ac, char *av[])
     air_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_a, c_f), mu_a);
     air_block.generateParticles<BaseParticles, Lattice>();
 
-    SolidBody wall_boundary(sph_system, makeShared<TankShape>("Tank"));
-    wall_boundary.defineMaterial<Solid>();
-    wall_boundary.generateParticles<BaseParticles, Lattice>();
+    SolidBody tank(sph_system, makeShared<TankShape>("Tank"));
+    tank.defineMaterial<Solid>();
+    tank.generateParticles<BaseParticles, Lattice>();
+    //tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    /*(!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
+        : tank.generateParticles<BaseParticles, Lattice>();*/
 
-   /* SolidBody cylinder(sph_system, makeShared<WettingCylinderBody>("Cylinder"));
-    cylinder.defineAdaptationRatios(1.15, 2.0);
-    cylinder.defineBodyLevelSetShape();
-    cylinder.defineClosure<Solid, IsotropicDiffusion>(
-        rho0_s, ConstructArgs(diffusion_species_name, diffusion_coeff));
-    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? cylinder.generateParticles<BaseParticles, Reload>(cylinder.getName())
-        : cylinder.generateParticles<BaseParticles, Lattice>();*/
-
-   /* ObserverBody cylinder_observer(sph_system, "CylinderObserver");
-    cylinder_observer.generateParticles<ObserverParticles>(observer_location);
-
-    ObserverBody wetting_observer(sph_system, "WettingObserver");
-    wetting_observer.generateParticles<ObserverParticles>(wetting_observer_location);*/
     //----------------------------------------------------------------------
     //	Define body relation map.
     //	The contact map gives the topological connections between the bodies.
@@ -158,20 +175,14 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     InnerRelation water_block_inner(water_block);
     ContactRelation water_air_contact(water_block, {&air_block});
-    ContactRelation water_wall_contact(water_block, {&wall_boundary});
-    ContactRelation water_air_wall_contact(water_block, {&air_block, &wall_boundary});
+    ContactRelation water_wall_contact(water_block, {&tank});
+    ContactRelation water_air_wall_contact(water_block, {&air_block, &tank});
 
     InnerRelation air_block_inner(air_block);
     ContactRelation air_water_contact(air_block, {&water_block});
-    ContactRelation air_wall_contact(air_block, {&wall_boundary});
-    ContactRelation air_water_wall_contact(air_block, {&water_block, &wall_boundary});
+    ContactRelation air_wall_contact(air_block, {&tank});
+    ContactRelation air_water_wall_contact(air_block, {&water_block, &tank});
 
-    /*InnerRelation cylinder_inner(cylinder);
-    ContactRelation cylinder_contact_water_only(cylinder, {&water_block});
-    ContactRelation cylinder_contact(cylinder, {&water_block, &air_block});*/
-
-    /*ContactRelation cylinder_observer_contact(cylinder_observer, {&cylinder});
-    ContactRelation wetting_observer_contact(wetting_observer, {&cylinder});*/
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     // which is only used for update configuration.
@@ -181,46 +192,46 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Run particle relaxation for body-fitted distribution if chosen.
     //----------------------------------------------------------------------
-    //if (sph_system.RunParticleRelaxation())
-    //{
-    //    /** body topology only for particle relaxation */
-    //    InnerRelation cylinder_inner(cylinder);
-    //    //----------------------------------------------------------------------
-    //    //	Methods used for particle relaxation.
-    //    //----------------------------------------------------------------------
-    //    using namespace relax_dynamics;
-    //    SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(cylinder);
-    //    /** Write the body state to Vtp file. */
-    //    BodyStatesRecordingToVtp write_inserted_body_to_vtp(cylinder);
-    //    /** Write the particle reload files. */
-    //    ReloadParticleIO write_particle_reload_files(cylinder);
-    //    /** A  Physics relaxation step. */
-    //    RelaxationStepInner relaxation_step_inner(cylinder_inner);
-    //    //----------------------------------------------------------------------
-    //    //	Particle relaxation starts here.
-    //    //----------------------------------------------------------------------
-    //    random_inserted_body_particles.exec(0.25);
-    //    relaxation_step_inner.SurfaceBounding().exec();
-    //    write_inserted_body_to_vtp.writeToFile(0);
-    //    //----------------------------------------------------------------------
-    //    //	Relax particles of the insert body.
-    //    //----------------------------------------------------------------------
-    //    int ite_p = 0;
-    //    while (ite_p < 1000)
-    //    {
-    //        relaxation_step_inner.exec();
-    //        ite_p += 1;
-    //        if (ite_p % 200 == 0)
-    //        {
-    //            std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
-    //            write_inserted_body_to_vtp.writeToFile(ite_p);
-    //        }
-    //    }
-    //    std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
-    //    /** Output results. */
-    //    write_particle_reload_files.writeToFile(0);
-    //    return 0;
-    //}
+    if (sph_system.RunParticleRelaxation())
+    {
+        /** body topology only for particle relaxation */
+        InnerRelation tank_inner(tank);
+        //----------------------------------------------------------------------
+        //	Methods used for particle relaxation.
+        //----------------------------------------------------------------------
+        using namespace relax_dynamics;
+        SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(tank);
+        /** Write the body state to Vtp file. */
+        BodyStatesRecordingToVtp write_inserted_body_to_vtp(tank);
+        /** Write the particle reload files. */
+        ReloadParticleIO write_particle_reload_files(tank);
+        /** A  Physics relaxation step. */
+        RelaxationStepInner relaxation_step_inner(tank_inner);
+        //----------------------------------------------------------------------
+        //	Particle relaxation starts here.
+        //----------------------------------------------------------------------
+        random_inserted_body_particles.exec(0.25);
+        relaxation_step_inner.SurfaceBounding().exec();
+        write_inserted_body_to_vtp.writeToFile(0);
+        //----------------------------------------------------------------------
+        //	Relax particles of the insert body.
+        //----------------------------------------------------------------------
+        int ite_p = 0;
+        while (ite_p < 1000)
+        {
+            relaxation_step_inner.exec();
+            ite_p += 1;
+            if (ite_p % 200 == 0)
+            {
+                std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
+                write_inserted_body_to_vtp.writeToFile(ite_p);
+            }
+        }
+        std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
+        /** Output results. */
+        write_particle_reload_files.writeToFile(0);
+        return 0;
+    }
     //----------------------------------------------------------------------
     //	Define the fluid dynamics used in the simulation.
     //	Note that there may be data dependence on the sequence of constructions.
@@ -231,7 +242,7 @@ int main(int ac, char *av[])
     //SimpleDynamics<WettingWallBodyInitialCondition> wetting_wall_initial_condition(wall_boundary);
     //SimpleDynamics<WettingCylinderBodyInitialCondition> wetting_cylinder_initial_condition(cylinder);
 
-    SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
+    SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(tank);
     //SimpleDynamics<NormalDirectionFromBodyShape> cylinder_normal_direction(cylinder);
 
     VariableGravity gravity(Vecd(0.0, -gravity_g , 0.0));
@@ -280,38 +291,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     ParticleSorting water_particle_sorting(water_block);
     ParticleSorting air_particle_sorting(air_block);
-    //----------------------------------------------------------------------
-    //	Building Simbody.
-    //----------------------------------------------------------------------
-    //SimTK::MultibodySystem MBsystem;
-    /** The bodies or matter of the MBsystem. */
-    //SimTK::SimbodyMatterSubsystem matter(MBsystem);
-    /** The forces of the MBsystem.*/
-    //SimTK::GeneralForceSubsystem forces(MBsystem);
-    /** Mass properties of the fixed spot. */
-    //GeometricShapeBall fix_spot_shape(cylinder_center, cylinder_radius);
-    //StructureSystemForSimbody ball_multibody(cylinder, fix_spot_shape);
-    //SimTK::Body::Rigid ball_info(*ball_multibody.body_part_mass_properties_);
-    /** Mobility of the tethered spot.
-     * Set the mass center as the origin location of the planar mobilizer
-     */
-    //SimTK::MobilizedBody::Free ball_mob(matter.Ground(), SimTK::Transform(SimTKVec3(G[0], G[1], G[2])),ball_info, SimTK::Transform(SimTKVec3(0)));
-
-    // discrete forces acting on the bodies
-    //SimTK::Force::UniformGravity sim_gravity(forces, matter, SimTK::Vec3(0.0, 0.0, Real(-gravity_g)), 0.0);
-    //SimTK::Force::DiscreteForces force_on_bodies(forces, matter);
-    //SimTK::State state = MBsystem.realizeTopology();
-
-    /** Time stepping method for multibody system.*/
-    //SimTK::RungeKuttaMersonIntegrator integ(MBsystem);
-    //integ.setAccuracy(1e-3);
-    //integ.setAllowInterpolation(false);
-    //integ.initialize(state);
-    //----------------------------------------------------------------------
-    //	Coupling between SimBody and SPH..
-    //----------------------------------------------------------------------
-    //ReduceDynamics<solid_dynamics::TotalForceOnBodyPartForSimBody> force_on_ball(ball_multibody, MBsystem, ball_mob, integ);
-    //SimpleDynamics<solid_dynamics::ConstraintBodyPartBySimBody> constraint_tethered_spot(ball_multibody, MBsystem, ball_mob, integ);
+   
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations, observations
     //	and regression tests of the simulation.
@@ -322,7 +302,7 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Vecd>(water_block, "Velocity");          // output for debug
    // body_states_recording.addToWrite<Real>(water_block, "Density");           // output for debug
     body_states_recording.addToWrite<int>(water_block, "Indicator");          // output for debug
-    body_states_recording.addToWrite<Vecd>(wall_boundary, "NormalDirection"); // output for debug
+    body_states_recording.addToWrite<Vecd>(tank, "NormalDirection"); // output for debug
     RestartIO restart_io(sph_system);
     //ObservedQuantityRecording<Vecd> write_cylinder_displacement("Position", cylinder_observer_contact);
     //ObservedQuantityRecording<Real> write_cylinder_wetting("Phi", wetting_observer_contact);
