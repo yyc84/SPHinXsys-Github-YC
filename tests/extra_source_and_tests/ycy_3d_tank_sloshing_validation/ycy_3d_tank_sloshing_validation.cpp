@@ -39,7 +39,7 @@ StdVec<Vecd> wetting_observer_location ={cylinder_center - Vecd(0.0, 0.0, cylind
 //Real rho0_a = 1.226; /**< Reference density of air. */
 //Real mu_a = 20.88e-6;
 
-Real resolution_ref = 0.005; /* Initial particle spacing*/
+Real resolution_ref = 0.006; /* Initial particle spacing*/
 /* Domain bounds of the system*/
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 0.5, 0.3));
 /*
@@ -217,16 +217,16 @@ int main(int ac, char *av[])
     SPHSystem system(system_domain_bounds, resolution_ref);
     //BoundingBox system_domain_bounds(Vec3d(-BW, -BW, -BW), Vec3d(DL + BW, DW + BW, DH + BW));
     //SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    system.setRunParticleRelaxation(true);
-    system.setReloadParticles(false);
+    system.setRunParticleRelaxation(false);
+    system.setReloadParticles(true);
     system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
     FluidBody water_block(system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity>(ConstructArgs(rho0_f, c_f), mu_water);
-    water_block.defineBodyLevelSetShape()->writeLevelSet(system);
-    //water_block.generateParticles<BaseParticles, Lattice>();
+    //water_block.defineBodyLevelSetShape()->writeLevelSet(system);
+    water_block.generateParticles<BaseParticles, Lattice>();
     /*(!system.RunParticleRelaxation() && system.ReloadParticles())
         ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
         : water_block.generateParticles<BaseParticles, Lattice>();*/
@@ -241,7 +241,7 @@ int main(int ac, char *av[])
 
     SolidBody tank(system, makeShared<Tank>("Tank"));
     tank.defineMaterial<Solid>();
-    tank.defineBodyLevelSetShape()->writeLevelSet(system);
+    //tank.defineBodyLevelSetShape()->writeLevelSet(system);
    // tank.generateParticles<BaseParticles, Lattice>();
     (!system.RunParticleRelaxation() && system.ReloadParticles())
         ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
