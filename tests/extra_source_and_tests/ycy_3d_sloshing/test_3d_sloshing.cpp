@@ -9,6 +9,11 @@
 #include "sphinxsys.h" //SPHinXsys Library.
 #define PI (3.14159265358979323846)
 using namespace SPH;   // Namespace cite here.
+
+std::string probe_s1_shape = "./input/ProbeS1.stl";
+std::string probe_s2_shape = "./input/ProbeS2.stl";
+std::string probe_s3_shape = "./input/ProbeS3.stl";
+
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -44,9 +49,10 @@ Real rho0_a = 1.226; /**< Reference density of air. */
 Real mu_a = 20.88e-6;
 
 int resolution(20); /**< Resolution of the cylinder. */
-
+Real length_scale = 1.0;
 Real f = 1.63;
 Real a = 0.0075;
+
 
 
 //----------------------------------------------------------------------
@@ -131,6 +137,36 @@ class VariableGravity : public Gravity
         }
         // global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * time_);
         return acceleration;
+    }
+};
+
+class ProbeS1 : public ComplexShape
+{
+  public:
+    explicit ProbeS1(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vec3d translation_probe(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeSTL>(probe_s1_shape, translation_probe, length_scale);
+    }
+};
+
+class ProbeS2 : public ComplexShape
+{
+  public:
+    explicit ProbeS2(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vec3d translation_probe_2(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeSTL>(probe_s2_shape, translation_probe_2, length_scale);
+    }
+};
+
+class ProbeS3 : public ComplexShape
+{
+  public:
+    explicit ProbeS3(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vec3d translation_probe_3(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeSTL>(probe_s3_shape, translation_probe_3, length_scale);
     }
 };
 //----------------------------------------------------------------------
@@ -292,6 +328,15 @@ int main(int ac, char *av[])
     ParticleSorting water_particle_sorting(water_block);
     ParticleSorting air_particle_sorting(air_block);
    
+    BodyRegionByCell probe_s1(water_block, makeShared<ProbeS1>("ProbeS1"));
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
+        wave_probe_S1(probe_s1, "FreeSurfaceHeight_S1", 1);
+    BodyRegionByCell probe_s2(water_block, makeShared<ProbeS2>("PorbeS2"));
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
+        wave_probe_S2(probe_s2, "FreeSurfaceHeight_S2", 1);
+    BodyRegionByCell probe_s3(water_block, makeShared<ProbeS3>("ProbeS3"));
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
+        wave_probe_S3(probe_s3, "FreeSurfaceHeight_S3", 1);
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations, observations
     //	and regression tests of the simulation.
@@ -330,7 +375,7 @@ int main(int ac, char *av[])
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
     Real end_time = 11.0;
-    Real output_interval = end_time / 70.0;
+    Real output_interval = 0.1;
     Real dt = 0.0;
     //----------------------------------------------------------------------
     //	Statistics for CPU time
@@ -445,7 +490,9 @@ int main(int ac, char *av[])
             free_stream_surface_indicator.exec();
             interval_updating_configuration += TickCount::now() - time_instance;
         }
-
+        wave_probe_S1.writeToFile();
+        wave_probe_S2.writeToFile();
+        wave_probe_S3.writeToFile();
         body_states_recording.writeToFile();
         TickCount t2 = TickCount::now();
         TickCount t3 = TickCount::now();
