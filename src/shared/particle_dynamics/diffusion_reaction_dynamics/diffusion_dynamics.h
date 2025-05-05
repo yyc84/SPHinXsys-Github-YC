@@ -388,8 +388,8 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
     virtual ~DiffusionRelaxation() {}
 
     void getDiffusionChangeRateTwoPhaseHeatExchange(
-        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-        const StdVec<Real *> &gradient_species_k);
+        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
+        const StdVec<Real *> &gradient_species_k, StdVec<StdLargeVec<Real> *> &heat_flux_contact_dt_k);
 
     void interaction(size_t index_i, Real dt = 0.0);
 
