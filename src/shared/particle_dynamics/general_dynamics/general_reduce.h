@@ -170,6 +170,27 @@ class QuantitySummation : public BaseLocalDynamicsReduce<ReduceSum<DataType>, Dy
     DataType *variable_;
 };
 
+template <typename DataType, class DynamicsIdentifier = SPHBody>
+class QuantityMax : public BaseLocalDynamicsReduce<ReduceMax, DynamicsIdentifier>    
+{
+  public:
+    explicit QuantityMax(DynamicsIdentifier &identifier, const std::string &variable_name)
+        : BaseLocalDynamicsReduce<ReduceMax, DynamicsIdentifier>(identifier),
+          variable_(this->particles_->template getVariableDataByName<DataType>(variable_name))
+    {
+        this->quantity_name_ = "Max" + variable_name;
+    };
+    virtual ~QuantityMax(){};
+
+    DataType reduce(size_t index_i, Real dt = 0.0)
+    {
+        return variable_[index_i];
+    };
+
+  protected:
+    DataType *variable_;
+};
+
 /**
  * @class QuantityMoment
  * @brief Compute the moment of a body
