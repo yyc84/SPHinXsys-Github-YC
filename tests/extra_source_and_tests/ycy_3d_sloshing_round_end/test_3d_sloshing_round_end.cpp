@@ -20,7 +20,7 @@ std::string water = "./input/water_small.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real particle_spacing_ref = 0.008; /**< Reference particle spacing. */
+Real particle_spacing_ref = 0.006; /**< Reference particle spacing. */
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 1.0, 0.3));
 Real Tank_L = 0.2;                          /**< Water tank length. */
 Real Tank_H = 0.35;                          /**< Water tank height. */
@@ -73,7 +73,7 @@ Real U_f = 2.0 * sqrt(gravity_g * 0.5); /**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5); /**< dispersion velocity in shallow water. */
 Real U_max = SMAX(U_f, U_g);
 Real c_f = 10.0 * U_max; /**< Reference sound speed. */
-Real f = 1.0;
+Real f = 1.7;
 Real a = 0.01;
 Real c_p_water = 3.4267e3;
 Real c_p_air = 1.054e3;
@@ -176,9 +176,9 @@ class VariableGravity : public Gravity
     {
         Real time = physical_time;
         Vecd acceleration = reference_acceleration_;
-        if (time >= 1.0)
+        if (time >= 2.0)
         {
-            acceleration[0] = -4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time - 1));
+            acceleration[0] = -4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time - 2));
         }
         // global_acceleration_[0] = 4.0 * PI * PI * f * f * a * sin(2 * PI * f * time_);
         return acceleration;
@@ -240,8 +240,8 @@ int main(int ac, char *av[])
 
     SolidBody tank(sph_system, makeShared<TankShape>("Tank"));
     tank.defineMaterial<Solid>();
-    tank.generateParticles<BaseParticles, Lattice>();
-    tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    //tank.generateParticles<BaseParticles, Lattice>();
+    //tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
         : tank.generateParticles<BaseParticles, Lattice>();
@@ -396,6 +396,7 @@ int main(int ac, char *av[])
     RestartIO restart_io(sph_system);
     //ObservedQuantityRecording<Vecd> write_cylinder_displacement("Position", cylinder_observer_contact);
     //ObservedQuantityRecording<Real> write_cylinder_wetting("Phi", wetting_observer_contact);
+    ReducedQuantityRecording<TotalMechanicalEnergy> write_water_mechanical_energy(water_block, gravity);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -411,6 +412,10 @@ int main(int ac, char *av[])
     free_stream_surface_indicator.exec();
     constant_gravity_to_water.exec();
     constant_gravity_to_air.exec();
+    wave_probe_S1.writeToFile();
+    wave_probe_S2.writeToFile();
+    wave_probe_S3.writeToFile();
+    write_water_mechanical_energy.writeToFile(0);
     //----------------------------------------------------------------------
     //	Setup for time-stepping control
     //----------------------------------------------------------------------
@@ -419,7 +424,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 11.0;
+    Real end_time = 22.0;
     Real output_interval = 0.1;
     Real dt = 0.0;
     //----------------------------------------------------------------------
@@ -534,10 +539,15 @@ int main(int ac, char *av[])
             air_complex.updateConfiguration();
             free_stream_surface_indicator.exec();
             interval_updating_configuration += TickCount::now() - time_instance;
+
+            wave_probe_S1.writeToFile();
+            wave_probe_S2.writeToFile();
+            wave_probe_S3.writeToFile();
+            write_water_mechanical_energy.writeToFile();
         }
-        wave_probe_S1.writeToFile();
+        /*wave_probe_S1.writeToFile();
         wave_probe_S2.writeToFile();
-        wave_probe_S3.writeToFile();
+        wave_probe_S3.writeToFile();*/
         body_states_recording.writeToFile();
         TickCount t2 = TickCount::now();
         TickCount t3 = TickCount::now();
