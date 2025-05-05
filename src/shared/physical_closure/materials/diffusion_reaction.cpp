@@ -30,6 +30,20 @@ IsotropicDiffusion::IsotropicDiffusion(ConstructArgs<std::string, Real> args)
 IsotropicDiffusion::IsotropicDiffusion(const std::string &species_name, Real d_coeff, Real cv)
     : IsotropicDiffusion(species_name, species_name, d_coeff, cv) {}
 //=================================================================================================//
+HeatIsotropicDiffusion::HeatIsotropicDiffusion(const std::string &diffusion_species_name,
+                                               const std::string &gradient_species_name,
+                                               Real diff_cf, Real density, Real specific_heat)
+    : BaseDiffusion(diffusion_species_name, gradient_species_name, specific_heat),
+      diff_cf_(diff_cf), density_(density), specific_heat_(specific_heat)
+{
+}
+//=================================================================================================//
+HeatIsotropicDiffusion::HeatIsotropicDiffusion(const std::string &species_name, Real diff_cf, Real density, Real specific_heat)
+    : HeatIsotropicDiffusion(species_name, species_name, diff_cf, density, specific_heat) {}
+//=================================================================================================//
+HeatIsotropicDiffusion::HeatIsotropicDiffusion(ConstructArgs<std::string, Real, Real, Real> args)
+    : HeatIsotropicDiffusion(std::get<0>(args), std::get<1>(args), std::get<2>(args), std::get<3>(args)) {}
+//=================================================================================================//
 LocalIsotropicDiffusion::LocalIsotropicDiffusion(const std::string &diffusion_species_name,
                                                  const std::string &gradient_species_name,
                                                  Real diff_background, Real diff_max, Real cv)
@@ -115,5 +129,6 @@ void LocalDirectionalDiffusion::initializeLocalParameters(BaseParticles *base_pa
 
     std::cout << "\n Local diffusion parameters setup finished " << std::endl;
 };
+
 //=================================================================================================//
 } // namespace SPH
