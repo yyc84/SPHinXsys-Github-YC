@@ -247,8 +247,12 @@ int main(int ac, char *av[])
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_inner_sum(right_body, "HeatFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_contact_sum(right_body, "HeatFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_contact_change_rate_sum(right_body, "HeatFluxContactChangeRate");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_right_phi_change_rate_sum(right_body, "PhiChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_inner_sum(left_body, "HeatFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_contact_sum(left_body, "HeatFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_contact_change_rate_sum(left_body, "HeatFluxContactChangeRate");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_left_phi_change_rate_sum(left_body, "PhiChangeRate");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -290,8 +294,12 @@ int main(int ac, char *av[])
 	write_temperature.writeToFile(0);
     write_right_heat_flux_inner_sum.writeToFile(0);
     write_right_heat_flux_contact_sum.writeToFile(0);
+    write_right_heat_flux_contact_change_rate_sum.writeToFile(0);
+    write_right_phi_change_rate_sum.writeToFile(0);
     write_left_heat_flux_inner_sum.writeToFile(0);
     write_left_heat_flux_contact_sum.writeToFile(0);
+    write_left_heat_flux_contact_change_rate_sum.writeToFile(0);
+    write_left_phi_change_rate_sum.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -341,8 +349,12 @@ int main(int ac, char *av[])
 			temperature_observer_contact.updateConfiguration();
             write_right_heat_flux_inner_sum.writeToFile(0);
             write_right_heat_flux_contact_sum.writeToFile(0);
+            write_right_heat_flux_contact_change_rate_sum.writeToFile(0);
+            write_right_phi_change_rate_sum.writeToFile(0);
             write_left_heat_flux_inner_sum.writeToFile(0);
             write_left_heat_flux_contact_sum.writeToFile(0);
+            write_left_heat_flux_contact_change_rate_sum.writeToFile(0);
+            write_left_phi_change_rate_sum.writeToFile(0);
 			//write_temperature.writeToFile();
 			time_instance = TickCount::now();
 			interval_updating_configuration += TickCount::now() - time_instance;
