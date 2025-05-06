@@ -379,8 +379,8 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
   protected:
     StdVec<StdVec<Real *>> contact_gradient_species_;
     //StdVec<StdVec<Real *>> contact_diffusion_dt_;
-    StdVec<Real *> heat_flux_contact_dt_;
-    StdVec<Real *> heat_flux_contact_;
+    StdVec<StdVec<Real *>> heat_flux_contact_dt_;
+    StdVec<StdVec<Real *>> heat_flux_contact_;
 
   public:
     template <typename... Args>
