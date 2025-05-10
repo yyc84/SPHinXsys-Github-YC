@@ -20,7 +20,7 @@ std::string water = "./input/water_small.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real particle_spacing_ref = 0.006; /**< Reference particle spacing. */
+Real particle_spacing_ref = 0.01; /**< Reference particle spacing. */
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 1.0, 0.3));
 
 //----------------------------------------------------------------------
@@ -33,7 +33,7 @@ Real U_f = 2.0 * sqrt(gravity_g * 0.5); /**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5); /**< dispersion velocity in shallow water. */
 Real U_max = SMAX(U_f, U_g);
 Real c_f = 10.0 * U_max; /**< Reference sound speed. */
-Real f = 1.7;
+Real f = 1.0;
 Real a = 0.01;
 Real c_p_water = 3.4267e3;
 Real c_p_air = 1.054e3;
@@ -91,7 +91,7 @@ class VariableGravity : public Gravity
     {
         Real time = physical_time;
         Vecd acceleration = reference_acceleration_;
-        if (time >= 2.0)
+        if (time >= 0.0)
         {
             acceleration[0] = -4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time - 2));
         }
@@ -216,8 +216,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //BoundingBox system_domain_bounds(Vec3d(-BW, -BW, -BW), Vec3d(DL + BW, DW + BW, DH + BW));
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.setRunParticleRelaxation(true);
-    sph_system.setReloadParticles(false);
+    sph_system.setRunParticleRelaxation(false);
+    sph_system.setReloadParticles(true);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
@@ -225,12 +225,20 @@ int main(int ac, char *av[])
     FluidBody water_block(sph_system, makeShared<FluidShape>("WaterBody"));
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity, HeatIsotropicDiffusion>
         (ConstructArgs(rho0_f, c_f), mu_f, ConstructArgs(diffusion_species_name, k_water, rho0_f, c_p_water));
-    water_block.generateParticles<BaseParticles, Lattice>();
+    //water_block.generateParticles<BaseParticles, Lattice>();
+    //water_block.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
+        : water_block.generateParticles<BaseParticles, Lattice>();
 
     FluidBody air_block(sph_system, makeShared<AirShape>("AirBody"));
     air_block.defineClosure<WeaklyCompressibleFluid, Viscosity, HeatIsotropicDiffusion>
         (ConstructArgs(rho0_a, c_f), mu_a, ConstructArgs(diffusion_species_name, k_air, rho0_a, c_p_air));
-    air_block.generateParticles<BaseParticles, Lattice>();
+    //air_block.generateParticles<BaseParticles, Lattice>();
+    //air_block.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
+        ? air_block.generateParticles<BaseParticles, Reload>(air_block.getName())
+        : air_block.generateParticles<BaseParticles, Lattice>();
 
     SolidBody tank(sph_system, makeShared<TankShape>("Tank"));
     tank.defineMaterial<Solid>();
@@ -280,36 +288,56 @@ int main(int ac, char *av[])
         //	Methods used for particle relaxation.
         //----------------------------------------------------------------------
         using namespace relax_dynamics;
-        SimpleDynamics<RandomizeParticlePosition> random_inserted_body_particles(tank);
+        SimpleDynamics<RandomizeParticlePosition> random_tank_particles(tank);
+        SimpleDynamics<RandomizeParticlePosition> random_air_particles(air_block);
+        SimpleDynamics<RandomizeParticlePosition> random_water_particles(water_block);
         /** Write the body state to Vtp file. */
-        BodyStatesRecordingToVtp write_inserted_body_to_vtp(tank);
+        BodyStatesRecordingToVtp write_tank_to_vtp(tank);
+        BodyStatesRecordingToVtp write_air_to_vtp(air_block);
+        BodyStatesRecordingToVtp write_water_to_vtp(water_block);
         /** Write the particle reload files. */
-        ReloadParticleIO write_particle_reload_files(tank);
+        ReloadParticleIO write_tank_particle_reload_files(tank);
+        ReloadParticleIO write_air_particle_reload_files(air_block);
+        ReloadParticleIO write_water_particle_reload_files(water_block);
         /** A  Physics relaxation step. */
-        RelaxationStepInner relaxation_step_inner(tank_inner);
+        RelaxationStepInner relaxation_step_inner_tank(tank_inner);
+        RelaxationStepInner relaxation_step_inner_air(air_block_inner);
+        RelaxationStepInner relaxation_step_inner_water(water_block_inner);
         //----------------------------------------------------------------------
         //	Particle relaxation starts here.
         //----------------------------------------------------------------------
-        random_inserted_body_particles.exec(0.25);
-        relaxation_step_inner.SurfaceBounding().exec();
-        write_inserted_body_to_vtp.writeToFile(0);
+        random_tank_particles.exec(0.25);
+        random_air_particles.exec(0.25);
+        random_water_particles.exec(0.25);
+        relaxation_step_inner_tank.SurfaceBounding().exec();
+        relaxation_step_inner_air.SurfaceBounding().exec();
+        relaxation_step_inner_water.SurfaceBounding().exec();
+        write_tank_to_vtp.writeToFile(0);
+        write_air_to_vtp.writeToFile(0);
+        write_water_to_vtp.writeToFile(0);
         //----------------------------------------------------------------------
         //	Relax particles of the insert body.
         //----------------------------------------------------------------------
         int ite_p = 0;
         while (ite_p < 1000)
         {
-            relaxation_step_inner.exec();
+            relaxation_step_inner_tank.exec();
+            relaxation_step_inner_air.exec();
+            relaxation_step_inner_water.exec();
             ite_p += 1;
             if (ite_p % 200 == 0)
             {
                 std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
-                write_inserted_body_to_vtp.writeToFile(ite_p);
+                write_tank_to_vtp.writeToFile(ite_p);
+                write_air_to_vtp.writeToFile(ite_p);
+                write_water_to_vtp.writeToFile(ite_p);
             }
         }
         std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
         /** Output results. */
-        write_particle_reload_files.writeToFile(0);
+        write_tank_particle_reload_files.writeToFile(0);
+        write_air_particle_reload_files.writeToFile(0);
+        write_water_particle_reload_files.writeToFile(0);
         return 0;
     };
 
@@ -465,7 +493,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 22.0;
+    Real end_time = 10.0;
     Real output_interval = 0.1;
     Real dt = 0.0;
     //----------------------------------------------------------------------
@@ -529,7 +557,7 @@ int main(int ac, char *av[])
                 water_density_relaxation.exec(dt);
                 air_density_relaxation.exec(dt);
 
-                if (physical_time >= 2.0)
+                if (physical_time >= 0.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -572,7 +600,7 @@ int main(int ac, char *av[])
             free_stream_surface_indicator.exec();
             interval_updating_configuration += TickCount::now() - time_instance;
 
-            if (physical_time >= 2.0)
+            if (physical_time >= 0.0)
             {
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
