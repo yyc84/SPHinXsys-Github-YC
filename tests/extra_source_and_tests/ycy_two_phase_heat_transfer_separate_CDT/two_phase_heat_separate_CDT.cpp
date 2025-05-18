@@ -19,6 +19,8 @@ Real k_r = 0.620;
 Real k_l = 0.0254;
 Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
+Real k_contact_l = 2 * k_r * k_l / (k_r + k_l);
+Real k_contact_r = 2 * k_r * k_l / (k_r + k_l);
 Real dp = 0.00625;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
 Real initial_temperature_right = 1.0;
@@ -158,6 +160,9 @@ using ThermalRelaxInner = DiffusionRelaxation<Inner<KernelGradientInner>, Isotro
 //using HeatExchangeComplex = HeatExchangeBodyRelaxationComplex<IsotropicDiffusion, IsotropicDiffusion, KernelGradientInner, KernelGradientContact, HeatExchange>;
 using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion,HeatIsotropicDiffusion>;
 
+using ThermalRelaxationComplex = DiffusionBodyRelaxationComplex<
+    HeatIsotropicDiffusion, KernelGradientInner, KernelGradientContact, Dirichlet>;
+
 StdVec<Vecd> createObservationPoints()
 {
     StdVec<Vecd> observation_points;
@@ -193,11 +198,13 @@ int main(int ac, char *av[])
     //	Creating bodies with corresponding materials and particles.
     //----------------------------------------------------------------------
     SolidBody right_body(sph_system, makeShared<RightBlock>("RightBody"));
-    right_body.defineClosure<Solid, HeatIsotropicDiffusion>(Solid(), ConstructArgs(diffusion_species_name, k_r, rho0_r, c_p_r));
+    right_body.defineMaterial<Solid>();
+    //right_body.defineClosure<Solid, HeatIsotropicDiffusion>(Solid(), ConstructArgs(diffusion_species_name, k_r, rho0_r, c_p_r));
     right_body.generateParticles<BaseParticles, Lattice>();
 
     SolidBody left_body(sph_system, makeShared<LeftBlock>("LeftBody"));
-    left_body.defineClosure<Solid, HeatIsotropicDiffusion>(Solid(), ConstructArgs(diffusion_species_name, k_l, rho0_l, c_p_l));
+    left_body.defineMaterial<Solid>();
+    //left_body.defineClosure<Solid, HeatIsotropicDiffusion>(Solid(), ConstructArgs(diffusion_species_name, k_l, rho0_l, c_p_l));
     left_body.generateParticles<BaseParticles, Lattice>();
 
     ObserverBody temperature_observer(sph_system, "TemperatureObserver");
@@ -223,13 +230,21 @@ int main(int ac, char *av[])
     // Define diffusion coefficient
     HeatIsotropicDiffusion left_heat_diffusion("Phi", "Phi", k_l, rho0_l, c_p_l);
     HeatIsotropicDiffusion right_heat_diffusion("Phi", "Phi", k_r, rho0_r, c_p_r);
+    HeatIsotropicDiffusion left_heat_diffusion_contact("Phi", "Phi", k_contact_l, rho0_l, c_p_l);
+    HeatIsotropicDiffusion right_heat_diffusion_contact("Phi", "Phi", k_contact_r, rho0_r, c_p_r);
 
     //Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
     //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_inner(right_inner, &right_heat_diffusion, &left_heat_diffusion);
 
-    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_right(right_inner, right_body_contact, &left_heat_diffusion);
-    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_left(left_inner, left_body_contact, &right_heat_diffusion);
-    
+    //Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_right(right_inner, right_body_contact, &left_heat_diffusion);
+    //Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_left(left_inner, left_body_contact, &right_heat_diffusion);
+    ThermalRelaxationComplex thermal_relaxation_complex_left(
+        ConstructorArgs(left_inner, &left_heat_diffusion),
+        ConstructorArgs(left_body_contact, &left_heat_diffusion_contact));
+    ThermalRelaxationComplex thermal_relaxation_complex_winding(
+        ConstructorArgs(winding_inner, &diffusion_winding),
+        ConstructorArgs(winding_thermal_contact, &conductivity_oil_winding));
+
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
 
