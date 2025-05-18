@@ -161,6 +161,16 @@ struct DynamicsArgs
         : identifier_(identifier), others_(other_args...) {};
 };
 
+template <typename BodyRelationType, typename... OtherArgs>
+struct ConstructorArgs
+{
+    BodyRelationType &body_relation_;
+    std::tuple<OtherArgs...> others_;
+    SPHBody &getSPHBody() { return body_relation_.getSPHBody(); };
+    ConstructorArgs(BodyRelationType &body_relation, OtherArgs... other_args)
+        : body_relation_(body_relation), others_(other_args...) {};
+};
+
 /**
  * @class ComplexInteraction
  * @brief A class that integrates multiple local dynamics.

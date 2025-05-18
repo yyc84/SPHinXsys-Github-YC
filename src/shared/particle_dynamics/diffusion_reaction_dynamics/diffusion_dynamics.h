@@ -68,6 +68,17 @@ class DiffusionRelaxation<DataDelegationType, DiffusionType>
   public:
     template <class BodyRelationType>
     explicit DiffusionRelaxation(BodyRelationType &body_relation);
+
+    template <class BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType &body_relation, StdVec<DiffusionType *> diffusions);
+
+    template <class BodyRelationType>
+    explicit DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion);
+
+    template <typename BodyRelationType, typename FirstArg>
+    explicit DiffusionRelaxation(ConstructorArgs<BodyRelationType, FirstArg> parameters)
+        : DiffusionRelaxation(parameters.body_relation_, std::get<0>(parameters.others_)){};
+
     void initialization(size_t index_i, Real dt = 0.0); // for contact diffusion integrated independently.
     void update(size_t index_i, Real dt = 0.0);
 
@@ -118,8 +129,8 @@ class DiffusionRelaxation<Inner<KernelGradientType>, DiffusionType>
     virtual ~DiffusionRelaxation() {};
     inline void interaction(size_t index_i, Real dt = 0.0);
 
-    void initialization(size_t index_i, Real dt = 0.0) override;
-    void update(size_t index_i, Real dt = 0.0) override;
+    void initialization(size_t index_i, Real dt = 0.0) ;
+    void update(size_t index_i, Real dt = 0.0) ;
 };
 
 class KernelGradientContact
@@ -193,8 +204,8 @@ class DiffusionRelaxation<Dirichlet<ContactKernelGradientType>, DiffusionType>
     explicit DiffusionRelaxation(Args &&...args);
     virtual ~DiffusionRelaxation() {};
     inline void interaction(size_t index_i, Real dt = 0.0);
-    void initialization(size_t index_i, Real dt = 0.0)override;
-    void update(size_t index_i, Real dt = 0.0)override;
+    void initialization(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
 };
 
 template <typename... ControlTypes>

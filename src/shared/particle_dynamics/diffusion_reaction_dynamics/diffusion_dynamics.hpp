@@ -37,6 +37,36 @@ DiffusionRelaxation<DataDelegationType, DiffusionType>::
 }
 //=================================================================================================//
 template <class DataDelegationType, class DiffusionType>
+template <class BodyRelationType>
+DiffusionRelaxation<DataDelegationType, DiffusionType>::
+    DiffusionRelaxation(BodyRelationType &body_relation, StdVec<DiffusionType *> diffusions)
+    : LocalDynamics(body_relation.getSPHBody()), DataDelegationType(body_relation),
+      diffusions_(diffusions),
+      Vol_(this->particles_->template getVariableDataByName<Real>("VolumetricMeasure"))
+{
+    for (auto &diffusion : diffusions_)
+    {
+        std::string diffusion_species_name = diffusion->DiffusionSpeciesName();
+        diffusion_species_.push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name));
+        this->particles_->template addEvolvingVariable<Real>(diffusion_species_name);
+        this->particles_->template addVariableToWrite<Real>(diffusion_species_name);
+        diffusion_dt_.push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "ChangeRate"));
+
+        std::string gradient_species_name = diffusion->GradientSpeciesName();
+        gradient_species_.push_back(this->particles_->template registerStateVariable<Real>(gradient_species_name));
+        this->particles_->template addEvolvingVariable<Real>(gradient_species_name);
+        this->particles_->template addVariableToWrite<Real>(gradient_species_name);
+        
+    }
+}
+//=================================================================================================//
+template <class DataDelegationType, class DiffusionType>
+template <class BodyRelationType>
+DiffusionRelaxation<DataDelegationType, DiffusionType>::
+    DiffusionRelaxation(BodyRelationType &body_relation, DiffusionType *diffusion)
+    : DiffusionRelaxation(body_relation, StdVec<DiffusionType *>{diffusion}) {}
+//=================================================================================================//
+template <class DataDelegationType, class DiffusionType>
 void DiffusionRelaxation<DataDelegationType, DiffusionType>::getDiffusions()
 {
     AbstractDiffusion &abstract_diffusion = DynamicCast<AbstractDiffusion>(this, this->sph_body_.getBaseMaterial());
@@ -128,7 +158,7 @@ void DiffusionRelaxation<Inner<KernelGradientType>, DiffusionType>::interaction(
             Real phi_ij = gradient_species[index_i] - gradient_species[index_j];
             d_species += diff_coeff_ij * phi_ij * surface_area_ij;
 
-            Real cross_section = *this->Vol_[index_j] * abs(inner_neighborhood.dW_ij_[n]) * this->Vol_[index_i];
+            Real cross_section = this->Vol_[index_j] * abs(inner_neighborhood.dW_ij_[n]) * this->Vol_[index_i];
 
             Real diff_coeff_ij_without_rho_cp = diffusion_m->getReferenceDiffusivity();
             d_species_without_rho_cp += diff_coeff_ij_without_rho_cp * phi_ij * surface_area_ij * cross_section;

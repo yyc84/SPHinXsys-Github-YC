@@ -241,9 +241,9 @@ int main(int ac, char *av[])
     ThermalRelaxationComplex thermal_relaxation_complex_left(
         ConstructorArgs(left_inner, &left_heat_diffusion),
         ConstructorArgs(left_body_contact, &left_heat_diffusion_contact));
-    ThermalRelaxationComplex thermal_relaxation_complex_winding(
-        ConstructorArgs(winding_inner, &diffusion_winding),
-        ConstructorArgs(winding_thermal_contact, &conductivity_oil_winding));
+    ThermalRelaxationComplex thermal_relaxation_complex_right(
+        ConstructorArgs(right_inner, &right_heat_diffusion),
+        ConstructorArgs(right_body_contact, &right_heat_diffusion_contact));
 
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
@@ -291,7 +291,7 @@ int main(int ac, char *av[])
 	int ite=0.0;
 	Real end_time = 1.0;
 	Real Output_Time = 0.1 * end_time;
-	Real Observe_time =  0.05*Output_Time;
+	Real Observe_time =  0.5*Output_Time;
 	Real dt = 0.0;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
@@ -334,8 +334,10 @@ int main(int ac, char *av[])
 				Real dt_thermal_right = get_time_step_size_right.exec();
 				Real dt_thermal_left = get_time_step_size_left.exec();
 				dt = SMIN(dt_thermal_right, dt_thermal_left);
-                heat_exchange_complex_right.exec(dt);
-                heat_exchange_complex_left.exec(dt);
+                thermal_relaxation_complex_left.exec(dt);
+                thermal_relaxation_complex_right.exec(dt);
+                //heat_exchange_complex_right.exec(dt);
+                //heat_exchange_complex_left.exec(dt);
                 Real time_difference = physical_time - start_time;
 				if (ite % 100== 0)
 				{
