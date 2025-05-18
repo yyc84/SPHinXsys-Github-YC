@@ -20,7 +20,7 @@ std::string water = "./input/water_small.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real particle_spacing_ref = 0.01; /**< Reference particle spacing. */
+Real particle_spacing_ref = 0.012; /**< Reference particle spacing. */
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 1.0, 0.3));
 
 //----------------------------------------------------------------------
@@ -33,7 +33,7 @@ Real U_f = 2.0 * sqrt(gravity_g * 0.5); /**< Characteristic velocity. */
 Real U_g = 2.0 * sqrt(gravity_g * 0.5); /**< dispersion velocity in shallow water. */
 Real U_max = SMAX(U_f, U_g);
 Real c_f = 10.0 * U_max; /**< Reference sound speed. */
-Real f = 1.0;
+Real f = 1.7;
 Real a = 0.01;
 Real c_p_water = 3.4267e3;
 Real c_p_air = 1.054e3;
@@ -91,7 +91,7 @@ class VariableGravity : public Gravity
     {
         Real time = physical_time;
         Vecd acceleration = reference_acceleration_;
-        if (time >= 0.0)
+        if (time >= 1.0)
         {
             acceleration[0] = -4.0 * PI * PI * f * f * a * sin(2 * PI * f * (time - 2));
         }
@@ -225,25 +225,25 @@ int main(int ac, char *av[])
     FluidBody water_block(sph_system, makeShared<FluidShape>("WaterBody"));
     water_block.defineClosure<WeaklyCompressibleFluid, Viscosity, HeatIsotropicDiffusion>
         (ConstructArgs(rho0_f, c_f), mu_f, ConstructArgs(diffusion_species_name, k_water, rho0_f, c_p_water));
-    //water_block.generateParticles<BaseParticles, Lattice>();
-    //water_block.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    water_block.generateParticles<BaseParticles, Lattice>();
+    /*water_block.defineBodyLevelSetShape()->writeLevelSet(sph_system);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? water_block.generateParticles<BaseParticles, Reload>(water_block.getName())
-        : water_block.generateParticles<BaseParticles, Lattice>();
+        : water_block.generateParticles<BaseParticles, Lattice>();*/
 
     FluidBody air_block(sph_system, makeShared<AirShape>("AirBody"));
     air_block.defineClosure<WeaklyCompressibleFluid, Viscosity, HeatIsotropicDiffusion>
         (ConstructArgs(rho0_a, c_f), mu_a, ConstructArgs(diffusion_species_name, k_air, rho0_a, c_p_air));
-    //air_block.generateParticles<BaseParticles, Lattice>();
-    //air_block.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    air_block.generateParticles<BaseParticles, Lattice>();
+   /* air_block.defineBodyLevelSetShape()->writeLevelSet(sph_system);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? air_block.generateParticles<BaseParticles, Reload>(air_block.getName())
-        : air_block.generateParticles<BaseParticles, Lattice>();
+        : air_block.generateParticles<BaseParticles, Lattice>();*/
 
     SolidBody tank(sph_system, makeShared<TankShape>("Tank"));
     tank.defineMaterial<Solid>();
     //tank.generateParticles<BaseParticles, Lattice>();
-    //tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
+    tank.defineBodyLevelSetShape()->writeLevelSet(sph_system);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
         ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
         : tank.generateParticles<BaseParticles, Lattice>();
@@ -493,7 +493,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 10.0;
+    Real end_time = 11.0;
     Real output_interval = 0.1;
     Real dt = 0.0;
     //----------------------------------------------------------------------
@@ -557,7 +557,7 @@ int main(int ac, char *av[])
                 water_density_relaxation.exec(dt);
                 air_density_relaxation.exec(dt);
 
-                if (physical_time >= 0.0)
+                if (physical_time >= 1.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
