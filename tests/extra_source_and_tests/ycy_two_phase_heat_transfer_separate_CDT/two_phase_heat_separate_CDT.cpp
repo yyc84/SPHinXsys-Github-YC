@@ -21,7 +21,7 @@ Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
 Real k_contact_l = 2 * k_r * k_l / (k_r + k_l);
 Real k_contact_r = 2 * k_r * k_l / (k_r + k_l);
-Real dp = 0.00625;	/**< Initial reference particle spacing. */
+Real dp = 0.025;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
 Real initial_temperature_right = 1.0;
 std::string diffusion_species_name = "Phi";
@@ -101,15 +101,16 @@ class LeftDiffusionInitialCondition : public LocalDynamics
   public:
     explicit LeftDiffusionInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>("Phi")),
+          phi_(particles_->registerStateVariable<Real>("Phi"))
+        /*,
           heat_flux_contact_(particles_->registerStateVariable<Real>("PhiFluxContact")),
-          heat_flux_inner_(particles_->registerStateVariable<Real>("PhiFluxInner"))
+          heat_flux_inner_(particles_->registerStateVariable<Real>("PhiFluxInner"))*/
 	{
-        this->particles_->template addEvolvingVariable<Real>("PhiFluxContact");
+       /* this->particles_->template addEvolvingVariable<Real>("PhiFluxContact");
         this->particles_->template addVariableToWrite<Real>("PhiFluxContact");
 
         this->particles_->template addEvolvingVariable<Real>("PhiFluxInner");
-        this->particles_->template addVariableToWrite<Real>("PhiFluxInner");
+        this->particles_->template addVariableToWrite<Real>("PhiFluxInner");*/
 	};
 
     void update(size_t index_i, Real dt)
@@ -128,16 +129,17 @@ class RightDiffusionInitialCondition : public LocalDynamics
   public:
     explicit RightDiffusionInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
-          phi_(particles_->registerStateVariable<Real>("Phi")),
+          phi_(particles_->registerStateVariable<Real>("Phi"))
+        /*,
           heat_flux_contact_(particles_->registerStateVariable<Real>("PhiFluxContact")),
-          heat_flux_inner_(particles_->registerStateVariable<Real>("PhiFluxInner"))
+          heat_flux_inner_(particles_->registerStateVariable<Real>("PhiFluxInner"))*/
 	{
         //this->particles_->template addVariableToSort<Real>("HeatFluxContact");
-        this->particles_->template addEvolvingVariable<Real>("PhiFluxContact");
-        this->particles_->template addVariableToWrite<Real>("PhiFluxContact");
-       // this->particles_->template addVariableToSort<Real>("HeatFluxInner");
-        this->particles_->template addEvolvingVariable<Real>("PhiFluxInner");
-        this->particles_->template addVariableToWrite<Real>("PhiFluxInner");
+       // this->particles_->template addEvolvingVariable<Real>("PhiFluxContact");
+       // this->particles_->template addVariableToWrite<Real>("PhiFluxContact");
+       //// this->particles_->template addVariableToSort<Real>("HeatFluxInner");
+       // this->particles_->template addEvolvingVariable<Real>("PhiFluxInner");
+       // this->particles_->template addVariableToWrite<Real>("PhiFluxInner");
 	};
 
     void update(size_t index_i, Real dt)
@@ -171,7 +173,7 @@ StdVec<Vecd> createObservationPoints()
 		
 		for(int i = 0;i< number_of_observation_points;i++)
 		{
-			observation_points.push_back(Vecd(i*dp,80*dp));
+			observation_points.push_back(Vecd(i*dp,20*dp));
 		}
     return observation_points;
 };
@@ -263,10 +265,12 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_inner_sum(right_body, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_contact_sum(right_body, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_contact_change_rate_sum(right_body, "PhiFluxContactChangeRate");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_inner_change_rate_sum(right_body, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_phi_change_rate_sum(right_body, "PhiChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_inner_sum(left_body, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_contact_sum(left_body, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_contact_change_rate_sum(left_body, "PhiFluxContactChangeRate");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_inner_change_rate_sum(left_body, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_phi_change_rate_sum(left_body, "PhiChangeRate");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
@@ -310,10 +314,12 @@ int main(int ac, char *av[])
     write_right_heat_flux_inner_sum.writeToFile(0);
     write_right_heat_flux_contact_sum.writeToFile(0);
     write_right_heat_flux_contact_change_rate_sum.writeToFile(0);
+    write_right_heat_flux_inner_change_rate_sum.writeToFile(0);
     write_right_phi_change_rate_sum.writeToFile(0);
     write_left_heat_flux_inner_sum.writeToFile(0);
     write_left_heat_flux_contact_sum.writeToFile(0);
     write_left_heat_flux_contact_change_rate_sum.writeToFile(0);
+    write_left_heat_flux_inner_change_rate_sum.writeToFile(0);
     write_left_phi_change_rate_sum.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
@@ -364,14 +370,16 @@ int main(int ac, char *av[])
 			right_complex.updateConfiguration();
 
 			temperature_observer_contact.updateConfiguration();
-            write_right_heat_flux_inner_sum.writeToFile(0);
-            write_right_heat_flux_contact_sum.writeToFile(0);
-            write_right_heat_flux_contact_change_rate_sum.writeToFile(0);
-            write_right_phi_change_rate_sum.writeToFile(0);
-            write_left_heat_flux_inner_sum.writeToFile(0);
-            write_left_heat_flux_contact_sum.writeToFile(0);
-            write_left_heat_flux_contact_change_rate_sum.writeToFile(0);
-            write_left_phi_change_rate_sum.writeToFile(0);
+            write_right_heat_flux_inner_sum.writeToFile();
+            write_right_heat_flux_contact_sum.writeToFile();
+            write_right_heat_flux_contact_change_rate_sum.writeToFile();
+            write_right_heat_flux_inner_change_rate_sum.writeToFile();
+            write_right_phi_change_rate_sum.writeToFile();
+            write_left_heat_flux_inner_sum.writeToFile();
+            write_left_heat_flux_contact_sum.writeToFile();
+            write_left_heat_flux_contact_change_rate_sum.writeToFile();
+            write_left_heat_flux_inner_change_rate_sum.writeToFile();
+            write_left_phi_change_rate_sum.writeToFile();
 			//write_temperature.writeToFile();
 			time_instance = TickCount::now();
 			interval_updating_configuration += TickCount::now() - time_instance;

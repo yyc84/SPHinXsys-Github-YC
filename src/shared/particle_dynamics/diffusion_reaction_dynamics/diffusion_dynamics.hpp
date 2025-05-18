@@ -242,9 +242,9 @@ DiffusionRelaxation<Dirichlet<ContactKernelGradientType>, DiffusionType>::
             this->particles_->template addEvolvingVariable<Real>(species_name + "FluxContactChangeRate");
             this->particles_->template addVariableToWrite<Real>(species_name + "FluxContactChangeRate");
 
-            heat_flux_contact_[k].push_back(this->particles_->template registerStateVariable<Real>(species_name + "HeatFluxContact"));
-            this->particles_->template addEvolvingVariable<Real>(species_name + "HeatFluxContact");
-            this->particles_->template addVariableToWrite<Real>(species_name  + "HeatFluxContact");
+            heat_flux_contact_[k].push_back(this->particles_->template registerStateVariable<Real>(species_name + "FluxContact"));
+            this->particles_->template addEvolvingVariable<Real>(species_name + "FluxContact");
+            this->particles_->template addVariableToWrite<Real>(species_name  + "FluxContact");
         }
     }
 }
