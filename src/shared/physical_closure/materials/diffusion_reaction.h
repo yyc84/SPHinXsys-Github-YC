@@ -145,15 +145,49 @@ class HeatIsotropicDiffusion : public BaseDiffusion
     explicit HeatIsotropicDiffusion(ConstructArgs<std::string, Real, Real, Real> args);
     virtual ~HeatIsotropicDiffusion(){};
 
-    virtual Real getReferenceDiffusivity() override { return diff_cf_ / (specific_heat_ * density_); };
-    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return diff_cf_; }
+    virtual Real getReferenceDiffusivity() override { return diff_cf_ / (density_ * specific_heat_); };
+    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return diff_cf_ / (density_ * specific_heat_); }
     virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
     {
-        return diff_cf_;
+        return diff_cf_ / (density_ * specific_heat_);
     };
     Real getDensity() { return density_; };
     Real getSpecificHeat() { return specific_heat_; };
     Real getThermalConductivity() { return diff_cf_; };
+};
+
+class ContactHeatIsotropicDiffusion : public BaseDiffusion
+{
+  protected:
+    Real diff_cf_; /**< diffusion coefficient. */
+    Real density_;
+    Real specific_heat_;
+    Real diff_cf_contact_; /**< diffusion coefficient. */
+    Real density_contact_;
+    Real specific_heat_contact_;
+
+  public:
+    ContactHeatIsotropicDiffusion(const std::string &diffusion_species_name, 
+                           const std::string &gradient_species_name,
+                            Real diff_cf = 1.0, Real density = 1.0, Real specific_heat = 1.0, 
+                            Real diff_cf_contact = 1.0, Real density_contact = 1.0, Real specific_heat_contact = 1.0);
+    ContactHeatIsotropicDiffusion(const std::string &species_name, Real diff_cf = 1.0, Real density = 1.0, Real specific_heat = 1.0,
+                                  Real diff_cf_contact = 1.0, Real density_contact = 1.0, Real specific_heat_contact = 1.0);
+    explicit ContactHeatIsotropicDiffusion(ConstructArgs<std::string, Real, Real, Real, Real, Real, Real> args);
+    virtual ~ContactHeatIsotropicDiffusion(){};
+
+    virtual Real getReferenceDiffusivity() override { return 2 * diff_cf_ * diff_cf_contact_ / (diff_cf_ + diff_cf_contact_); };
+    virtual Real getDiffusionCoeffWithBoundary(size_t index_i) override { return 2 * diff_cf_ * diff_cf_contact_ / (diff_cf_ + diff_cf_contact_) / (density_ * specific_heat_); }
+    virtual Real getInterParticleDiffusionCoeff(size_t index_i, size_t index_j, const Vecd &e_ij) override
+    {
+        return 2 * diff_cf_ * diff_cf_contact_ / (diff_cf_ + diff_cf_contact_) / (density_ * specific_heat_);
+    };
+    Real getDensity() { return density_; };
+    Real getSpecificHeat() { return specific_heat_; };
+    Real getThermalConductivity() { return diff_cf_; };
+    Real getDensityContact() { return density_contact_; };
+    Real getSpecificHeatContact() { return specific_heat_contact_; };
+    Real getThermalConductivityContact() { return diff_cf_contact_; };
 };
 /**
  * @class LocalIsotropicDiffusion

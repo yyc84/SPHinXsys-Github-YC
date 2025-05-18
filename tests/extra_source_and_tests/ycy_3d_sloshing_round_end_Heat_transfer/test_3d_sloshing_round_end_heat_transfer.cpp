@@ -136,14 +136,14 @@ class ThermoWaterBodyInitialCondition : public LocalDynamics
     explicit ThermoWaterBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           phi_(particles_->registerStateVariable<Real>("Phi")),
-          heat_flux_contact_(particles_->registerStateVariable<Real>("HeatFluxContact")),
-          heat_flux_inner_(particles_->registerStateVariable<Real>("HeatFluxInner"))
+          heat_flux_contact_(particles_->registerStateVariable<Real>("PhiFluxContact")),
+          heat_flux_inner_(particles_->registerStateVariable<Real>("PhiFluxInner"))
     {
-        this->particles_->template addEvolvingVariable<Real>("HeatFluxContact");
-        this->particles_->template addVariableToWrite<Real>("HeatFluxContact");
+        this->particles_->template addEvolvingVariable<Real>("PhiFluxContact");
+        this->particles_->template addVariableToWrite<Real>("PhiFluxContact");
 
-        this->particles_->template addEvolvingVariable<Real>("HeatFluxInner");
-        this->particles_->template addVariableToWrite<Real>("HeatFluxInner");
+        this->particles_->template addEvolvingVariable<Real>("PhiFluxInner");
+        this->particles_->template addVariableToWrite<Real>("PhiFluxInner");
     };
 
     void update(size_t index_i, Real dt)
@@ -163,13 +163,13 @@ class ThermoAirBodyInitialCondition : public LocalDynamics
     explicit ThermoAirBodyInitialCondition(SPHBody &sph_body)
         : LocalDynamics(sph_body),
           phi_(particles_->registerStateVariable<Real>("Phi")),
-          heat_flux_contact_(particles_->registerStateVariable<Real>("HeatFluxContact")),
-          heat_flux_inner_(particles_->registerStateVariable<Real>("HeatFluxInner"))
+          heat_flux_contact_(particles_->registerStateVariable<Real>("PhiFluxContact")),
+          heat_flux_inner_(particles_->registerStateVariable<Real>("PhiFluxInner"))
     {
-        this->particles_->template addEvolvingVariable<Real>("HeatFluxContact");
-        this->particles_->template addVariableToWrite<Real>("HeatFluxContact");
-        this->particles_->template addEvolvingVariable<Real>("HeatFluxInner");
-        this->particles_->template addVariableToWrite<Real>("HeatFluxInner");
+        this->particles_->template addEvolvingVariable<Real>("PhiFluxContact");
+        this->particles_->template addVariableToWrite<Real>("PhiFluxContact");
+        this->particles_->template addEvolvingVariable<Real>("PhiFluxInner");
+        this->particles_->template addVariableToWrite<Real>("PhiFluxInner");
     };
 
     void update(size_t index_i, Real dt)
@@ -447,10 +447,10 @@ int main(int ac, char *av[])
     ObservedQuantityRecording<Real> write_temperature_liquid("Phi", liquid_temperature_observer_contact);
     ObservedQuantityRecording<Real> write_temperature_gas("Phi", gas_temperature_observer_contact);
 
-    ReducedQuantityRecording<QuantitySummation<Real>> write_water_heat_flux_inner(water_block, "HeatFluxInner");
-    ReducedQuantityRecording<QuantitySummation<Real>> write_air_heat_flux_inner(air_block, "HeatFluxInner");
-    ReducedQuantityRecording<QuantitySummation<Real>> write_water_heat_flux_contact(water_block, "HeatFluxContact");
-    ReducedQuantityRecording<QuantitySummation<Real>> write_air_heat_flux_contact(air_block, "HeatFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
+    ReducedQuantityRecording<QuantitySummation<Real>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
     
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> water_everage_temperature(water_block, "Phi");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> air_everage_temperature(air_block, "Phi");

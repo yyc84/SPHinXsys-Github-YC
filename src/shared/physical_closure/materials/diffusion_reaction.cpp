@@ -44,6 +44,24 @@ HeatIsotropicDiffusion::HeatIsotropicDiffusion(const std::string &species_name, 
 HeatIsotropicDiffusion::HeatIsotropicDiffusion(ConstructArgs<std::string, Real, Real, Real> args)
     : HeatIsotropicDiffusion(std::get<0>(args), std::get<1>(args), std::get<2>(args), std::get<3>(args)) {}
 //=================================================================================================//
+ContactHeatIsotropicDiffusion::ContactHeatIsotropicDiffusion(const std::string& diffusion_species_name,
+    const std::string& gradient_species_name,
+    Real diff_cf, Real density, Real specific_heat,
+    Real diff_cf_contact, Real density_contact, Real specific_heat_contact)
+    : BaseDiffusion(diffusion_species_name, gradient_species_name, specific_heat),
+    diff_cf_(diff_cf), density_(density), specific_heat_(specific_heat), diff_cf_contact_(diff_cf_contact),
+    density_contact_(density_contact), specific_heat_contact_(specific_heat_contact)
+{}
+//=================================================================================================//
+ContactHeatIsotropicDiffusion::ContactHeatIsotropicDiffusion(const std::string &diffusion_species_name,
+                                                             Real diff_cf, Real density, Real specific_heat,
+                                                             Real diff_cf_contact, Real density_contact, Real specific_heat_contact)
+    : ContactHeatIsotropicDiffusion(diffusion_species_name, diffusion_species_name, diff_cf, density, specific_heat, diff_cf_contact, density_contact, specific_heat_contact)
+{}
+//=================================================================================================//
+ContactHeatIsotropicDiffusion::ContactHeatIsotropicDiffusion(ConstructArgs<std::string, Real, Real, Real, Real, Real, Real> args)
+    : ContactHeatIsotropicDiffusion(std::get<0>(args), std::get<1>(args), std::get<2>(args), std::get<3>(args), std::get<4>(args), std::get<5>(args), std::get<6>(args)) {}
+//=================================================================================================//
 LocalIsotropicDiffusion::LocalIsotropicDiffusion(const std::string &diffusion_species_name,
                                                  const std::string &gradient_species_name,
                                                  Real diff_background, Real diff_max, Real cv)

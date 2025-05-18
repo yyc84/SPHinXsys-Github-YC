@@ -108,6 +108,8 @@ class DiffusionRelaxation<Inner<KernelGradientType>, DiffusionType>
 {
   protected:
     KernelGradientType kernel_gradient_;
+    StdVec<Real *> heat_flux_inner_dt_;
+    StdVec<Real *> heat_flux_inner_;
 
   public:
     template <typename... Args>
@@ -115,6 +117,9 @@ class DiffusionRelaxation<Inner<KernelGradientType>, DiffusionType>
 
     virtual ~DiffusionRelaxation() {};
     inline void interaction(size_t index_i, Real dt = 0.0);
+
+    void initialization(size_t index_i, Real dt = 0.0) override;
+    void update(size_t index_i, Real dt = 0.0) override;
 };
 
 class KernelGradientContact
@@ -170,15 +175,26 @@ class DiffusionRelaxation<Dirichlet<ContactKernelGradientType>, DiffusionType>
 
   protected:
     StdVec<StdVec<Real *>> contact_gradient_species_;
+
+    /*for two body heat transfer*/
+    StdVec<StdVec<Real *>> heat_flux_contact_dt_;
+    StdVec<StdVec<Real *>> heat_flux_contact_;
+
     void getDiffusionChangeRateDirichlet(
-        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij,
-        const StdVec<Real *> &gradient_species_k);
+        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
+        const StdVec<Real *> &gradient_species_k, StdVec<Real *> &heat_flux_contact_dt);
+
+    /*void getDiffusionChangeRateTwoPhaseHeatExchange(
+        size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
+        const StdVec<Real *> &gradient_species_k, StdVec<Real *> &heat_flux_contact_dt);*/
 
   public:
     template <typename... Args>
     explicit DiffusionRelaxation(Args &&...args);
     virtual ~DiffusionRelaxation() {};
     inline void interaction(size_t index_i, Real dt = 0.0);
+    void initialization(size_t index_i, Real dt = 0.0)override;
+    void update(size_t index_i, Real dt = 0.0)override;
 };
 
 template <typename... ControlTypes>
@@ -330,8 +346,8 @@ class DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>
 {
   protected:
     KernelGradientType kernel_gradient_;
-    Real *heat_flux_inner_dt_;
-    Real *heat_flux_inner_;
+    StdVec<Real *> heat_flux_inner_dt_;
+    StdVec<Real *> heat_flux_inner_;
 
   public:
     template <typename... Args>
