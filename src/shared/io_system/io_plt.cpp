@@ -36,21 +36,21 @@ void PltEngine::writeAQuantityHeader(
 //=============================================================================================//
 void PltEngine::writeAQuantity(std::ofstream &out_file, const Real &quantity)
 {
-    out_file << std::fixed << std::setprecision(9) << quantity << "   ";
+    out_file << std::fixed << std::setprecision(20) << quantity << "   ";
 }
 //=============================================================================================//
 void PltEngine::writeAQuantity(std::ofstream &out_file, const Vecd &quantity)
 {
     for (int i = 0; i < Dimensions; ++i)
-        out_file << std::fixed << std::setprecision(9) << quantity[i] << "   ";
+        out_file << std::fixed << std::setprecision(20) << quantity[i] << "   ";
 }
 //=============================================================================================//
 void PltEngine::writeAQuantity(std::ofstream &out_file, const SimTK::SpatialVec &quantity)
 {
     for (int i = 0; i < 3; ++i)
-        out_file << std::fixed << std::setprecision(9) << quantity[0][i] << "   ";
+        out_file << std::fixed << std::setprecision(20) << quantity[0][i] << "   ";
     for (int i = 0; i < 3; ++i)
-        out_file << std::fixed << std::setprecision(9) << quantity[1][i] << "   ";
+        out_file << std::fixed << std::setprecision(20) << quantity[1][i] << "   ";
 }
 
 //=================================================================================================//

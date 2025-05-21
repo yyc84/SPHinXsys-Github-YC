@@ -19,7 +19,7 @@ Real k_r = 0.620;
 Real k_l = 0.0254;
 Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
-Real dp = 0.003125;	/**< Initial reference particle spacing. */
+Real dp = 0.05/4.0;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
 Real initial_temperature_right = 1.0;
 std::string diffusion_species_name = "Phi";
@@ -243,9 +243,35 @@ int main(int ac, char *av[])
 	//	and regression tests of the simulation.
 	//----------------------------------------------------------------------
 	//RestartIO restart_io(io_environment, sph_system.real_bodies_);
-	BodyStatesRecordingToVtp write_real_body_states(sph_system);
+	BodyStatesRecordingToPlt write_real_body_states(sph_system);
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxContact");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxContact");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxInner");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxInner");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxContactChangeRate");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxContactChangeRate");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxInnerChangeRate");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxInnerChangeRate");
+    write_real_body_states.addToWrite<Real>(left_body, "VolumetricMeasure");
+    write_real_body_states.addToWrite<Real>(right_body, "VolumetricMeasure");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiChangeRate");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiChangeRate");
+
+   /* write_real_body_states.addToWrite<Real>(left_body, "PhiSurfaceContactSUM");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiSurfaceContactSUM");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiCrossSectionContactSUM");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiCrossSectionContactSUM");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiKPhiContactSUM");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiKPhiContactSUM");
+
+    write_real_body_states.addToWrite<Real>(left_body, "PhiSurfaceInnerSUM");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiSurfaceInnerSUM");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiCrossSectionInnerSUM");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiCrossSectionInnerSUM");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiKPhiInnerSUM");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiKPhiInnerSUM");*/
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_inner_sum(right_body, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real>> write_right_heat_flux_contact_sum(right_body, "PhiFluxContact");
@@ -257,6 +283,21 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_contact_change_rate_sum(left_body, "PhiFluxContactChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_heat_flux_inner_change_rate_sum(left_body, "PhiFluxInnerChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real>> write_left_phi_change_rate_sum(left_body, "PhiChangeRate");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_everage_temperature(right_body, "Phi");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_everage_temperature(left_body, "Phi");
+
+  /*  ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_surface_contact_sum(right_body, "PhiSurfaceContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_surface_contact_sum(left_body, "PhiSurfaceContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_cross_section_contact_sum(right_body, "PhiCrossSectionContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_cross_section_contact_sum(left_body, "PhiCrossSectionContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_k_phi_contact_sum(right_body, "PhiKPhiContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_k_phi_contact_sum(left_body, "PhiKPhiContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_surface_inner_sum(right_body, "PhiSurfaceInnerSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_surface_inner_sum(left_body, "PhiSurfaceInnerSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_cross_section_inner_sum(right_body, "PhiCrossSectionInnerSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_cross_section_inner_sum(left_body, "PhiCrossSectionInnerSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_k_phi_inner_sum(right_body, "PhiKPhiInnerSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_k_phi_inner_sum(left_body, "PhiKPhiInnerSUM");*/
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -306,6 +347,21 @@ int main(int ac, char *av[])
     write_left_heat_flux_contact_change_rate_sum.writeToFile(0);
     write_left_heat_flux_inner_change_rate_sum.writeToFile(0);
     write_left_phi_change_rate_sum.writeToFile(0);
+    right_everage_temperature.writeToFile(0);
+    left_everage_temperature.writeToFile(0);
+
+   /* right_surface_contact_sum.writeToFile(0);
+    left_surface_contact_sum.writeToFile(0);
+    right_cross_section_contact_sum.writeToFile(0);
+    left_cross_section_contact_sum.writeToFile(0);
+    right_k_phi_contact_sum.writeToFile(0);
+    left_k_phi_contact_sum.writeToFile(0);
+    right_surface_inner_sum.writeToFile(0);
+    left_surface_inner_sum.writeToFile(0);
+    right_cross_section_inner_sum.writeToFile(0);
+    left_cross_section_inner_sum.writeToFile(0);
+    right_k_phi_inner_sum.writeToFile(0);
+    left_k_phi_inner_sum.writeToFile(0);*/
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -344,6 +400,8 @@ int main(int ac, char *av[])
                  
 			}
 
+
+
 			interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;
 			/** Update cell linked list and configuration. */
 			left_body.updateCellLinkedList();
@@ -363,7 +421,24 @@ int main(int ac, char *av[])
             write_left_heat_flux_contact_change_rate_sum.writeToFile();
             write_left_heat_flux_inner_change_rate_sum.writeToFile();
             write_left_phi_change_rate_sum.writeToFile();
+            right_everage_temperature.writeToFile();
+            left_everage_temperature.writeToFile();
+
+            /* right_surface_contact_sum.writeToFile();
+            left_surface_contact_sum.writeToFile();
+            right_cross_section_contact_sum.writeToFile();
+            left_cross_section_contact_sum.writeToFile();
+            right_k_phi_contact_sum.writeToFile();
+            left_k_phi_contact_sum.writeToFile();
+            right_surface_inner_sum.writeToFile();
+            left_surface_inner_sum.writeToFile();
+            right_cross_section_inner_sum.writeToFile();
+            left_cross_section_inner_sum.writeToFile();
+            right_k_phi_inner_sum.writeToFile();
+            left_k_phi_inner_sum.writeToFile();*/
+
 			//write_temperature.writeToFile();
+            //write_real_body_states.writeToFile();
 			time_instance = TickCount::now();
 			interval_updating_configuration += TickCount::now() - time_instance;
 		}
