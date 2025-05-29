@@ -169,10 +169,10 @@ int main(int ac, char* av[])
     InteractionWithUpdate<fluid_dynamics::MultiPhaseTransportVelocityCorrectionComplex<AllParticles>>
         air_transport_correction(air_inner, air_water_contact, air_tank_contact);
 
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_f);
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_air_advection_time_step_size(air_block, U_g);
-    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_water_time_step_size(water_block);
-    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_air_time_step_size(air_block);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_f, 0.1);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_air_advection_time_step_size(air_block, U_g, 0.1);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_water_time_step_size(water_block, 0.2);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_air_time_step_size(air_block, 0.2);
 
 	InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall> viscous_acceleration_water(water_inner,  water_air_contact, water_tank_contact);
 	InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall> viscous_acceleration_air(air_inner, air_water_contact, air_tank_contact);
@@ -204,6 +204,10 @@ int main(int ac, char* av[])
 	BodyStatesRecordingToVtp write_real_body_states(system);
     write_real_body_states.addToWrite<Real>(water_block, "Phi");
     write_real_body_states.addToWrite<Real>(air_block, "Phi");
+    write_real_body_states.addToWrite<Real>(water_block, "PhiFluxContact");
+    write_real_body_states.addToWrite<Real>(air_block, "PhiFluxContact");
+    write_real_body_states.addToWrite<Real>(water_block, "PhiFluxInner");
+    write_real_body_states.addToWrite<Real>(air_block, "PhiFluxInner");
 
     RestartIO restart_io(system);
     restart_io.addToWrite<Real>(water_block, "Phi");
@@ -211,28 +215,21 @@ int main(int ac, char* av[])
     ObservedQuantityRecording<Real> write_temperature_liquid("Phi", liquid_temperature_observer_contact);
     ObservedQuantityRecording<Real> write_temperature_gas("Phi", gas_temperature_observer_contact);
 
-	/*ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
-		water_average_temperature(in_output, water_block, "Phi");
-	ReducedQuantityRecording<ReduceAverage<DiffusionReactionSpeciesSummation<FluidParticles, WeaklyCompressibleFluid>>>
-		air_average_temperature(in_output, air_block, "Phi");*/
 	
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact(water_block, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_air_heat_flux_contact(air_block, "PhiFluxContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_wu(water_block, "PhiFluxWuContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_wu(air_block, "PhiFluxWuContact");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_water_heat_flux_inner_rate(water_block, "PhiFluxInnerChangeRate");
-    ReducedQuantityRecording<QuantityMoment<Real, SPHBody>> write_air_heat_flux_inner_rate(air_block, "PhiFluxInnerChangeRate");
+  
     ReducedQuantityRecording<Average<QuantitySummation<Real, SPHBody>>> water_everage_temperature(water_block, "Phi");
     ReducedQuantityRecording<Average<QuantitySummation<Real, SPHBody>>> air_everage_temperature(air_block, "Phi");
     ReducedQuantityRecording<QuantityMax<Real, SPHBody>> water_max_temperature(water_block, "Phi");
     ReducedQuantityRecording<QuantityMax<Real, SPHBody>> air_max_temperature(air_block, "Phi");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_water_heat_flux_contact_change_rate(water_block, "PhiChangeRate");
-	/*ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_air_total_mass(air_block, "MassiveMeasure");
-    ReducedQuantityRecording<QuantitySummation<Real,SPHBody>> compute_water_total_mass(water_block, "MassiveMeasure");*/
+	
 	
     ReducedQuantityRecording<TotalMechanicalEnergy> write_water_mechanical_energy(water_block, gravity);
+    ReducedQuantityRecording<TotalMechanicalEnergy> write_air_mechanical_energy(air_block, gravity);
 	/**
 	* @brief Pre-simulation.
 	*/
@@ -263,10 +260,7 @@ int main(int ac, char* av[])
    //write_air_heat_flux_inner.writeToFile(0);
     //write_water_heat_flux_contact.writeToFile(0);
     //write_air_heat_flux_contact.writeToFile(0);
-    write_air_heat_flux_wu.writeToFile(0);
-    write_water_heat_flux_wu.writeToFile(0);
-    write_air_heat_flux_inner_rate.writeToFile(0);
-    write_water_heat_flux_inner_rate.writeToFile(0);
+   
     write_temperature_liquid.writeToFile(0);
     write_temperature_gas.writeToFile(0);
     //water_everage_temperature.writeToFile(0);
@@ -285,7 +279,7 @@ int main(int ac, char* av[])
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
 	int restart_output_interval = screen_output_interval * 20;
-	Real End_Time = 22.0;			/**< End time. */
+	Real End_Time = 21.0;			/**< End time. */
 	Real D_Time = 0.1;	/**< time stamps for output. */
 	Real dt = 0.0; 					/**< Default acoustic time step sizes for fluid. */
 
@@ -347,7 +341,7 @@ int main(int ac, char* av[])
                 air_density_relaxation.exec(dt);
 
 				/*Thermal relaxation*/
-                if (GlobalStaticVariables::physical_time_>= 2.0)
+                if (GlobalStaticVariables::physical_time_>= 1.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -428,10 +422,7 @@ int main(int ac, char* av[])
                 write_air_heat_flux_inner.writeToFile();
                 write_water_heat_flux_contact.writeToFile();
                 write_air_heat_flux_contact.writeToFile();
-                write_air_heat_flux_wu.writeToFile();
-                write_water_heat_flux_wu.writeToFile();
-                write_air_heat_flux_inner_rate.writeToFile();
-                write_water_heat_flux_inner_rate.writeToFile();
+       
                 write_temperature_liquid.writeToFile();
                 write_temperature_gas.writeToFile();
                 water_everage_temperature.writeToFile();
@@ -439,6 +430,7 @@ int main(int ac, char* av[])
                 water_max_temperature.writeToFile();
                 air_max_temperature.writeToFile();
                 write_water_mechanical_energy.writeToFile();
+                write_air_mechanical_energy.writeToFile();
                 write_water_heat_flux_contact_change_rate.writeToFile();
 			}
 			
