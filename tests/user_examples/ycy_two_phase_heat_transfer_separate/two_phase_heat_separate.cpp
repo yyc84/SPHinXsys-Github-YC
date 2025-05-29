@@ -20,7 +20,7 @@ Real k_r = 0.620;
 Real k_l = 0.0254;
 Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
-Real dp = 0.0125;	/**< Initial reference particle spacing. */
+Real dp = 0.05/8.0;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
 Real initial_temperature_right = 1.0;
 
@@ -32,9 +32,9 @@ std::vector<Vecd> createOverallShape()
 {
 	std::vector<Vecd> over_all_shape;
 	over_all_shape.push_back(Vecd(0.0, 0.0));
-	over_all_shape.push_back(Vecd(0.0, 40.0 * dp));
-	over_all_shape.push_back(Vecd(80.0 * dp, 40.0 * dp));
-	over_all_shape.push_back(Vecd(80.0 * dp, 0.0));
+	over_all_shape.push_back(Vecd(0.0, 0.5));
+	over_all_shape.push_back(Vecd(1.0, 0.5));
+	over_all_shape.push_back(Vecd(1.0, 0.0));
 	over_all_shape.push_back(Vecd(0.0, 0.0));
 
 	return over_all_shape;
@@ -43,11 +43,11 @@ std::vector<Vecd> createOverallShape()
 std::vector<Vecd> createRightBlockShape()
 {
     std::vector<Vecd> right_block_shape;
-	right_block_shape.push_back(Vecd(40*dp, 0.0));
-	right_block_shape.push_back(Vecd(40*dp, 40*dp));
-	right_block_shape.push_back(Vecd(80*dp, 40*dp));
-	right_block_shape.push_back(Vecd(80*dp, 0.0));
-	right_block_shape.push_back(Vecd(40*dp, 0.0));
+	right_block_shape.push_back(Vecd(0.5, 0.0));
+	right_block_shape.push_back(Vecd(0.5, 0.5));
+	right_block_shape.push_back(Vecd(1.0, 0.5));
+	right_block_shape.push_back(Vecd(1.0, 0.0));
+	right_block_shape.push_back(Vecd(0.5, 0.0));
 
     return right_block_shape;
 }
@@ -57,9 +57,9 @@ std::vector<Vecd> createLeftBlockShape()
 {
     std::vector<Vecd> left_block_shape;
 	left_block_shape.push_back(Vecd(0.0, 0.0));
-	left_block_shape.push_back(Vecd(0.0, 40*dp));
-	left_block_shape.push_back(Vecd(40*dp, 40*dp));
-	left_block_shape.push_back(Vecd(40*dp, 0.0));
+	left_block_shape.push_back(Vecd(0.0, 0.5));
+	left_block_shape.push_back(Vecd(0.5, 0.5));
+	left_block_shape.push_back(Vecd(0.5, 0.0));
 	left_block_shape.push_back(Vecd(0.0, 0.0));
 
     return left_block_shape;
@@ -155,7 +155,7 @@ StdVec<Vecd> createObservationPoints()
 		
 		for(int i = 0;i< number_of_observation_points;i++)
 		{
-			observation_points.push_back(Vecd(i*0.5*dp,20*dp));
+			observation_points.push_back(Vecd(i*0.00625,80*0.00625));
 		}
     return observation_points;
 };
@@ -168,7 +168,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up an SPHSystem.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(0.0, 0.0), Vec2d(80 * dp, 40 * dp));
+    BoundingBox system_domain_bounds(Vec2d(0.0, 0.0), Vec2d(1.0, 1.0));
     SPHSystem sph_system(system_domain_bounds, dp);
     sph_system.handleCommandlineOptions(ac, av);
     IOEnvironment io_environment(sph_system);
