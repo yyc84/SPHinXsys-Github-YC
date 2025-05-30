@@ -20,7 +20,7 @@ Real k_r = 0.620;
 Real k_l = 0.0254;
 Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
-Real dp = 0.05/8.0;	/**< Initial reference particle spacing. */
+Real dp = 0.05/2.0;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
 Real initial_temperature_right = 1.0;
 
@@ -217,8 +217,8 @@ int main(int ac, char *av[])
 	//Dynamics1Level<ThermalDiffusionInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
 	//Dynamics1Level<ThermalDiffusionContact> left_thermal_relax_contact(left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
     
-    Dynamics1Level<ThermalDiffusionComplex,SequencedPolicy> left_thermal_relax_complex(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
-    Dynamics1Level<ThermalDiffusionComplex,SequencedPolicy> right_thermal_relax_complex(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
+    Dynamics1Level<ThermalDiffusionComplex> left_thermal_relax_complex(left_inner, left_body_contact, &left_heat_diffusion, &right_heat_diffusion);
+    Dynamics1Level<ThermalDiffusionComplex> right_thermal_relax_complex(right_inner, right_body_contact, &right_heat_diffusion, &left_heat_diffusion);
 
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
@@ -231,9 +231,19 @@ int main(int ac, char *av[])
 	//	and regression tests of the simulation.
 	//----------------------------------------------------------------------
 	//RestartIO restart_io(io_environment, sph_system.real_bodies_);
-	BodyStatesRecordingToVtp write_real_body_states(sph_system);
+	BodyStatesRecordingToPlt write_real_body_states(sph_system);
     write_real_body_states.addToWrite<Real>(right_body, "Phi");
 	write_real_body_states.addToWrite<Real>(left_body, "Phi");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxInner");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxInner");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxContact");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxContact");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxInnerChangeRate");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxInnerChangeRate");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiFluxContactChangeRate");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiFluxContactChangeRate");
+    write_real_body_states.addToWrite<Real>(right_body, "PhiChangeRate");
+    write_real_body_states.addToWrite<Real>(left_body, "PhiChangeRate");
 	ObservedQuantityRecording<Real> write_temperature("Phi", temperature_observer_contact);
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_change_rate_total(right_body, "PhiChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_change_rate_total(left_body, "PhiChangeRate");
