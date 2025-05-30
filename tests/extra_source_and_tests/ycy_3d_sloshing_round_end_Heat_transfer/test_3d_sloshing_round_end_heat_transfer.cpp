@@ -20,7 +20,7 @@ std::string water = "./input/water_small.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real particle_spacing_ref = 0.006; /**< Reference particle spacing. */
+Real particle_spacing_ref = 0.007; /**< Reference particle spacing. */
 BoundingBox system_domain_bounds(Vec3d(-0.3, -0.3, -0.3), Vec3d(0.3, 1.0, 0.3));
 
 //----------------------------------------------------------------------
@@ -34,7 +34,7 @@ Real U_g = 2.0 * sqrt(gravity_g * 0.5); /**< dispersion velocity in shallow wate
 Real U_max = SMAX(U_f, U_g);
 Real c_f = 10.0 * U_max; /**< Reference sound speed. */
 Real f = 1.7;
-Real a = 0.01;
+Real a = 0.03;
 Real c_p_water = 3.4267e3;
 Real c_p_air = 1.054e3;
 Real k_water = 0.1846;
@@ -216,8 +216,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //BoundingBox system_domain_bounds(Vec3d(-BW, -BW, -BW), Vec3d(DL + BW, DW + BW, DH + BW));
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
-    sph_system.setRunParticleRelaxation(true);
-    sph_system.setReloadParticles(false);
+    sph_system.setRunParticleRelaxation(false);
+    sph_system.setReloadParticles(true);
     sph_system.handleCommandlineOptions(ac, av)->setIOEnvironment();
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
@@ -389,11 +389,11 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::MultiPhaseViscousForceWithWall>
         air_viscous_acceleration(air_block_inner, air_water_contact, air_tank_contact);
 
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_water_advection_time_step_size(water_block, U_max, 0.15);
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_air_advection_time_step_size(air_block, U_max, 0.15);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_water_advection_time_step_size(water_block, U_max, 0.1);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStep> get_air_advection_time_step_size(air_block, U_max, 0.1);
 
-    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_water_time_step_size(water_block, 0.25);
-    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_air_time_step_size(air_block, 0.25);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_water_time_step_size(water_block, 0.15);
+    ReduceDynamics<fluid_dynamics::AcousticTimeStep> get_air_time_step_size(air_block, 0.15);
     
     // Define diffusion coefficient
     HeatIsotropicDiffusion water_heat_diffusion("Phi", "Phi", k_water, rho0_f, c_p_water);
@@ -501,7 +501,7 @@ int main(int ac, char *av[])
     int screen_output_interval = 100;
     int observation_sample_interval = screen_output_interval * 2;
     int restart_output_interval = screen_output_interval * 10;
-    Real end_time = 11.0;
+    Real end_time = 21.0;
     Real output_interval = 0.1;
     Real dt = 0.0;
     //----------------------------------------------------------------------

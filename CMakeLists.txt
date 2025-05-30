@@ -76,6 +76,21 @@ set(Simbody_LIBS
 target_link_libraries(sphinxsys_core INTERFACE ${Simbody_LIBS})
 target_compile_definitions(sphinxsys_core INTERFACE _SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING) # Because of Simbody headers
 
+# ##--- Project Chrono
+find_package(Chrono CONFIG REQUIRED)
+
+# include dirs & flags
+target_include_directories(sphinxsys_core
+  INTERFACE ${CHRONO_INCLUDE_DIRS}
+)
+target_compile_options(sphinxsys_core
+  INTERFACE ${CHRONO_CXX_FLAGS}
+)
+# link libraries
+target_link_libraries(sphinxsys_core
+  INTERFACE ${CHRONO_LIBRARIES}
+)
+
 # ## Eigen
 find_package(Eigen3 CONFIG REQUIRED)
 target_link_libraries(sphinxsys_core INTERFACE Eigen3::Eigen)
