@@ -517,8 +517,6 @@ DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::
     DiffusionRelaxation(Args &&...args)
     : DiffusionRelaxation<DataDelegateInner, DiffusionType>(std::forward<Args>(args)...),
       kernel_gradient_(this->particles_)
-      //,heat_flux_inner_dt_(this->particles_->template registerStateVariable<Real>("HeatFluxInnerChangeRate")),
-      //heat_flux_inner_(this->particles_->template registerStateVariable<Real>("HeatFluxInner"))
 {
     for (auto &diffusion : this->diffusions_)
     {
@@ -530,7 +528,7 @@ DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::
         this->particles_->template addEvolvingVariable<Real>(diffusion_species_name + "FluxInner");
         this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxInner");
 
-        /*surface_inner_sum_.push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "SurfaceInnerSUM"));
+        surface_inner_sum_.push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "SurfaceInnerSUM"));
         this->particles_->template addEvolvingVariable<Real>(diffusion_species_name + "SurfaceInnerSUM");
         this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "SurfaceInnerSUM");
         cross_section_inner_sum_.push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "CrossSectionInnerSUM"));
@@ -538,7 +536,7 @@ DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::
         this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "CrossSectionInnerSUM");
         k_times_Phi_ij_sum_.push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "KPhiInnerSUM"));
         this->particles_->template addEvolvingVariable<Real>(diffusion_species_name + "KPhiInnerSUM");
-        this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "KPhiInnerSUM");*/
+        this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "KPhiInnerSUM");
 
     }
 
@@ -562,9 +560,9 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interact
         Real d_species_times_cross_section = 0.0;
 
         /*for debuging*/
-        /*Real surface_inner_sum = 0.0;
+        Real surface_inner_sum = 0.0;
         Real cross_section_inner_sum = 0.0;
-        Real k_times_phi_ij_sum = 0.0;*/
+        Real k_times_phi_ij_sum = 0.0;
 
         Neighborhood &inner_neighborhood = this->inner_configuration_[index_i];
         for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
@@ -583,17 +581,17 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::interact
             Real cross_section = this->Vol_[index_j] * abs(inner_neighborhood.dW_ij_[n]) * this->Vol_[index_i];
             d_species_times_cross_section += diff_coeff_ij * phi_ij * cross_section * grad_ijV_j.dot(e_ij);
 
-            /*surface_inner_sum += surface_area_ij;
+            surface_inner_sum += surface_area_ij;
             cross_section_inner_sum += cross_section;
-            k_times_phi_ij_sum += diff_coeff_ij * phi_ij * surface_area_ij;*/
+            k_times_phi_ij_sum += diff_coeff_ij * phi_ij * surface_area_ij;
         }
         this->diffusion_dt_[m][index_i] = d_species / rho_i / c_v_i;
         this->heat_flux_inner_dt_[m][index_i] = d_species_times_cross_section;
 
         /*for debuging*/
-       /* this->surface_inner_sum_[m][index_i] = surface_inner_sum;
+        this->surface_inner_sum_[m][index_i] = surface_inner_sum;
         this->cross_section_inner_sum_[m][index_i] = cross_section_inner_sum;
-        this->k_times_Phi_ij_sum_[m][index_i] = k_times_phi_ij_sum;*/
+        this->k_times_Phi_ij_sum_[m][index_i] = k_times_phi_ij_sum;
     }
 }
 //=================================================================================================//
@@ -615,9 +613,7 @@ void DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>::update(s
     DiffusionRelaxation<DataDelegateInner, DiffusionType>::update(index_i, dt);
     for (size_t m = 0; m < this->diffusions_.size(); ++m)
     {
-        /*Real density_i = this->diffusions_[m]->getDensity();
-        Real specific_heat_i = this->diffusions_[m]->getSpecificHeat();
-        heat_flux_inner_[m][index_i] += dt * this->Vol_[index_i] * density_i * specific_heat_i * heat_flux_inner_dt_[index_i];*/
+        
         heat_flux_inner_[m][index_i] = heat_flux_inner_dt_[m][index_i];
     }
 }
@@ -672,10 +668,10 @@ DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, Conta
     heat_flux_contact_.resize(this->contact_particles_.size());
 
     /*for debuging*/
-    /*surface_contact_sum_.resize(this->contact_particles_.size());
+    surface_contact_sum_.resize(this->contact_particles_.size());
     cross_section_contact_sum_.resize(this->contact_particles_.size());
     k_times_Phi_ij_contact_sum_.resize(this->contact_particles_.size());
-    dw_ij_sum_.resize(this->contact_particles_.size());*/
+    dw_ij_sum_.resize(this->contact_particles_.size());
 
     for (size_t k = 0; k != this->contact_particles_.size(); ++k)
     {
@@ -697,7 +693,7 @@ DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, Conta
             this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "FluxContact");
 
             /*for debuging*/
-            /*surface_contact_sum_[k].push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "SurfaceContactSUM"));
+            surface_contact_sum_[k].push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "SurfaceContactSUM"));
             this->particles_->template addEvolvingVariable<Real>(diffusion_species_name + "SurfaceContactSUM");
             this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "SurfaceContactSUM");
 
@@ -711,7 +707,7 @@ DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, Conta
 
             dw_ij_sum_[k].push_back(this->particles_->template registerStateVariable<Real>(diffusion_species_name + "DWijSUM"));
             this->particles_->template addEvolvingVariable<Real>(diffusion_species_name + "DWijSUM");
-            this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "DWijSUM");*/
+            this->particles_->template addVariableToWrite<Real>(diffusion_species_name + "DWijSUM");
         }
     }
 }
@@ -744,10 +740,10 @@ void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, 
         StdVec<Real *> &heat_flux_contact_dt_k = this->heat_flux_contact_dt_[k];
 
         /*for debuging*/
-        /*StdVec<Real *> surface_contact_sum_k = this->surface_contact_sum_[k];
+        StdVec<Real *> surface_contact_sum_k = this->surface_contact_sum_[k];
         StdVec<Real *> cross_section_contact_sum_k = this->cross_section_contact_sum_[k];
         StdVec<Real *> k_times_Phi_ij_contact_sum_k = this->k_times_Phi_ij_contact_sum_[k];
-        StdVec<Real *> dw_ij_sum_k = this->dw_ij_sum_[k];*/
+        StdVec<Real *> dw_ij_sum_k = this->dw_ij_sum_[k];
 
         Real *contact_Vol_k = this->contact_Vol_[k];
         Neighborhood &contact_neighborhood = (*this->contact_configuration_[k])[index_i];
@@ -765,11 +761,11 @@ void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, 
 
             getDiffusionChangeRateTwoPhaseHeatExchange(index_i, index_j, e_ij, fector_ij, area_ij, cross_section, gradient_species_k, heat_flux_contact_dt_k);
 
-            /*getDebugingValuesBack(index_i, index_j, e_ij, area_ij, cross_section, gradient_species_k, surface_contact_sum_k, cross_section_contact_sum_k, k_times_Phi_ij_contact_sum_k);
+            getDebugingValuesBack(index_i, index_j, e_ij, area_ij, cross_section, gradient_species_k, surface_contact_sum_k, cross_section_contact_sum_k, k_times_Phi_ij_contact_sum_k);
             for (size_t m = 0; m < this->diffusions_.size(); ++m)
             {
                 dw_ij_sum_k[m][index_i] += grad_ijV_j.dot(e_ij);
-            }*/
+            }
             
         }
         /*for (size_t m = 0; m < this->diffusions_.size(); ++m)
@@ -779,27 +775,27 @@ void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, 
     }
 }
 //=================================================================================================//
-//template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
-//void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
-//getDebugingValuesBack(size_t particle_i, size_t particle_j, Vecd& e_ij, Real surface_area_ij, Real cross_section,
-//                          const StdVec<Real *> &gradient_species_k, StdVec<Real *> &surface_contact_sum_k, StdVec<Real *> &cross_section_contact_sum_k, StdVec<Real *> &k_times_Phi_ij_contact_sum_k)
-//{
-//    for (size_t m = 0; m < this->diffusions_.size(); ++m)
-//    {
-//        Real rho_i = this->diffusions_[m]->getDensity();
-//        Real c_v_i = this->diffusions_[m]->getSpecificHeat();
-//        Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
-//        Real thermal_conductivity_j = this->contact_diffusions_[m]->getThermalConductivity();
-//        Real diff_coeff_ij =
-//            this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
-//        Real phi_ij = (this->gradient_species_[m][particle_i] - gradient_species_k[m][particle_j]);
-//
-//        surface_contact_sum_k[m][particle_i] += surface_area_ij;
-//        cross_section_contact_sum_k[m][particle_i] += cross_section;
-//        k_times_Phi_ij_contact_sum_k[m][particle_i] += diff_coeff_ij * phi_ij * surface_area_ij;
-//
-//    }
-//}
+template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
+void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::
+    getDebugingValuesBack(size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
+                          const StdVec<Real *> &gradient_species_k, StdVec<Real *> &surface_contact_sum_k, StdVec<Real *> &cross_section_contact_sum_k, StdVec<Real *> &k_times_Phi_ij_contact_sum_k)
+{
+    for (size_t m = 0; m < this->diffusions_.size(); ++m)
+    {
+        Real rho_i = this->diffusions_[m]->getDensity();
+        Real c_v_i = this->diffusions_[m]->getSpecificHeat();
+        Real thermal_conductivity_i = this->diffusions_[m]->getThermalConductivity();
+        Real thermal_conductivity_j = this->contact_diffusions_[m]->getThermalConductivity();
+        Real diff_coeff_ij =
+            this->getInterParticleThermalConductivity(thermal_conductivity_i, thermal_conductivity_j);
+        Real phi_ij = (this->gradient_species_[m][particle_i] - gradient_species_k[m][particle_j]);
+
+        surface_contact_sum_k[m][particle_i] += surface_area_ij;
+        cross_section_contact_sum_k[m][particle_i] += cross_section;
+        k_times_Phi_ij_contact_sum_k[m][particle_i] += diff_coeff_ij * phi_ij * surface_area_ij;
+
+    }
+}
 //=================================================================================================//
 template <class ContactKernelGradientType, class DiffusionType, class ContactDiffusionType>
 void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, ContactDiffusionType>::initialization(size_t index_i, Real dt)
@@ -809,10 +805,10 @@ void DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType, 
         for (size_t m = 0; m < this->diffusions_.size(); ++m)
         {
             heat_flux_contact_dt_[k][m][index_i] = 0.0;
-            /*surface_contact_sum_[k][m][index_i] = 0.0;
+            surface_contact_sum_[k][m][index_i] = 0.0;
             cross_section_contact_sum_[k][m][index_i] = 0.0;
             k_times_Phi_ij_contact_sum_[k][m][index_i] = 0.0;
-            dw_ij_sum_[k][m][index_i] = 0.0;*/
+            dw_ij_sum_[k][m][index_i] = 0.0;
         }
         
     }

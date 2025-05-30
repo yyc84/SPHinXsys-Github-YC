@@ -361,9 +361,9 @@ class DiffusionRelaxation<HeatInner<KernelGradientType>, DiffusionType>
     StdVec<Real *> heat_flux_inner_dt_;
     StdVec<Real *> heat_flux_inner_;
 
-  /*  StdVec<Real *> surface_inner_sum_;
+    StdVec<Real *> surface_inner_sum_;
     StdVec<Real *> cross_section_inner_sum_;
-    StdVec<Real *> k_times_Phi_ij_sum_;*/
+    StdVec<Real *> k_times_Phi_ij_sum_;
 
   public:
     template <typename... Args>
@@ -414,10 +414,10 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
     StdVec<StdVec<Real *>> heat_flux_contact_dt_;
     StdVec<StdVec<Real *>> heat_flux_contact_;
 
-    /*StdVec<StdVec<Real *>> surface_contact_sum_;
+    StdVec<StdVec<Real *>> surface_contact_sum_;
     StdVec<StdVec<Real *>> cross_section_contact_sum_;
     StdVec<StdVec<Real *>> k_times_Phi_ij_contact_sum_;
-    StdVec<StdVec<Real *>> dw_ij_sum_;*/
+    StdVec<StdVec<Real *>> dw_ij_sum_;
 
   public:
     template <typename... Args>
@@ -429,8 +429,8 @@ class DiffusionRelaxation<HeatContact<ContactKernelGradientType>, DiffusionType,
         size_t particle_i, size_t particle_j, Vecd &e_ij, Real fector_ij, Real surface_area_ij, Real cross_section,
         const StdVec<Real *> &gradient_species_k, StdVec<Real *> &heat_flux_contact_dt);
 
-    /*void getDebugingValuesBack(size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
-                               const StdVec<Real *> &gradient_species_k, StdVec<Real *> &surface_contact_sum_k, StdVec<Real *> &cross_section_contact_sum_k, StdVec<Real *> &k_times_Phi_ij_contact_sum_k);*/
+    void getDebugingValuesBack(size_t particle_i, size_t particle_j, Vecd &e_ij, Real surface_area_ij, Real cross_section,
+                               const StdVec<Real *> &gradient_species_k, StdVec<Real *> &surface_contact_sum_k, StdVec<Real *> &cross_section_contact_sum_k, StdVec<Real *> &k_times_Phi_ij_contact_sum_k);
 
     void interaction(size_t index_i, Real dt = 0.0);
 

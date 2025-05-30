@@ -19,7 +19,7 @@ Real k_r = 0.620;
 Real k_l = 0.0254;
 Real diffusion_coff_r = k_r / (c_p_r * rho0_r);
 Real diffusion_coff_l = k_l / (c_p_l * rho0_l);
-Real dp = 0.05/4.0;	/**< Initial reference particle spacing. */
+Real dp = 0.05/2.0;	/**< Initial reference particle spacing. */
 Real initial_temperature_left = 0.0;
 Real initial_temperature_right = 1.0;
 std::string diffusion_species_name = "Phi";
@@ -229,8 +229,8 @@ int main(int ac, char *av[])
     //Dynamics1Level<ThermalRelaxInner> left_thermal_relax_inner(left_inner, &left_heat_diffusion);
     //Dynamics1Level<ThermalRelaxContact> right_thermal_relax_inner(right_inner, &right_heat_diffusion, &left_heat_diffusion);
 
-    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_right(right_inner, right_body_contact, &left_heat_diffusion);
-    Dynamics1Level<HeatExchangeComplex, SequencedPolicy> heat_exchange_complex_left(left_inner, left_body_contact, &right_heat_diffusion);
+    Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_right(right_inner, right_body_contact, &left_heat_diffusion);
+    Dynamics1Level<HeatExchangeComplex> heat_exchange_complex_left(left_inner, left_body_contact, &right_heat_diffusion);
     
 	SimpleDynamics<LeftDiffusionInitialCondition> left_diffusion_initial_condition(left_body);
 	SimpleDynamics<RightDiffusionInitialCondition> right_diffusion_initial_condition(right_body);
@@ -286,7 +286,7 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_everage_temperature(right_body, "Phi");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_everage_temperature(left_body, "Phi");
 
-  /*  ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_surface_contact_sum(right_body, "PhiSurfaceContactSUM");
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_surface_contact_sum(right_body, "PhiSurfaceContactSUM");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_surface_contact_sum(left_body, "PhiSurfaceContactSUM");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_cross_section_contact_sum(right_body, "PhiCrossSectionContactSUM");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_cross_section_contact_sum(left_body, "PhiCrossSectionContactSUM");
@@ -297,7 +297,7 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_cross_section_inner_sum(right_body, "PhiCrossSectionInnerSUM");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_cross_section_inner_sum(left_body, "PhiCrossSectionInnerSUM");
     ReducedQuantityRecording<Average<QuantitySummation<Real>>> right_k_phi_inner_sum(right_body, "PhiKPhiInnerSUM");
-    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_k_phi_inner_sum(left_body, "PhiKPhiInnerSUM");*/
+    ReducedQuantityRecording<Average<QuantitySummation<Real>>> left_k_phi_inner_sum(left_body, "PhiKPhiInnerSUM");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -350,7 +350,7 @@ int main(int ac, char *av[])
     right_everage_temperature.writeToFile(0);
     left_everage_temperature.writeToFile(0);
 
-   /* right_surface_contact_sum.writeToFile(0);
+   right_surface_contact_sum.writeToFile(0);
     left_surface_contact_sum.writeToFile(0);
     right_cross_section_contact_sum.writeToFile(0);
     left_cross_section_contact_sum.writeToFile(0);
@@ -361,7 +361,7 @@ int main(int ac, char *av[])
     right_cross_section_inner_sum.writeToFile(0);
     left_cross_section_inner_sum.writeToFile(0);
     right_k_phi_inner_sum.writeToFile(0);
-    left_k_phi_inner_sum.writeToFile(0);*/
+    left_k_phi_inner_sum.writeToFile(0);
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
