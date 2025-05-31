@@ -255,8 +255,7 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_change_rate_contact(left_body, "PhiFluxContactChangeRate");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_right_heat_flux_contact(right_body, "PhiFluxContact");
     ReducedQuantityRecording<QuantitySummation<Real, SPHBody>> write_left_heat_flux_contact(left_body, "PhiFluxContact");
-    
-    
+   
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -369,7 +368,8 @@ int main(int ac, char *av[])
         write_left_heat_flux_change_rate_inner.writeToFile();
         write_right_heat_flux_change_rate_contact.writeToFile();
         write_left_heat_flux_change_rate_contact.writeToFile();
-       
+     
+
 		TickCount t3 = TickCount::now();
 		interval += t3 - t2;
 	}
