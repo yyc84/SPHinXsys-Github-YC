@@ -15,13 +15,33 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS2.stl
         DESTINATION ${BUILD_INPUT_PATH})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS3.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/cylindrical_gas.stl
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS4.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/cylindrical_water.stl
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS5.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/cylindrical_tank_inner.stl
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/ProbeS6.stl
         DESTINATION ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/cylindrical_tank_outer.stl
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/gas_174.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/gas_200.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_174.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_200.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_outer.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_outer_24mm.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_9Hole_174.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/water_9Hole_200.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_9Hole_174.stl
+        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/tank_inner_9Hole_200.stl
         DESTINATION ${BUILD_INPUT_PATH})
 
 add_executable(${PROJECT_NAME})

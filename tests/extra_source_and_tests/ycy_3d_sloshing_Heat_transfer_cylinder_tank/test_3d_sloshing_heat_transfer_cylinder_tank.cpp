@@ -13,14 +13,17 @@ using namespace SPH;   // Namespace cite here.
 std::string probe_s1_shape = "./input/ProbeS1.stl";
 std::string probe_s2_shape = "./input/ProbeS2.stl";
 std::string probe_s3_shape = "./input/ProbeS3.stl";
-std::string fuel_tank_outer = "./input/cylindrical_tank_outer.stl";
-std::string fuel_tank_inner = "./input/cylindrical_tank_inner.stl";
-std::string air = "./input/cylindrical_gas.stl";
-std::string water = "./input/cylindrical_water.stl";
+std::string probe_s4_shape = "./input/ProbeS4.stl";
+std::string probe_s5_shape = "./input/ProbeS5.stl";
+std::string probe_s6_shape = "./input/ProbeS6.stl";
+std::string fuel_tank_outer = "./input/tank_outer.stl";
+std::string fuel_tank_inner = "./input/tank_inner.stl";
+std::string air = "./input/gas_174.stl";
+std::string water = "./input/water_174.stl";
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
-Real particle_spacing_ref = 0.005; /**< Reference particle spacing. */
+Real particle_spacing_ref = 0.004; /**< Reference particle spacing. */
 BoundingBox system_domain_bounds(Vec3d(-1.0, -1.0, -1.0), Vec3d(1.0, 1.0, 1.0));
 
 //----------------------------------------------------------------------
@@ -154,6 +157,36 @@ class ProbeS3 : public ComplexShape
     }
 };
 
+class ProbeS4 : public ComplexShape
+{
+  public:
+    explicit ProbeS4(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vec3d translation_probe(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeSTL>(probe_s4_shape, translation_probe, length_scale);
+    }
+};
+
+class ProbeS5 : public ComplexShape
+{
+  public:
+    explicit ProbeS5(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vec3d translation_probe_5(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeSTL>(probe_s5_shape, translation_probe_5, length_scale);
+    }
+};
+
+class ProbeS6 : public ComplexShape
+{
+  public:
+    explicit ProbeS6(const std::string &shape_name) : ComplexShape(shape_name)
+    {
+        Vec3d translation_probe_6(0.0, 0.0, 0.0);
+        add<TriangleMeshShapeSTL>(probe_s6_shape, translation_probe_6, length_scale);
+    }
+};
+
 class ThermoWaterBodyInitialCondition : public LocalDynamics
 {
   public:
@@ -209,27 +242,27 @@ class ThermoAirBodyInitialCondition : public LocalDynamics
 
 using HeatExchangeComplex = HeatExchangeDiffusionComplex<KernelGradientInner, KernelGradientContact, HeatIsotropicDiffusion, HeatIsotropicDiffusion>;
 
-StdVec<Vecd> LiquidTemperatureObserverParticle()
-{
-    StdVec<Vecd> observation_points;
-
-    observation_points.push_back(Vecd(0.0, 0.35, 0.0));
-    observation_points.push_back(Vecd(0.0, 0.5, 0.0));
-    observation_points.push_back(Vecd(0.0, 0.6, 0.0));
-
-    return observation_points;
-};
-
-StdVec<Vecd> GasTemperatureObserverParticle()
-{
-    StdVec<Vecd> observation_points;
-
-    observation_points.push_back(Vecd(0.0, 0.4, 0.0));
-    observation_points.push_back(Vecd(0.0, 0.5, 0.0));
-    observation_points.push_back(Vecd(0.0, 0.65, 0.0));
-
-    return observation_points;
-};
+//StdVec<Vecd> LiquidTemperatureObserverParticle()
+//{
+//    StdVec<Vecd> observation_points;
+//
+//    observation_points.push_back(Vecd(0.0, 0.35, 0.0));
+//    observation_points.push_back(Vecd(0.0, 0.5, 0.0));
+//    observation_points.push_back(Vecd(0.0, 0.6, 0.0));
+//
+//    return observation_points;
+//};
+//
+//StdVec<Vecd> GasTemperatureObserverParticle()
+//{
+//    StdVec<Vecd> observation_points;
+//
+//    observation_points.push_back(Vecd(0.0, 0.4, 0.0));
+//    observation_points.push_back(Vecd(0.0, 0.5, 0.0));
+//    observation_points.push_back(Vecd(0.0, 0.65, 0.0));
+//
+//    return observation_points;
+//};
 //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
@@ -272,11 +305,11 @@ int main(int ac, char *av[])
         ? tank.generateParticles<BaseParticles, Reload>(tank.getName())
         : tank.generateParticles<BaseParticles, Lattice>();
 
-    ObserverBody gas_temperature_observer(sph_system, "GasTemperatureObserver");
+    /*ObserverBody gas_temperature_observer(sph_system, "GasTemperatureObserver");
     gas_temperature_observer.generateParticles<ObserverParticles>(GasTemperatureObserverParticle());
 
     ObserverBody liquid_temperature_observer(sph_system, "LiquidTemperatureObserver");
-    liquid_temperature_observer.generateParticles<ObserverParticles>(LiquidTemperatureObserverParticle());
+    liquid_temperature_observer.generateParticles<ObserverParticles>(LiquidTemperatureObserverParticle());*/
 
     //----------------------------------------------------------------------
     //	Define body relation map.
@@ -365,8 +398,8 @@ int main(int ac, char *av[])
         return 0;
     };
 
-    ContactRelation liquid_temperature_observer_contact(liquid_temperature_observer, {&water_block});
-    ContactRelation gas_temperature_observer_contact(gas_temperature_observer, {&air_block});
+    //ContactRelation liquid_temperature_observer_contact(liquid_temperature_observer, {&water_block});
+    //ContactRelation gas_temperature_observer_contact(gas_temperature_observer, {&air_block});
 
     //----------------------------------------------------------------------
     //	Define the fluid dynamics used in the simulation.
@@ -448,6 +481,15 @@ int main(int ac, char *av[])
     BodyRegionByCell probe_s3(water_block, makeShared<ProbeS3>("ProbeS3"));
     ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
         wave_probe_S3(probe_s3, "FreeSurfaceHeight_S3", 2);
+    BodyRegionByCell probe_s4(water_block, makeShared<ProbeS4>("ProbeS4"));
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
+        wave_probe_S4(probe_s4, "FreeSurfaceHeight_S4", 2);
+    BodyRegionByCell probe_s5(water_block, makeShared<ProbeS5>("PorbeS5"));
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
+        wave_probe_S5(probe_s5, "FreeSurfaceHeight_S5", 2);
+    BodyRegionByCell probe_s6(water_block, makeShared<ProbeS6>("ProbeS6"));
+    ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>
+        wave_probe_S6(probe_s6, "FreeSurfaceHeight_S6", 2);
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations, observations
     //	and regression tests of the simulation.
@@ -457,9 +499,9 @@ int main(int ac, char *av[])
     body_states_recording.addToWrite<Real>(air_block, "Pressure");          // output for debug
     body_states_recording.addToWrite<Vecd>(water_block, "Velocity");          // output for debug
     body_states_recording.addToWrite<Vecd>(air_block, "Velocity");            // output for debug
-    body_states_recording.addToWrite<Real>(water_block, "Density");           // output for debug
-    body_states_recording.addToWrite<Real>(air_block, "Density");             // output for debug
-    body_states_recording.addToWrite<int>(water_block, "Indicator");          // output for debug
+    //body_states_recording.addToWrite<Real>(water_block, "Density");           // output for debug
+    //body_states_recording.addToWrite<Real>(air_block, "Density");             // output for debug
+    //body_states_recording.addToWrite<int>(water_block, "Indicator");          // output for debug
     body_states_recording.addToWrite<Vecd>(tank, "NormalDirection"); // output for debug
     body_states_recording.addToWrite<Real>(water_block, "Phi");
     body_states_recording.addToWrite<Real>(air_block, "Phi");  
@@ -476,8 +518,8 @@ int main(int ac, char *av[])
     ReducedQuantityRecording<TotalMechanicalEnergy> write_water_mechanical_energy(water_block, gravity);
     ReducedQuantityRecording<TotalMechanicalEnergy> write_air_mechanical_energy(air_block, gravity);
 
-    ObservedQuantityRecording<Real> write_temperature_liquid("Phi", liquid_temperature_observer_contact);
-    ObservedQuantityRecording<Real> write_temperature_gas("Phi", gas_temperature_observer_contact);
+    //ObservedQuantityRecording<Real> write_temperature_liquid("Phi", liquid_temperature_observer_contact);
+    //ObservedQuantityRecording<Real> write_temperature_gas("Phi", gas_temperature_observer_contact);
 
     ReducedQuantityRecording<QuantitySummation<Real>> write_water_heat_flux_inner(water_block, "PhiFluxInner");
     ReducedQuantityRecording<QuantitySummation<Real>> write_air_heat_flux_inner(air_block, "PhiFluxInner");
@@ -589,7 +631,7 @@ int main(int ac, char *av[])
                 water_density_relaxation.exec(dt);
                 air_density_relaxation.exec(dt);
 
-                if (physical_time >= 0.0)
+                if (physical_time >= 2.0)
                 {
                     water_heat_exchange_complex.exec(dt);
                     air_heat_exchange_complex.exec(dt);
@@ -632,15 +674,15 @@ int main(int ac, char *av[])
             free_stream_surface_indicator.exec();
             interval_updating_configuration += TickCount::now() - time_instance;
 
-            if (physical_time >= 0.0)
+            if (physical_time >= 2.0)
             {
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
                 wave_probe_S3.writeToFile();
                 write_water_mechanical_energy.writeToFile();
                 write_air_mechanical_energy.writeToFile();
-                write_temperature_liquid.writeToFile();
-                write_temperature_gas.writeToFile();
+                //write_temperature_liquid.writeToFile();
+                //write_temperature_gas.writeToFile();
                 write_water_heat_flux_inner.writeToFile();
                 write_air_heat_flux_inner.writeToFile();
                 write_water_heat_flux_contact.writeToFile();
