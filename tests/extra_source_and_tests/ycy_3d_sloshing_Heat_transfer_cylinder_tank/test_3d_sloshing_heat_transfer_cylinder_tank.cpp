@@ -547,6 +547,9 @@ int main(int ac, char *av[])
     wave_probe_S1.writeToFile();
     wave_probe_S2.writeToFile();
     wave_probe_S3.writeToFile();
+    wave_probe_S4.writeToFile();
+    wave_probe_S5.writeToFile();
+    wave_probe_S6.writeToFile();
     write_water_mechanical_energy.writeToFile(0);
     write_air_mechanical_energy.writeToFile(0);
     //write_temperature_liquid.writeToFile(0);
@@ -679,6 +682,9 @@ int main(int ac, char *av[])
                 wave_probe_S1.writeToFile();
                 wave_probe_S2.writeToFile();
                 wave_probe_S3.writeToFile();
+                wave_probe_S4.writeToFile();
+                wave_probe_S5.writeToFile();
+                wave_probe_S6.writeToFile();
                 write_water_mechanical_energy.writeToFile();
                 write_air_mechanical_energy.writeToFile();
                 //write_temperature_liquid.writeToFile();
